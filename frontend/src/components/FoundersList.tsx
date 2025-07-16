@@ -1,13 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Founder, FounderCreate, Skill, Startup } from '../types';
 import { founderAPI, skillAPI, startupAPI } from '../api';
+import Modal from './Modal';
 
-const FoundersList: React.FC = () => {
+type ViewType = 'table' | 'card' | 'compact';
+
+interface FoundersListProps {
+  searchQuery?: string;
+}
+
+const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
   const [founders, setFounders] = useState<Founder[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [startups, setStartups] = useState<Startup[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null);
+  const [viewType, setViewType] = useState<ViewType>('table');
+  const [selectedFounder, setSelectedFounder] = useState<Founder | null>(null);
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
     email: '',
@@ -129,10 +138,81 @@ const FoundersList: React.FC = () => {
     }));
   };
 
+  const truncateDescription = (text: string, maxLength: number = 100): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const getFounderIndustries = (founder: Founder): string[] => {
+    return founder.startups.map(startup => startup.industry).filter(Boolean) as string[];
+  };
+
+  const filteredFounders = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return founders;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return founders.filter(founder => {
+      const matchesName = founder.name.toLowerCase().includes(query);
+      const matchesEmail = founder.email.toLowerCase().includes(query);
+      const matchesBio = founder.bio?.toLowerCase().includes(query);
+      const matchesLocation = founder.location?.toLowerCase().includes(query);
+      const matchesSkills = founder.skills.some(skill => 
+        skill.name.toLowerCase().includes(query) || 
+        skill.category?.toLowerCase().includes(query)
+      );
+      const matchesStartups = founder.startups.some(startup => 
+        startup.name.toLowerCase().includes(query) || 
+        startup.industry?.toLowerCase().includes(query) ||
+        startup.description?.toLowerCase().includes(query)
+      );
+      
+      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartups;
+    });
+  }, [founders, searchQuery]);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Founders</h2>
+        <div className="flex items-center space-x-6">
+          <h2 className="text-3xl font-bold text-gray-900">Founders</h2>
+          
+          {/* View Switcher */}
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewType('table')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                viewType === 'table' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Table
+            </button>
+            <button
+              onClick={() => setViewType('card')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                viewType === 'card' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Card
+            </button>
+            <button
+              onClick={() => setViewType('compact')}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                viewType === 'compact' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+            >
+              Compact
+            </button>
+          </div>
+        </div>
+        
         <button 
           onClick={() => setShowForm(true)} 
           className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
@@ -273,92 +353,326 @@ const FoundersList: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {founders.map(founder => (
-          <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => handleEdit(founder)} 
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDelete(founder.id)} 
-                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-            
-            <p className="text-gray-600 mb-2">{founder.email}</p>
-            {founder.bio && <p className="text-gray-700 mb-3">{founder.bio}</p>}
-            {founder.location && <p className="text-gray-500 mb-3 flex items-center">📍 {founder.location}</p>}
-            
-            <div className="flex space-x-4 mb-4">
-              {founder.linkedin_url && (
-                <a 
-                  href={founder.linkedin_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  LinkedIn
-                </a>
-              )}
-              {founder.twitter_url && (
-                <a 
-                  href={founder.twitter_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  Twitter
-                </a>
-              )}
-              {founder.github_url && (
-                <a 
-                  href={founder.github_url} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  GitHub
-                </a>
-              )}
-            </div>
-
-            {founder.skills.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {founder.skills.map(skill => (
-                    <span key={skill.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {skill.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {founder.startups.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {founder.startups.map(startup => (
-                    <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                      {startup.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Table View */}
+      {viewType === 'table' && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Skills
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Startups
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredFounders.map(founder => (
+                  <tr key={founder.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{founder.name}</div>
+                      {founder.bio && (
+                        <div className="text-sm text-gray-500">{truncateDescription(founder.bio, 50)}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {founder.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {founder.location || '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {founder.skills.slice(0, 2).map(skill => (
+                          <span key={skill.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {skill.name}
+                          </span>
+                        ))}
+                        {founder.skills.length > 2 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            +{founder.skills.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {founder.startups.slice(0, 2).map(startup => (
+                          <span key={startup.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            {startup.name}
+                          </span>
+                        ))}
+                        {founder.startups.length > 2 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                            +{founder.startups.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <div className="flex space-x-2">
+                        <button 
+                          onClick={() => handleEdit(founder)} 
+                          className="px-2 py-1 bg-sky-400 hover:bg-sky-700 text-white text-xs rounded transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(founder.id)} 
+                          className="px-2 py-1 bg-rose-400 hover:bg-rose-700 text-white text-xs rounded transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Card View */}
+      {viewType === 'card' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFounders.map(founder => (
+            <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEdit(founder)} 
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(founder.id)} 
+                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+              
+              <p className="text-gray-600 mb-2">{founder.email}</p>
+              {founder.bio && <p className="text-gray-700 mb-3">{founder.bio}</p>}
+              {founder.location && <p className="text-gray-500 mb-3 flex items-center">📍 {founder.location}</p>}
+              
+              <div className="flex space-x-4 mb-4">
+                {founder.linkedin_url && (
+                  <a 
+                    href={founder.linkedin_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+                {founder.twitter_url && (
+                  <a 
+                    href={founder.twitter_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Twitter
+                  </a>
+                )}
+                {founder.github_url && (
+                  <a 
+                    href={founder.github_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    GitHub
+                  </a>
+                )}
+              </div>
+
+              {founder.skills.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {founder.skills.map(skill => (
+                      <span key={skill.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {skill.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {founder.startups.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {founder.startups.map(startup => (
+                      <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {startup.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Compact View */}
+      {viewType === 'compact' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+          {filteredFounders.map(founder => (
+            <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <div className="space-y-2">
+                <button
+                  onClick={() => setSelectedFounder(founder)}
+                  className="text-left w-full"
+                >
+                  <div className="flex items-center space-x-2 flex-wrap">
+                    <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                      {founder.name}
+                    </h3>
+                    {getFounderIndustries(founder).slice(0, 2).map((industry, index) => (
+                      <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                        {industry}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+                
+                {founder.bio && (
+                  <p className="text-xs text-gray-600">
+                    {truncateDescription(founder.bio, 80)}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Founder Details Modal */}
+      <Modal
+        isOpen={selectedFounder !== null}
+        onClose={() => setSelectedFounder(null)}
+        title={selectedFounder?.name || ''}
+      >
+        {selectedFounder && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedFounder.name}</h3>
+              <p className="text-gray-600 mb-4">{selectedFounder.email}</p>
+              
+              {selectedFounder.bio && (
+                <p className="text-gray-700 mb-4">{selectedFounder.bio}</p>
+              )}
+              
+              {selectedFounder.location && (
+                <p className="text-gray-500 mb-4">📍 {selectedFounder.location}</p>
+              )}
+              
+              <div className="flex space-x-4 mb-4">
+                {selectedFounder.linkedin_url && (
+                  <a 
+                    href={selectedFounder.linkedin_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    LinkedIn
+                  </a>
+                )}
+                {selectedFounder.twitter_url && (
+                  <a 
+                    href={selectedFounder.twitter_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Twitter
+                  </a>
+                )}
+                {selectedFounder.github_url && (
+                  <a 
+                    href={selectedFounder.github_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    GitHub
+                  </a>
+                )}
+              </div>
+
+              {selectedFounder.skills.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFounder.skills.map(skill => (
+                      <span key={skill.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {skill.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedFounder.startups.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFounder.startups.map(startup => (
+                      <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        {startup.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setSelectedFounder(null);
+                  handleEdit(selectedFounder);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedFounder(null);
+                  handleDelete(selectedFounder.id);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

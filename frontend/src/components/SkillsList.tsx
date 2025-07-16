@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Skill, SkillCreate } from '../types';
 import { skillAPI } from '../api';
+import Modal from './Modal';
 
-const SkillsList: React.FC = () => {
+interface SkillsListProps {
+  searchQuery?: string;
+}
+
+const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
+  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [formData, setFormData] = useState<SkillCreate>({
     name: '',
     category: '',
@@ -72,6 +78,26 @@ const SkillsList: React.FC = () => {
   };
 
   const skillCategories = ['Technical', 'Marketing', 'Business', 'Design', 'Sales', 'Product', 'Other'];
+
+  const truncateDescription = (text: string, maxLength: number = 100): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  const filteredSkills = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return skills;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return skills.filter(skill => {
+      const matchesName = skill.name.toLowerCase().includes(query);
+      const matchesCategory = skill.category?.toLowerCase().includes(query);
+      const matchesDescription = skill.description?.toLowerCase().includes(query);
+      
+      return matchesName || matchesCategory || matchesDescription;
+    });
+  }, [skills, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -148,41 +174,83 @@ const SkillsList: React.FC = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {skills.map(skill => (
-          <div key={skill.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">{skill.name}</h3>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => handleEdit(skill)} 
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDelete(skill.id)} 
-                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+        {filteredSkills.map(skill => (
+          <div key={skill.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+            <div className="space-y-2">
+              <button
+                onClick={() => setSelectedSkill(skill)}
+                className="text-left w-full"
+              >
+                <div className="flex items-center space-x-2 flex-wrap">
+                  <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                    {skill.name}
+                  </h3>
+                  {skill.category && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
+                      {skill.category}
+                    </span>
+                  )}
+                </div>
+              </button>
+              
+              {skill.description && (
+                <p className="text-xs text-gray-600">
+                  {truncateDescription(skill.description, 80)}
+                </p>
+              )}
             </div>
-            
-            {skill.category && (
-              <div className="mb-3">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                  {skill.category}
-                </span>
-              </div>
-            )}
-            
-            {skill.description && (
-              <p className="text-gray-700 mb-3">{skill.description}</p>
-            )}
           </div>
         ))}
       </div>
+
+      {/* Skill Details Modal */}
+      <Modal
+        isOpen={selectedSkill !== null}
+        onClose={() => setSelectedSkill(null)}
+        title={selectedSkill?.name || ''}
+      >
+        {selectedSkill && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedSkill.name}</h3>
+              
+              {selectedSkill.category && (
+                <div className="mb-4">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
+                    {selectedSkill.category}
+                  </span>
+                </div>
+              )}
+              
+              {selectedSkill.description && (
+                <p className="text-gray-700 mb-4">{selectedSkill.description}</p>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setSelectedSkill(null);
+                  handleEdit(selectedSkill);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedSkill(null);
+                  handleDelete(selectedSkill.id);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

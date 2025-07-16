@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Startup, StartupCreate } from '../types';
 import { startupAPI } from '../api';
 
-const StartupsList: React.FC = () => {
+interface StartupsListProps {
+  searchQuery?: string;
+}
+
+const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStartup, setEditingStartup] = useState<Startup | null>(null);
@@ -85,6 +89,23 @@ const StartupsList: React.FC = () => {
 
   const startupStages = ['Idea', 'MVP', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C+', 'IPO'];
   const industries = ['Technology', 'Healthcare', 'Finance', 'E-commerce', 'Education', 'Entertainment', 'SaaS', 'Other'];
+
+  const filteredStartups = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return startups;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return startups.filter(startup => {
+      const matchesName = startup.name.toLowerCase().includes(query);
+      const matchesDescription = startup.description?.toLowerCase().includes(query);
+      const matchesIndustry = startup.industry?.toLowerCase().includes(query);
+      const matchesStage = startup.stage?.toLowerCase().includes(query);
+      const matchesLocation = startup.location?.toLowerCase().includes(query);
+      
+      return matchesName || matchesDescription || matchesIndustry || matchesStage || matchesLocation;
+    });
+  }, [startups, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -209,7 +230,7 @@ const StartupsList: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {startups.map(startup => (
+        {filteredStartups.map(startup => (
           <div key={startup.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-gray-900">{startup.name}</h3>

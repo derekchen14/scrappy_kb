@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HelpRequest, HelpRequestCreate, Founder } from '../types';
 import { helpRequestAPI, founderAPI } from '../api';
 
-const HelpRequestsList: React.FC = () => {
+interface HelpRequestsListProps {
+  searchQuery?: string;
+}
+
+const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' }) => {
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
   const [founders, setFounders] = useState<Founder[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -117,6 +121,24 @@ const HelpRequestsList: React.FC = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  const filteredHelpRequests = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return helpRequests;
+    }
+    
+    const query = searchQuery.toLowerCase();
+    return helpRequests.filter(request => {
+      const matchesTitle = request.title.toLowerCase().includes(query);
+      const matchesDescription = request.description.toLowerCase().includes(query);
+      const matchesCategory = request.category?.toLowerCase().includes(query);
+      const matchesUrgency = request.urgency?.toLowerCase().includes(query);
+      const matchesStatus = request.status?.toLowerCase().includes(query);
+      const matchesFounder = getFounderName(request.founder_id).toLowerCase().includes(query);
+      
+      return matchesTitle || matchesDescription || matchesCategory || matchesUrgency || matchesStatus || matchesFounder;
+    });
+  }, [helpRequests, searchQuery, founders]);
 
   return (
     <div className="space-y-6">
@@ -242,7 +264,7 @@ const HelpRequestsList: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {helpRequests.map(request => (
+        {filteredHelpRequests.map(request => (
           <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
