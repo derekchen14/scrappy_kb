@@ -138,7 +138,7 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' })
       
       return matchesTitle || matchesDescription || matchesCategory || matchesUrgency || matchesStatus || matchesFounder;
     });
-  }, [helpRequests, searchQuery, founders]);
+  }, [helpRequests, searchQuery, founders, getFounderName]);
 
   return (
     <div className="space-y-6">
