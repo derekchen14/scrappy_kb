@@ -130,171 +130,213 @@ const FoundersList: React.FC = () => {
   };
 
   return (
-    <div className="founders-list">
-      <div className="list-header">
-        <h2>Founders</h2>
-        <button onClick={() => setShowForm(true)} className="add-button">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900">Founders</h2>
+        <button 
+          onClick={() => setShowForm(true)} 
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+        >
           Add Founder
         </button>
       </div>
 
       {showForm && (
-        <div className="form-overlay">
-          <form onSubmit={handleSubmit} className="founder-form">
-            <h3>{editingFounder ? 'Edit Founder' : 'Add New Founder'}</h3>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900">{editingFounder ? 'Edit Founder' : 'Add New Founder'}</h3>
             
-            <div className="form-group">
-              <label>Name *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Email *</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Bio</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                rows={3}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>LinkedIn URL</label>
-              <input
-                type="url"
-                value={formData.linkedin_url}
-                onChange={(e) => setFormData({...formData, linkedin_url: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Twitter URL</label>
-              <input
-                type="url"
-                value={formData.twitter_url}
-                onChange={(e) => setFormData({...formData, twitter_url: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>GitHub URL</label>
-              <input
-                type="url"
-                value={formData.github_url}
-                onChange={(e) => setFormData({...formData, github_url: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Skills</label>
-              <div className="checkbox-group">
-                {skills.map(skill => (
-                  <label key={skill.id} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.skill_ids?.includes(skill.id) || false}
-                      onChange={() => handleSkillToggle(skill.id)}
-                    />
-                    {skill.name}
-                  </label>
-                ))}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-            </div>
 
-            <div className="form-group">
-              <label>Startups</label>
-              <div className="checkbox-group">
-                {startups.map(startup => (
-                  <label key={startup.id} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.startup_ids?.includes(startup.id) || false}
-                      onChange={() => handleStartupToggle(startup.id)}
-                    />
-                    {startup.name}
-                  </label>
-                ))}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Email *</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
-            </div>
 
-            <div className="form-buttons">
-              <button type="submit" className="submit-button">
-                {editingFounder ? 'Update' : 'Create'}
-              </button>
-              <button type="button" onClick={resetForm} className="cancel-button">
-                Cancel
-              </button>
-            </div>
-          </form>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Bio</label>
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Location</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                <input
+                  type="url"
+                  value={formData.linkedin_url}
+                  onChange={(e) => setFormData({...formData, linkedin_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Twitter URL</label>
+                <input
+                  type="url"
+                  value={formData.twitter_url}
+                  onChange={(e) => setFormData({...formData, twitter_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">GitHub URL</label>
+                <input
+                  type="url"
+                  value={formData.github_url}
+                  onChange={(e) => setFormData({...formData, github_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Skills</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {skills.map(skill => (
+                    <label key={skill.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.skill_ids?.includes(skill.id) || false}
+                        onChange={() => handleSkillToggle(skill.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{skill.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Startups</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {startups.map(startup => (
+                    <label key={startup.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.startup_ids?.includes(startup.id) || false}
+                        onChange={() => handleStartupToggle(startup.id)}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-700">{startup.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  {editingFounder ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      <div className="founders-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {founders.map(founder => (
-          <div key={founder.id} className="founder-card">
-            <div className="founder-header">
-              <h3>{founder.name}</h3>
-              <div className="founder-actions">
-                <button onClick={() => handleEdit(founder)} className="edit-button">
+          <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => handleEdit(founder)} 
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
                   Edit
                 </button>
-                <button onClick={() => handleDelete(founder.id)} className="delete-button">
+                <button 
+                  onClick={() => handleDelete(founder.id)} 
+                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                >
                   Delete
                 </button>
               </div>
             </div>
             
-            <p className="founder-email">{founder.email}</p>
-            {founder.bio && <p className="founder-bio">{founder.bio}</p>}
-            {founder.location && <p className="founder-location">📍 {founder.location}</p>}
+            <p className="text-gray-600 mb-2">{founder.email}</p>
+            {founder.bio && <p className="text-gray-700 mb-3">{founder.bio}</p>}
+            {founder.location && <p className="text-gray-500 mb-3 flex items-center">📍 {founder.location}</p>}
             
-            <div className="founder-links">
+            <div className="flex space-x-4 mb-4">
               {founder.linkedin_url && (
-                <a href={founder.linkedin_url} target="_blank" rel="noopener noreferrer">
+                <a 
+                  href={founder.linkedin_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
                   LinkedIn
                 </a>
               )}
               {founder.twitter_url && (
-                <a href={founder.twitter_url} target="_blank" rel="noopener noreferrer">
+                <a 
+                  href={founder.twitter_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
                   Twitter
                 </a>
               )}
               {founder.github_url && (
-                <a href={founder.github_url} target="_blank" rel="noopener noreferrer">
+                <a 
+                  href={founder.github_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
                   GitHub
                 </a>
               )}
             </div>
 
             {founder.skills.length > 0 && (
-              <div className="founder-skills">
-                <h4>Skills:</h4>
-                <div className="skills-tags">
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
+                <div className="flex flex-wrap gap-2">
                   {founder.skills.map(skill => (
-                    <span key={skill.id} className="skill-tag">
+                    <span key={skill.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       {skill.name}
                     </span>
                   ))}
@@ -303,11 +345,11 @@ const FoundersList: React.FC = () => {
             )}
 
             {founder.startups.length > 0 && (
-              <div className="founder-startups">
-                <h4>Startups:</h4>
-                <div className="startups-list">
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
+                <div className="flex flex-wrap gap-2">
                   {founder.startups.map(startup => (
-                    <span key={startup.id} className="startup-tag">
+                    <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                       {startup.name}
                     </span>
                   ))}
