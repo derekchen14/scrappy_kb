@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import models, schemas, database, crud
 
-app = FastAPI(title="Founders Community CRM")
+app = FastAPI(title="Scrappy Founders Knowledge Base")
 
 # CORS middleware
 app.add_middleware(
@@ -31,6 +31,7 @@ def read_root():
     return {"message": "Founders Community CRM API"}
 
 # Health check
+
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
