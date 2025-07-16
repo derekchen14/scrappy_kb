@@ -283,10 +283,6 @@ const HelpRequestsList: React.FC = () => {
                 {request.status || 'Open'}
               </span>
             </div>
-            
-            <p className="text-sm text-gray-500 pt-4 border-t border-gray-200">
-              Created: {new Date(request.created_at).toLocaleDateString()}
-            </p>
           </div>
         ))}
       </div>

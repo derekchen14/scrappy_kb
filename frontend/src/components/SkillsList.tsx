@@ -180,10 +180,6 @@ const SkillsList: React.FC = () => {
             {skill.description && (
               <p className="text-gray-700 mb-3">{skill.description}</p>
             )}
-            
-            <p className="text-sm text-gray-500">
-              Created: {new Date(skill.created_at).toLocaleDateString()}
-            </p>
           </div>
         ))}
       </div>

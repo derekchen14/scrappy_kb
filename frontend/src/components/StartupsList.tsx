@@ -280,10 +280,6 @@ const StartupsList: React.FC = () => {
                 </div>
               )}
             </div>
-            
-            <p className="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-200">
-              Created: {new Date(startup.created_at).toLocaleDateString()}
-            </p>
           </div>
         ))}
       </div>
