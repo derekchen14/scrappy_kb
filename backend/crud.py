@@ -76,7 +76,7 @@ def delete_founder(db: Session, founder_id: int):
 
 # Skill CRUD operations
 def create_skill(db: Session, skill: schemas.SkillCreate):
-    db_skill = models.Skill(**skill.dict())
+    db_skill = models.Skill(**skill.model_dump())
     db.add(db_skill)
     db.commit()
     db.refresh(db_skill)
@@ -91,7 +91,7 @@ def get_skills(db: Session, skip: int = 0, limit: int = 100):
 def update_skill(db: Session, skill_id: int, skill: schemas.SkillCreate):
     db_skill = db.query(models.Skill).filter(models.Skill.id == skill_id).first()
     if db_skill:
-        for key, value in skill.dict().items():
+        for key, value in skill.model_dump().items():
             setattr(db_skill, key, value)
         db.commit()
         db.refresh(db_skill)
@@ -106,7 +106,7 @@ def delete_skill(db: Session, skill_id: int):
 
 # Startup CRUD operations
 def create_startup(db: Session, startup: schemas.StartupCreate):
-    db_startup = models.Startup(**startup.dict())
+    db_startup = models.Startup(**startup.model_dump())
     db.add(db_startup)
     db.commit()
     db.refresh(db_startup)
@@ -121,7 +121,7 @@ def get_startups(db: Session, skip: int = 0, limit: int = 100):
 def update_startup(db: Session, startup_id: int, startup: schemas.StartupCreate):
     db_startup = db.query(models.Startup).filter(models.Startup.id == startup_id).first()
     if db_startup:
-        for key, value in startup.dict().items():
+        for key, value in startup.model_dump().items():
             setattr(db_startup, key, value)
         db.commit()
         db.refresh(db_startup)
@@ -136,7 +136,7 @@ def delete_startup(db: Session, startup_id: int):
 
 # Help Request CRUD operations
 def create_help_request(db: Session, help_request: schemas.HelpRequestCreate):
-    db_help_request = models.HelpRequest(**help_request.dict())
+    db_help_request = models.HelpRequest(**help_request.model_dump())
     db.add(db_help_request)
     db.commit()
     db.refresh(db_help_request)
@@ -151,7 +151,7 @@ def get_help_requests(db: Session, skip: int = 0, limit: int = 100):
 def update_help_request(db: Session, help_request_id: int, help_request: schemas.HelpRequestCreate):
     db_help_request = db.query(models.HelpRequest).filter(models.HelpRequest.id == help_request_id).first()
     if db_help_request:
-        for key, value in help_request.dict().items():
+        for key, value in help_request.model_dump().items():
             setattr(db_help_request, key, value)
         db.commit()
         db.refresh(db_help_request)
