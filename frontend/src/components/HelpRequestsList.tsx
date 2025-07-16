@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { HelpRequest, HelpRequestCreate, Founder } from '../types';
 import { helpRequestAPI, founderAPI } from '../api';
 
@@ -99,10 +99,10 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' })
   const urgencyLevels = ['Low', 'Medium', 'High'];
   const statusOptions = ['Open', 'In Progress', 'Resolved'];
 
-  const getFounderName = (founderId: number) => {
+  const getFounderName = useCallback((founderId: number) => {
     const founder = founders.find(f => f.id === founderId);
     return founder ? founder.name : 'Unknown';
-  };
+  }, [founders]);
 
   const getUrgencyClass = (urgency: string) => {
     switch (urgency) {
@@ -138,7 +138,7 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' })
       
       return matchesTitle || matchesDescription || matchesCategory || matchesUrgency || matchesStatus || matchesFounder;
     });
-  }, [helpRequests, searchQuery, founders, getFounderName]);
+  }, [helpRequests, searchQuery, getFounderName]);
 
   return (
     <div className="space-y-6">
