@@ -9,10 +9,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-blue-900 shadow-sm border-b border-blue-800">
+      <header className="bg-sky-950 shadow-sm border-b border-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <h1 className="text-2xl font-bold text-white">Scrappy Founders Knowledge Base</h1>
+            <h1 className="text-2xl font-bold text-white font-serif">Scrappy Founders Knowledge Base</h1>
           </div>
           <nav className="flex space-x-8 -mb-px">
             <button 
