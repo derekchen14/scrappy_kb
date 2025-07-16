@@ -124,7 +124,7 @@ const HelpRequestsList: React.FC = () => {
         <h2 className="text-3xl font-bold text-gray-900">Help Requests</h2>
         <button 
           onClick={() => setShowForm(true)} 
-          className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
         >
           Add Help Request
         </button>
@@ -142,7 +142,7 @@ const HelpRequestsList: React.FC = () => {
                   value={formData.founder_id}
                   onChange={(e) => setFormData({...formData, founder_id: parseInt(e.target.value)})}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value={0}>Select a founder</option>
                   {founders.map(founder => (
@@ -160,7 +160,7 @@ const HelpRequestsList: React.FC = () => {
                   value={formData.title}
                   onChange={(e) => setFormData({...formData, title: e.target.value})}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
@@ -171,7 +171,7 @@ const HelpRequestsList: React.FC = () => {
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   rows={4}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
@@ -180,7 +180,7 @@ const HelpRequestsList: React.FC = () => {
                 <select
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="">Select a category</option>
                   {categories.map(category => (
@@ -196,7 +196,7 @@ const HelpRequestsList: React.FC = () => {
                 <select
                   value={formData.urgency}
                   onChange={(e) => setFormData({...formData, urgency: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   {urgencyLevels.map(urgency => (
                     <option key={urgency} value={urgency}>
@@ -211,7 +211,7 @@ const HelpRequestsList: React.FC = () => {
                 <select
                   value={formData.status}
                   onChange={(e) => setFormData({...formData, status: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   {statusOptions.map(status => (
                     <option key={status} value={status}>
@@ -231,7 +231,7 @@ const HelpRequestsList: React.FC = () => {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition-colors"
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
                 >
                   {editingRequest ? 'Update' : 'Create'}
                 </button>
