@@ -102,163 +102,189 @@ const HelpRequestsList: React.FC = () => {
 
   const getUrgencyClass = (urgency: string) => {
     switch (urgency) {
-      case 'High': return 'urgency-high';
-      case 'Medium': return 'urgency-medium';
-      case 'Low': return 'urgency-low';
-      default: return '';
+      case 'High': return 'bg-red-100 text-red-800';
+      case 'Medium': return 'bg-yellow-100 text-yellow-800';
+      case 'Low': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusClass = (status: string) => {
     switch (status) {
-      case 'Open': return 'status-open';
-      case 'In Progress': return 'status-progress';
-      case 'Resolved': return 'status-resolved';
-      default: return '';
+      case 'Open': return 'bg-blue-100 text-blue-800';
+      case 'In Progress': return 'bg-orange-100 text-orange-800';
+      case 'Resolved': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="help-requests-list">
-      <div className="list-header">
-        <h2>Help Requests</h2>
-        <button onClick={() => setShowForm(true)} className="add-button">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900">Help Requests</h2>
+        <button 
+          onClick={() => setShowForm(true)} 
+          className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+        >
           Add Help Request
         </button>
       </div>
 
       {showForm && (
-        <div className="form-overlay">
-          <form onSubmit={handleSubmit} className="help-request-form">
-            <h3>{editingRequest ? 'Edit Help Request' : 'Add New Help Request'}</h3>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900">{editingRequest ? 'Edit Help Request' : 'Add New Help Request'}</h3>
             
-            <div className="form-group">
-              <label>Founder *</label>
-              <select
-                value={formData.founder_id}
-                onChange={(e) => setFormData({...formData, founder_id: parseInt(e.target.value)})}
-                required
-              >
-                <option value={0}>Select a founder</option>
-                {founders.map(founder => (
-                  <option key={founder.id} value={founder.id}>
-                    {founder.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Founder *</label>
+                <select
+                  value={formData.founder_id}
+                  onChange={(e) => setFormData({...formData, founder_id: parseInt(e.target.value)})}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value={0}>Select a founder</option>
+                  {founders.map(founder => (
+                    <option key={founder.id} value={founder.id}>
+                      {founder.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Title *</label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Title *</label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Description *</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={4}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Description *</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  rows={4}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Category</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({...formData, category: e.target.value})}
-              >
-                <option value="">Select a category</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Category</label>
+                <select
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">Select a category</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Urgency</label>
-              <select
-                value={formData.urgency}
-                onChange={(e) => setFormData({...formData, urgency: e.target.value})}
-              >
-                {urgencyLevels.map(urgency => (
-                  <option key={urgency} value={urgency}>
-                    {urgency}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Urgency</label>
+                <select
+                  value={formData.urgency}
+                  onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  {urgencyLevels.map(urgency => (
+                    <option key={urgency} value={urgency}>
+                      {urgency}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
-              >
-                {statusOptions.map(status => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  {statusOptions.map(status => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-buttons">
-              <button type="submit" className="submit-button">
-                {editingRequest ? 'Update' : 'Create'}
-              </button>
-              <button type="button" onClick={resetForm} className="cancel-button">
-                Cancel
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end space-x-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition-colors"
+                >
+                  {editingRequest ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      <div className="help-requests-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {helpRequests.map(request => (
-          <div key={request.id} className="help-request-card">
-            <div className="request-header">
-              <h3>{request.title}</h3>
-              <div className="request-actions">
-                <button onClick={() => handleEdit(request)} className="edit-button">
+          <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => handleEdit(request)} 
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                >
                   Edit
                 </button>
-                <button onClick={() => handleDelete(request.id)} className="delete-button">
+                <button 
+                  onClick={() => handleDelete(request.id)} 
+                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                >
                   Delete
                 </button>
               </div>
             </div>
             
-            <p className="request-founder">
-              <strong>Requested by:</strong> {getFounderName(request.founder_id)}
+            <p className="text-sm text-gray-600 mb-3">
+              <span className="font-medium">Requested by:</span> {getFounderName(request.founder_id)}
             </p>
             
-            <p className="request-description">{request.description}</p>
+            <p className="text-gray-700 mb-4">{request.description}</p>
             
-            <div className="request-meta">
+            <div className="flex flex-wrap gap-2 mb-4">
               {request.category && (
-                <span className="category-tag">{request.category}</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  {request.category}
+                </span>
               )}
               
-              <span className={`urgency-tag ${getUrgencyClass(request.urgency || 'Medium')}`}>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyClass(request.urgency || 'Medium')}`}>
                 {request.urgency || 'Medium'}
               </span>
               
-              <span className={`status-tag ${getStatusClass(request.status || 'Open')}`}>
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(request.status || 'Open')}`}>
                 {request.status || 'Open'}
               </span>
             </div>
             
-            <p className="request-date">
+            <p className="text-sm text-gray-500 pt-4 border-t border-gray-200">
               Created: {new Date(request.created_at).toLocaleDateString()}
             </p>
           </div>

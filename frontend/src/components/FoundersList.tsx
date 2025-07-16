@@ -281,13 +281,13 @@ const FoundersList: React.FC = () => {
               <div className="flex space-x-2">
                 <button 
                   onClick={() => handleEdit(founder)} 
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
                 >
                   Edit
                 </button>
                 <button 
                   onClick={() => handleDelete(founder.id)} 
-                  className="text-red-600 hover:text-red-800 text-sm font-medium"
+                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
                 >
                   Delete
                 </button>

@@ -87,163 +87,201 @@ const StartupsList: React.FC = () => {
   const industries = ['Technology', 'Healthcare', 'Finance', 'E-commerce', 'Education', 'Entertainment', 'SaaS', 'Other'];
 
   return (
-    <div className="startups-list">
-      <div className="list-header">
-        <h2>Startups</h2>
-        <button onClick={() => setShowForm(true)} className="add-button">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold text-gray-900">Startups</h2>
+        <button 
+          onClick={() => setShowForm(true)} 
+          className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+        >
           Add Startup
         </button>
       </div>
 
       {showForm && (
-        <div className="form-overlay">
-          <form onSubmit={handleSubmit} className="startup-form">
-            <h3>{editingStartup ? 'Edit Startup' : 'Add New Startup'}</h3>
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <h3 className="text-xl font-semibold text-gray-900">{editingStartup ? 'Edit Startup' : 'Add New Startup'}</h3>
             
-            <div className="form-group">
-              <label>Name *</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                required
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Description</label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={3}
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Industry</label>
-              <select
-                value={formData.industry}
-                onChange={(e) => setFormData({...formData, industry: e.target.value})}
-              >
-                <option value="">Select an industry</option>
-                {industries.map(industry => (
-                  <option key={industry} value={industry}>
-                    {industry}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Industry</label>
+                <select
+                  value={formData.industry}
+                  onChange={(e) => setFormData({...formData, industry: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">Select an industry</option>
+                  {industries.map(industry => (
+                    <option key={industry} value={industry}>
+                      {industry}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Stage</label>
-              <select
-                value={formData.stage}
-                onChange={(e) => setFormData({...formData, stage: e.target.value})}
-              >
-                <option value="">Select a stage</option>
-                {startupStages.map(stage => (
-                  <option key={stage} value={stage}>
-                    {stage}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Stage</label>
+                <select
+                  value={formData.stage}
+                  onChange={(e) => setFormData({...formData, stage: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                >
+                  <option value="">Select a stage</option>
+                  {startupStages.map(stage => (
+                    <option key={stage} value={stage}>
+                      {stage}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="form-group">
-              <label>Website URL</label>
-              <input
-                type="url"
-                value={formData.website_url}
-                onChange={(e) => setFormData({...formData, website_url: e.target.value})}
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Website URL</label>
+                <input
+                  type="url"
+                  value={formData.website_url}
+                  onChange={(e) => setFormData({...formData, website_url: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Team Size</label>
-              <input
-                type="number"
-                min="1"
-                value={formData.team_size || ''}
-                onChange={(e) => setFormData({...formData, team_size: e.target.value ? parseInt(e.target.value) : undefined})}
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Team Size</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.team_size || ''}
+                  onChange={(e) => setFormData({...formData, team_size: e.target.value ? parseInt(e.target.value) : undefined})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-group">
-              <label>Location</label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-              />
-            </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Location</label>
+                <input
+                  type="text"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                />
+              </div>
 
-            <div className="form-buttons">
-              <button type="submit" className="submit-button">
-                {editingStartup ? 'Update' : 'Create'}
-              </button>
-              <button type="button" onClick={resetForm} className="cancel-button">
-                Cancel
-              </button>
-            </div>
-          </form>
+              <div className="flex justify-end space-x-4 pt-4">
+                <button 
+                  type="button" 
+                  onClick={resetForm} 
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-md transition-colors"
+                >
+                  {editingStartup ? 'Update' : 'Create'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
-      <div className="startups-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {startups.map(startup => (
-          <div key={startup.id} className="startup-card">
-            <div className="startup-header">
-              <h3>{startup.name}</h3>
-              <div className="startup-actions">
-                <button onClick={() => handleEdit(startup)} className="edit-button">
+          <div key={startup.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">{startup.name}</h3>
+              <div className="flex space-x-2">
+                <button 
+                  onClick={() => handleEdit(startup)} 
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                >
                   Edit
                 </button>
-                <button onClick={() => handleDelete(startup.id)} className="delete-button">
+                <button 
+                  onClick={() => handleDelete(startup.id)} 
+                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                >
                   Delete
                 </button>
               </div>
             </div>
             
             {startup.description && (
-              <p className="startup-description">{startup.description}</p>
+              <p className="text-gray-700 mb-4">{startup.description}</p>
             )}
             
-            <div className="startup-details">
+            <div className="space-y-3">
               {startup.industry && (
-                <p className="startup-industry">
-                  <strong>Industry:</strong> {startup.industry}
-                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Industry:</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    {startup.industry}
+                  </span>
+                </div>
               )}
               
               {startup.stage && (
-                <p className="startup-stage">
-                  <strong>Stage:</strong> <span className="stage-tag">{startup.stage}</span>
-                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Stage:</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    {startup.stage}
+                  </span>
+                </div>
               )}
               
               {startup.team_size && (
-                <p className="startup-team">
-                  <strong>Team Size:</strong> {startup.team_size}
-                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Team Size:</span>
+                  <span className="text-sm text-gray-600">{startup.team_size}</span>
+                </div>
               )}
               
               {startup.location && (
-                <p className="startup-location">
-                  <strong>Location:</strong> 📍 {startup.location}
-                </p>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Location:</span>
+                  <span className="text-sm text-gray-600">📍 {startup.location}</span>
+                </div>
               )}
               
               {startup.website_url && (
-                <p className="startup-website">
-                  <strong>Website:</strong> 
-                  <a href={startup.website_url} target="_blank" rel="noopener noreferrer">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm font-medium text-gray-700">Website:</span>
+                  <a 
+                    href={startup.website_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                  >
                     {startup.website_url}
                   </a>
-                </p>
+                </div>
               )}
             </div>
             
-            <p className="startup-date">
+            <p className="text-sm text-gray-500 mt-4 pt-4 border-t border-gray-200">
               Created: {new Date(startup.created_at).toLocaleDateString()}
             </p>
           </div>
