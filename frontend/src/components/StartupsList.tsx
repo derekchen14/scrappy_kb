@@ -87,8 +87,75 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
     setShowForm(false);
   };
 
-  const startupStages = ['Idea', 'MVP', 'Pre-Seed', 'Seed', 'Series A', 'Series B', 'Series C+', 'IPO'];
-  const industries = ['Technology', 'Healthcare', 'Finance', 'E-commerce', 'Education', 'Entertainment', 'SaaS', 'Other'];
+  const startupStages = [
+    'Ideation',
+    'Validation',
+    'MVP',
+    'Design Partners (pre-revenue)',
+    'Customers (post-revenue)',
+    'Pre-seed',
+    'Seed',
+    'Series A',
+    'Series B or later',
+    'Scaling'
+  ];
+
+  const industries = [
+    'AI/ML/Deep Learning',
+    'Deeptech',
+    'DevTools',
+    'Infrastructure / Cloud',
+    'Agents',
+    'Fintech',
+    'Healthtech',
+    'Biotech',
+    'Edtech',
+    'Martech',
+    'Salestech',
+    'Legaltech',
+    'Insurtech',
+    'Proptech',
+    'Foodtech',
+    'Industrialtech',
+    'Ecommerce / Marketplaces',
+    'Consumer',
+    'Gaming',
+    'Robotics',
+    'Hardware / Devices',
+    'Wearables',
+    'Climate / Energy',
+    'Mobility / Transportation',
+    'Aerospace',
+    'Social / Community',
+    'Web3 / Crypto',
+    'Security / Privacy'
+  ];
+
+  const targetMarkets = [
+    'Consumers / D2C',
+    'SMBs',
+    'Mid-Market',
+    'Enterprises',
+    'Developers / Engineers',
+    'Startups',
+    'Public Sector / Government',
+    'Healthcare Providers',
+    'Educational Institutions',
+    'Nonprofits',
+    'Marketplaces / Platforms',
+    'Internal / In-house Teams'
+  ];
+
+  const revenueOptions = [
+    'Pre-revenue',
+    '$1-10K',
+    '$10-25K',
+    '$25-50K',
+    '$50-150K',
+    '$150-500K',
+    '$500-1M',
+    '$1M+'
+  ];
 
   const filteredStartups = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -191,24 +258,34 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Target Market</label>
-                <input
-                  type="text"
+                <select
                   value={formData.target_market}
                   onChange={(e) => setFormData({...formData, target_market: e.target.value})}
-                  placeholder="e.g., SMBs, Enterprise, Consumers"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                >
+                  <option value="">Select a target market</option>
+                  {targetMarkets.map(market => (
+                    <option key={market} value={market}>
+                      {market}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Revenue ARR</label>
-                <input
-                  type="text"
+                <select
                   value={formData.revenue_arr}
                   onChange={(e) => setFormData({...formData, revenue_arr: e.target.value})}
-                  placeholder="e.g., $1M, $500K, Pre-revenue"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
+                >
+                  <option value="">Select revenue range</option>
+                  {revenueOptions.map(revenue => (
+                    <option key={revenue} value={revenue}>
+                      {revenue}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="flex justify-end space-x-4 pt-4">
