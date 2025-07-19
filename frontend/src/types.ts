@@ -4,14 +4,17 @@ export interface Founder {
   email: string;
   bio?: string;
   location?: string;
-  linkedin_url?: string;
+  linkedin_url: string;
   twitter_url?: string;
   github_url?: string;
+  profile_image_url?: string;
+  profile_visible?: boolean;
   created_at: string;
   updated_at: string;
   skills: Skill[];
   help_requests: HelpRequest[];
   startups: Startup[];
+  hobbies: Hobby[];
 }
 
 export interface FounderCreate {
@@ -19,11 +22,14 @@ export interface FounderCreate {
   email: string;
   bio?: string;
   location?: string;
-  linkedin_url?: string;
+  linkedin_url: string;
   twitter_url?: string;
   github_url?: string;
+  profile_image_url?: string;
+  profile_visible?: boolean;
   skill_ids?: number[];
   startup_ids?: number[];
+  hobby_ids?: number[];
 }
 
 export interface Skill {
@@ -40,6 +46,20 @@ export interface SkillCreate {
   description?: string;
 }
 
+export interface Hobby {
+  id: number;
+  name: string;
+  category?: string;
+  description?: string;
+  created_at: string;
+}
+
+export interface HobbyCreate {
+  name: string;
+  category?: string;
+  description?: string;
+}
+
 export interface Startup {
   id: number;
   name: string;
@@ -47,8 +67,8 @@ export interface Startup {
   industry?: string;
   stage?: string;
   website_url?: string;
-  team_size?: number;
-  location?: string;
+  target_market?: string;
+  revenue_arr?: string;
   created_at: string;
   updated_at: string;
 }
@@ -59,8 +79,8 @@ export interface StartupCreate {
   industry?: string;
   stage?: string;
   website_url?: string;
-  team_size?: number;
-  location?: string;
+  target_market?: string;
+  revenue_arr?: string;
 }
 
 export interface HelpRequest {

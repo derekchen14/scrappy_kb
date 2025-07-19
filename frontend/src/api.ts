@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Founder, FounderCreate, Skill, SkillCreate, Startup, StartupCreate, HelpRequest, HelpRequestCreate } from './types';
+import { Founder, FounderCreate, Skill, SkillCreate, Startup, StartupCreate, HelpRequest, HelpRequestCreate, Hobby, HobbyCreate } from './types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -44,4 +44,27 @@ export const helpRequestAPI = {
   create: (helpRequest: HelpRequestCreate) => api.post<HelpRequest>('/help-requests/', helpRequest),
   update: (id: number, helpRequest: HelpRequestCreate) => api.put<HelpRequest>(`/help-requests/${id}`, helpRequest),
   delete: (id: number) => api.delete(`/help-requests/${id}`),
+};
+
+// Hobby API
+export const hobbyAPI = {
+  getAll: () => api.get<Hobby[]>('/hobbies/'),
+  getById: (id: number) => api.get<Hobby>(`/hobbies/${id}`),
+  create: (hobby: HobbyCreate) => api.post<Hobby>('/hobbies/', hobby),
+  update: (id: number, hobby: HobbyCreate) => api.put<Hobby>(`/hobbies/${id}`, hobby),
+  delete: (id: number) => api.delete(`/hobbies/${id}`),
+};
+
+// Image upload API
+export const imageAPI = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    return api.post<{ image_url: string }>('/upload-image/', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
 };

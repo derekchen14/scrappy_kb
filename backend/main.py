@@ -1,10 +1,21 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List
 import models, schemas, database, crud
+import os
+import uuid
+from pathlib import Path
 
 app = FastAPI(title="Scrappy Founders Knowledge Base")
+
+# Create uploads directory if it doesn't exist
+UPLOAD_DIR = Path("uploads")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
+# Mount static files for serving uploaded images
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS middleware
 app.add_middleware(
@@ -35,6 +46,26 @@ def read_root():
 @app.get("/health")
 def health_check():
     return {"status": "healthy"}
+
+# Image upload endpoint
+@app.post("/upload-image/")
+async def upload_image(file: UploadFile = File(...)):
+    # Validate file type
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Generate unique filename
+    file_extension = file.filename.split(".")[-1] if file.filename else "jpg"
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    file_path = UPLOAD_DIR / unique_filename
+    
+    # Save file
+    with open(file_path, "wb") as buffer:
+        content = await file.read()
+        buffer.write(content)
+    
+    # Return the URL that can be used to access the image
+    return {"image_url": f"/uploads/{unique_filename}"}
 
 # Founder endpoints
 @app.post("/founders/", response_model=schemas.Founder)
@@ -155,3 +186,33 @@ def delete_help_request(help_request_id: int, db: Session = Depends(get_db)):
     if deleted_help_request is None:
         raise HTTPException(status_code=404, detail="Help request not found")
     return {"message": "Help request deleted successfully"}
+
+# Hobby endpoints
+@app.post("/hobbies/", response_model=schemas.Hobby)
+def create_hobby(hobby: schemas.HobbyCreate, db: Session = Depends(get_db)):
+    return crud.create_hobby(db=db, hobby=hobby)
+
+@app.get("/hobbies/", response_model=List[schemas.Hobby])
+def read_hobbies(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_hobbies(db, skip=skip, limit=limit)
+
+@app.get("/hobbies/{hobby_id}", response_model=schemas.Hobby)
+def read_hobby(hobby_id: int, db: Session = Depends(get_db)):
+    hobby = crud.get_hobby(db, hobby_id=hobby_id)
+    if hobby is None:
+        raise HTTPException(status_code=404, detail="Hobby not found")
+    return hobby
+
+@app.put("/hobbies/{hobby_id}", response_model=schemas.Hobby)
+def update_hobby(hobby_id: int, hobby: schemas.HobbyCreate, db: Session = Depends(get_db)):
+    updated_hobby = crud.update_hobby(db, hobby_id=hobby_id, hobby=hobby)
+    if updated_hobby is None:
+        raise HTTPException(status_code=404, detail="Hobby not found")
+    return updated_hobby
+
+@app.delete("/hobbies/{hobby_id}")
+def delete_hobby(hobby_id: int, db: Session = Depends(get_db)):
+    deleted_hobby = crud.delete_hobby(db, hobby_id=hobby_id)
+    if deleted_hobby is None:
+        raise HTTPException(status_code=404, detail="Hobby not found")
+    return {"message": "Hobby deleted successfully"}

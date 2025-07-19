@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Founder, FounderCreate, Skill, Startup } from '../types';
-import { founderAPI, skillAPI, startupAPI } from '../api';
+import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
+import { founderAPI, skillAPI, startupAPI, imageAPI, hobbyAPI } from '../api';
 import Modal from './Modal';
 
 type ViewType = 'table' | 'card' | 'compact';
@@ -13,10 +13,14 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
   const [founders, setFounders] = useState<Founder[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [startups, setStartups] = useState<Startup[]>([]);
+  const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingFounder, setEditingFounder] = useState<Founder | null>(null);
   const [viewType, setViewType] = useState<ViewType>('table');
   const [selectedFounder, setSelectedFounder] = useState<Founder | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
     email: '',
@@ -25,14 +29,18 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
     linkedin_url: '',
     twitter_url: '',
     github_url: '',
+    profile_image_url: '',
+    profile_visible: true,
     skill_ids: [],
-    startup_ids: []
+    startup_ids: [],
+    hobby_ids: []
   });
 
   useEffect(() => {
     fetchFounders();
     fetchSkills();
     fetchStartups();
+    fetchHobbies();
   }, []);
 
   const fetchFounders = async () => {
@@ -62,13 +70,60 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
     }
   };
 
+  const fetchHobbies = async () => {
+    try {
+      const response = await hobbyAPI.getAll();
+      setHobbies(response.data);
+    } catch (error) {
+      console.error('Error fetching hobbies:', error);
+    }
+  };
+
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadImage = async (): Promise<string | null> => {
+    if (!selectedImage) return null;
+    
+    setUploadingImage(true);
+    try {
+      const response = await imageAPI.upload(selectedImage);
+      return response.data.image_url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      return null;
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let finalFormData = { ...formData };
+      
+      // Upload image if selected
+      if (selectedImage) {
+        const imageUrl = await uploadImage();
+        if (imageUrl) {
+          finalFormData.profile_image_url = imageUrl;
+        }
+      }
+      
       if (editingFounder) {
-        await founderAPI.update(editingFounder.id, formData);
+        await founderAPI.update(editingFounder.id, finalFormData);
       } else {
-        await founderAPI.create(formData);
+        await founderAPI.create(finalFormData);
       }
       fetchFounders();
       resetForm();
@@ -78,18 +133,27 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
   };
 
   const handleEdit = (founder: Founder) => {
+    if (!isProfileVisible(founder)) {
+      alert('This profile is marked as not visible and cannot be edited from this view.');
+      return;
+    }
+    
     setEditingFounder(founder);
     setFormData({
       name: founder.name,
       email: founder.email,
       bio: founder.bio || '',
       location: founder.location || '',
-      linkedin_url: founder.linkedin_url || '',
+      linkedin_url: founder.linkedin_url,
       twitter_url: founder.twitter_url || '',
       github_url: founder.github_url || '',
+      profile_image_url: founder.profile_image_url || '',
+      profile_visible: founder.profile_visible ?? true,
       skill_ids: founder.skills.map(skill => skill.id),
-      startup_ids: founder.startups.map(startup => startup.id)
+      startup_ids: founder.startups.map(startup => startup.id),
+      hobby_ids: founder.hobbies.map(hobby => hobby.id)
     });
+    setImagePreview(founder.profile_image_url || null);
     setShowForm(true);
   };
 
@@ -113,11 +177,16 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
       linkedin_url: '',
       twitter_url: '',
       github_url: '',
+      profile_image_url: '',
+      profile_visible: true,
       skill_ids: [],
-      startup_ids: []
+      startup_ids: [],
+      hobby_ids: []
     });
     setEditingFounder(null);
     setShowForm(false);
+    setSelectedImage(null);
+    setImagePreview(null);
   };
 
   const handleSkillToggle = (skillId: number) => {
@@ -138,6 +207,15 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
     }));
   };
 
+  const handleHobbyToggle = (hobbyId: number) => {
+    setFormData(prev => ({
+      ...prev,
+      hobby_ids: prev.hobby_ids?.includes(hobbyId)
+        ? prev.hobby_ids.filter(id => id !== hobbyId)
+        : [...(prev.hobby_ids || []), hobbyId]
+    }));
+  };
+
   const truncateDescription = (text: string, maxLength: number = 100): string => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
@@ -145,6 +223,10 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
 
   const getFounderIndustries = (founder: Founder): string[] => {
     return founder.startups.map(startup => startup.industry).filter(Boolean) as string[];
+  };
+
+  const isProfileVisible = (founder: Founder): boolean => {
+    return founder.profile_visible ?? true;
   };
 
   const filteredFounders = useMemo(() => {
@@ -167,8 +249,12 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
         startup.industry?.toLowerCase().includes(query) ||
         startup.description?.toLowerCase().includes(query)
       );
+      const matchesHobbies = founder.hobbies.some(hobby => 
+        hobby.name.toLowerCase().includes(query) || 
+        hobby.category?.toLowerCase().includes(query)
+      );
       
-      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartups;
+      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartups || matchesHobbies;
     });
   }, [founders, searchQuery]);
 
@@ -270,11 +356,12 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">LinkedIn URL</label>
+                <label className="block text-sm font-medium text-gray-700">LinkedIn URL *</label>
                 <input
                   type="url"
                   value={formData.linkedin_url}
                   onChange={(e) => setFormData({...formData, linkedin_url: e.target.value})}
+                  required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
@@ -297,6 +384,38 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                   onChange={(e) => setFormData({...formData, github_url: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Profile Image</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+                {imagePreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.profile_visible}
+                    onChange={(e) => setFormData({...formData, profile_visible: e.target.checked})}
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Profile Visible</span>
+                </label>
+                <p className="text-xs text-gray-500">When unchecked, only name and bio will be visible to others</p>
               </div>
 
               <div className="space-y-2">
@@ -333,6 +452,23 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">Hobbies</label>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {hobbies.map(hobby => (
+                    <label key={hobby.id} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={formData.hobby_ids?.includes(hobby.id) || false}
+                        onChange={() => handleHobbyToggle(hobby.id)}
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                      />
+                      <span className="text-sm text-gray-700">{hobby.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex justify-end space-x-4 pt-4">
                 <button 
                   type="button" 
@@ -343,9 +479,10 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                 </button>
                 <button 
                   type="submit" 
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors"
+                  disabled={uploadingImage}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
                 >
-                  {editingFounder ? 'Update' : 'Create'}
+                  {uploadingImage ? 'Uploading...' : (editingFounder ? 'Update' : 'Create')}
                 </button>
               </div>
             </form>
@@ -453,7 +590,16 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
           {filteredFounders.map(founder => (
             <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
+                <div className="flex items-center space-x-4">
+                  {founder.profile_image_url && (
+                    <img 
+                      src={`http://localhost:8000${founder.profile_image_url}`}
+                      alt={founder.name}
+                      className="w-16 h-16 object-cover rounded-full border-2 border-gray-300"
+                    />
+                  )}
+                  <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
+                </div>
                 <div className="flex space-x-2">
                   <button 
                     onClick={() => handleEdit(founder)} 
@@ -532,6 +678,19 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                   </div>
                 </div>
               )}
+
+              {founder.hobbies.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Hobbies:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {founder.hobbies.map(hobby => (
+                      <span key={hobby.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {hobby.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -544,7 +703,13 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
             <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
               <div className="space-y-2">
                 <button
-                  onClick={() => setSelectedFounder(founder)}
+                  onClick={() => {
+                    if (!isProfileVisible(founder)) {
+                      alert('This profile is marked as not visible and details cannot be viewed.');
+                      return;
+                    }
+                    setSelectedFounder(founder);
+                  }}
                   className="text-left w-full"
                 >
                   <div className="flex items-center space-x-2 flex-wrap">
@@ -643,6 +808,19 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                     {selectedFounder.startups.map(startup => (
                       <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         {startup.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedFounder.hobbies.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Hobbies:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFounder.hobbies.map(hobby => (
+                      <span key={hobby.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                        {hobby.name}
                       </span>
                     ))}
                   </div>

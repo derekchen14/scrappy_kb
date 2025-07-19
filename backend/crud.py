@@ -11,7 +11,9 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
         location=founder.location,
         linkedin_url=founder.linkedin_url,
         twitter_url=founder.twitter_url,
-        github_url=founder.github_url
+        github_url=founder.github_url,
+        profile_image_url=founder.profile_image_url,
+        profile_visible=founder.profile_visible
     )
     
     db.add(db_founder)
@@ -32,6 +34,13 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
         db.commit()
         db.refresh(db_founder)
     
+    # Add hobbies
+    if founder.hobby_ids and len(founder.hobby_ids) > 0:
+        hobbies = db.query(models.Hobby).filter(models.Hobby.id.in_(founder.hobby_ids)).all()
+        db_founder.hobbies = hobbies
+        db.commit()
+        db.refresh(db_founder)
+    
     return db_founder
 
 def get_founder(db: Session, founder_id: int):
@@ -43,7 +52,7 @@ def get_founders(db: Session, skip: int = 0, limit: int = 100):
 def update_founder(db: Session, founder_id: int, founder: schemas.FounderCreate):
     db_founder = db.query(models.Founder).filter(models.Founder.id == founder_id).first()
     if db_founder:
-        for key, value in founder.dict(exclude={'skill_ids', 'startup_ids'}).items():
+        for key, value in founder.model_dump(exclude={'skill_ids', 'startup_ids', 'hobby_ids'}).items():
             if value is not None:
                 setattr(db_founder, key, value)
         
@@ -62,6 +71,14 @@ def update_founder(db: Session, founder_id: int, founder: schemas.FounderCreate)
                 db_founder.startups = startups
             else:
                 db_founder.startups = []
+        
+        # Update hobbies
+        if founder.hobby_ids is not None:
+            if len(founder.hobby_ids) > 0:
+                hobbies = db.query(models.Hobby).filter(models.Hobby.id.in_(founder.hobby_ids)).all()
+                db_founder.hobbies = hobbies
+            else:
+                db_founder.hobbies = []
         
         db.commit()
         db.refresh(db_founder)
@@ -163,3 +180,33 @@ def delete_help_request(db: Session, help_request_id: int):
         db.delete(db_help_request)
         db.commit()
     return db_help_request
+
+# Hobby CRUD operations
+def create_hobby(db: Session, hobby: schemas.HobbyCreate):
+    db_hobby = models.Hobby(**hobby.model_dump())
+    db.add(db_hobby)
+    db.commit()
+    db.refresh(db_hobby)
+    return db_hobby
+
+def get_hobby(db: Session, hobby_id: int):
+    return db.query(models.Hobby).filter(models.Hobby.id == hobby_id).first()
+
+def get_hobbies(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(models.Hobby).offset(skip).limit(limit).all()
+
+def update_hobby(db: Session, hobby_id: int, hobby: schemas.HobbyCreate):
+    db_hobby = db.query(models.Hobby).filter(models.Hobby.id == hobby_id).first()
+    if db_hobby:
+        for key, value in hobby.model_dump().items():
+            setattr(db_hobby, key, value)
+        db.commit()
+        db.refresh(db_hobby)
+    return db_hobby
+
+def delete_hobby(db: Session, hobby_id: int):
+    db_hobby = db.query(models.Hobby).filter(models.Hobby.id == hobby_id).first()
+    if db_hobby:
+        db.delete(db_hobby)
+        db.commit()
+    return db_hobby
