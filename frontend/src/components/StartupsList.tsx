@@ -16,8 +16,8 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
     industry: '',
     stage: '',
     website_url: '',
-    team_size: undefined,
-    location: ''
+    target_market: '',
+    revenue_arr: ''
   });
 
   useEffect(() => {
@@ -56,8 +56,8 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
       industry: startup.industry || '',
       stage: startup.stage || '',
       website_url: startup.website_url || '',
-      team_size: startup.team_size || undefined,
-      location: startup.location || ''
+      target_market: startup.target_market || '',
+      revenue_arr: startup.revenue_arr || ''
     });
     setShowForm(true);
   };
@@ -80,8 +80,8 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
       industry: '',
       stage: '',
       website_url: '',
-      team_size: undefined,
-      location: ''
+      target_market: '',
+      revenue_arr: ''
     });
     setEditingStartup(null);
     setShowForm(false);
@@ -101,9 +101,10 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
       const matchesDescription = startup.description?.toLowerCase().includes(query);
       const matchesIndustry = startup.industry?.toLowerCase().includes(query);
       const matchesStage = startup.stage?.toLowerCase().includes(query);
-      const matchesLocation = startup.location?.toLowerCase().includes(query);
+      const matchesTargetMarket = startup.target_market?.toLowerCase().includes(query);
+      const matchesRevenue = startup.revenue_arr?.toLowerCase().includes(query);
       
-      return matchesName || matchesDescription || matchesIndustry || matchesStage || matchesLocation;
+      return matchesName || matchesDescription || matchesIndustry || matchesStage || matchesTargetMarket || matchesRevenue;
     });
   }, [startups, searchQuery]);
 
@@ -189,22 +190,23 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Team Size</label>
+                <label className="block text-sm font-medium text-gray-700">Target Market</label>
                 <input
-                  type="number"
-                  min="1"
-                  value={formData.team_size || ''}
-                  onChange={(e) => setFormData({...formData, team_size: e.target.value ? parseInt(e.target.value) : undefined})}
+                  type="text"
+                  value={formData.target_market}
+                  onChange={(e) => setFormData({...formData, target_market: e.target.value})}
+                  placeholder="e.g., SMBs, Enterprise, Consumers"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Location</label>
+                <label className="block text-sm font-medium text-gray-700">Revenue ARR</label>
                 <input
                   type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  value={formData.revenue_arr}
+                  onChange={(e) => setFormData({...formData, revenue_arr: e.target.value})}
+                  placeholder="e.g., $1M, $500K, Pre-revenue"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
@@ -273,17 +275,17 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
                 </div>
               )}
               
-              {startup.team_size && (
+              {startup.target_market && (
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Team Size:</span>
-                  <span className="text-sm text-gray-600">{startup.team_size}</span>
+                  <span className="text-sm font-medium text-gray-700">Target Market:</span>
+                  <span className="text-sm text-gray-600">🎯 {startup.target_market}</span>
                 </div>
               )}
               
-              {startup.location && (
+              {startup.revenue_arr && (
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Location:</span>
-                  <span className="text-sm text-gray-600">📍 {startup.location}</span>
+                  <span className="text-sm font-medium text-gray-700">Revenue ARR:</span>
+                  <span className="text-sm text-gray-600">💰 {startup.revenue_arr}</span>
                 </div>
               )}
               
