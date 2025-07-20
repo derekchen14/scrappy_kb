@@ -398,6 +398,11 @@ const FoundersList: React.FC = () => {
                   type="url"
                   value={formData.linkedin_url}
                   onChange={(e) => setFormData({...formData, linkedin_url: e.target.value})}
+                  onFocus={(e) => {
+                    if (!e.target.value) {
+                      setFormData({...formData, linkedin_url: 'https://www.linkedin.com/in/'});
+                    }
+                  }}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
@@ -409,6 +414,11 @@ const FoundersList: React.FC = () => {
                   type="url"
                   value={formData.twitter_url}
                   onChange={(e) => setFormData({...formData, twitter_url: e.target.value})}
+                  onFocus={(e) => {
+                    if (!e.target.value) {
+                      setFormData({...formData, twitter_url: 'https://www.twitter.com/'});
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
@@ -419,6 +429,11 @@ const FoundersList: React.FC = () => {
                   type="url"
                   value={formData.github_url}
                   onChange={(e) => setFormData({...formData, github_url: e.target.value})}
+                  onFocus={(e) => {
+                    if (!e.target.value) {
+                      setFormData({...formData, github_url: 'https://www.github.com/'});
+                    }
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
