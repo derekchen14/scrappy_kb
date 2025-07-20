@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
-import { founderAPI, skillAPI, startupAPI, imageAPI, hobbyAPI } from '../api';
+import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
+import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
 
 type ViewType = 'table' | 'card' | 'compact';
@@ -10,6 +11,8 @@ interface FoundersListProps {
 }
 
 const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
+  const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
+  const { canEditProfile, canDeleteUser } = useAdmin();
   const [founders, setFounders] = useState<Founder[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [startups, setStartups] = useState<Startup[]>([]);
@@ -45,7 +48,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
 
   const fetchFounders = async () => {
     try {
-      const response = await founderAPI.getAll();
+      const response = await publicAPI.get<Founder[]>('/founders/');
       setFounders(response.data);
     } catch (error) {
       console.error('Error fetching founders:', error);
@@ -54,7 +57,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
 
   const fetchSkills = async () => {
     try {
-      const response = await skillAPI.getAll();
+      const response = await publicAPI.get<Skill[]>('/skills/');
       setSkills(response.data);
     } catch (error) {
       console.error('Error fetching skills:', error);
@@ -63,7 +66,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
 
   const fetchStartups = async () => {
     try {
-      const response = await startupAPI.getAll();
+      const response = await publicAPI.get<Startup[]>('/startups/');
       setStartups(response.data);
     } catch (error) {
       console.error('Error fetching startups:', error);
@@ -72,7 +75,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
 
   const fetchHobbies = async () => {
     try {
-      const response = await hobbyAPI.getAll();
+      const response = await publicAPI.get<Hobby[]>('/hobbies/');
       setHobbies(response.data);
     } catch (error) {
       console.error('Error fetching hobbies:', error);
@@ -97,7 +100,14 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
     
     setUploadingImage(true);
     try {
-      const response = await imageAPI.upload(selectedImage);
+      const formData = new FormData();
+      formData.append('file', selectedImage);
+      
+      const response = await authenticatedAPI.post('/upload-image/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       return response.data.image_url;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -121,9 +131,9 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
       }
       
       if (editingFounder) {
-        await founderAPI.update(editingFounder.id, finalFormData);
+        await authenticatedAPI.put(`/founders/${editingFounder.id}`, finalFormData);
       } else {
-        await founderAPI.create(finalFormData);
+        await authenticatedAPI.post('/founders/', finalFormData);
       }
       fetchFounders();
       resetForm();
@@ -133,6 +143,11 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
   };
 
   const handleEdit = (founder: Founder) => {
+    if (!canEditProfile(founder.email)) {
+      alert('You can only edit your own profile.');
+      return;
+    }
+    
     if (!isProfileVisible(founder)) {
       alert('This profile is marked as not visible and cannot be edited from this view.');
       return;
@@ -158,9 +173,14 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
   };
 
   const handleDelete = async (id: number) => {
+    if (!canDeleteUser()) {
+      alert('You do not have permission to delete users.');
+      return;
+    }
+    
     if (window.confirm('Are you sure you want to delete this founder?')) {
       try {
-        await founderAPI.delete(id);
+        await authenticatedAPI.delete(`/founders/${id}`);
         fetchFounders();
       } catch (error) {
         console.error('Error deleting founder:', error);
@@ -562,18 +582,25 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
-                        <button 
-                          onClick={() => handleEdit(founder)} 
-                          className="px-2 py-1 bg-sky-400 hover:bg-sky-700 text-white text-xs rounded transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(founder.id)} 
-                          className="px-2 py-1 bg-rose-400 hover:bg-rose-700 text-white text-xs rounded transition-colors"
-                        >
-                          Delete
-                        </button>
+                        {canEditProfile(founder.email) && (
+                          <button 
+                            onClick={() => handleEdit(founder)} 
+                            className="px-2 py-1 bg-sky-400 hover:bg-sky-700 text-white text-xs rounded transition-colors"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {canDeleteUser() && (
+                          <button 
+                            onClick={() => handleDelete(founder.id)} 
+                            className="px-2 py-1 bg-rose-400 hover:bg-rose-700 text-white text-xs rounded transition-colors"
+                          >
+                            Delete
+                          </button>
+                        )}
+                        {!canEditProfile(founder.email) && !canDeleteUser() && (
+                          <span className="text-xs text-gray-500">No actions available</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -601,18 +628,22 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
                   <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
                 </div>
                 <div className="flex space-x-2">
-                  <button 
-                    onClick={() => handleEdit(founder)} 
-                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(founder.id)} 
-                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                  >
-                    Delete
-                  </button>
+                  {canEditProfile(founder.email) && (
+                    <button 
+                      onClick={() => handleEdit(founder)} 
+                      className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {canDeleteUser() && (
+                    <button 
+                      onClick={() => handleDelete(founder.id)} 
+                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               </div>
               
@@ -829,24 +860,36 @@ const FoundersList: React.FC<FoundersListProps> = ({ searchQuery = '' }) => {
             </div>
             
             <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => {
-                  setSelectedFounder(null);
-                  handleEdit(selectedFounder);
-                }}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => {
-                  setSelectedFounder(null);
-                  handleDelete(selectedFounder.id);
-                }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-              >
-                Delete
-              </button>
+              {canEditProfile(selectedFounder?.email) && (
+                <button
+                  onClick={() => {
+                    setSelectedFounder(null);
+                    handleEdit(selectedFounder);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+                >
+                  Edit
+                </button>
+              )}
+              {canDeleteUser() && (
+                <button
+                  onClick={() => {
+                    setSelectedFounder(null);
+                    handleDelete(selectedFounder.id);
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+              {!canEditProfile(selectedFounder?.email) && !canDeleteUser() && (
+                <button
+                  onClick={() => setSelectedFounder(null)}
+                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+                >
+                  Close
+                </button>
+              )}
             </div>
           </div>
         )}

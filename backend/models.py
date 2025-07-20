@@ -8,25 +8,29 @@ founder_skills = Table(
     'founder_skills',
     Base.metadata,
     Column('founder_id', Integer, ForeignKey('founders.id'), primary_key=True),
-    Column('skill_id', Integer, ForeignKey('skills.id'), primary_key=True)
+    Column('skill_id', Integer, ForeignKey('skills.id'), primary_key=True),
+    extend_existing=True
 )
 
 startup_founders = Table(
     'startup_founders',
     Base.metadata,
     Column('startup_id', Integer, ForeignKey('startups.id'), primary_key=True),
-    Column('founder_id', Integer, ForeignKey('founders.id'), primary_key=True)
+    Column('founder_id', Integer, ForeignKey('founders.id'), primary_key=True),
+    extend_existing=True
 )
 
 founder_hobbies = Table(
     'founder_hobbies',
     Base.metadata,
     Column('founder_id', Integer, ForeignKey('founders.id'), primary_key=True),
-    Column('hobby_id', Integer, ForeignKey('hobbies.id'), primary_key=True)
+    Column('hobby_id', Integer, ForeignKey('hobbies.id'), primary_key=True),
+    extend_existing=True
 )
 
 class Founder(Base):
     __tablename__ = "founders"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
@@ -49,6 +53,7 @@ class Founder(Base):
 
 class Skill(Base):
     __tablename__ = "skills"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, nullable=False)
@@ -61,6 +66,7 @@ class Skill(Base):
 
 class HelpRequest(Base):
     __tablename__ = "help_requests"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     founder_id = Column(Integer, ForeignKey('founders.id'), nullable=False)
@@ -77,6 +83,7 @@ class HelpRequest(Base):
 
 class Startup(Base):
     __tablename__ = "startups"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), nullable=False)
@@ -94,6 +101,7 @@ class Startup(Base):
 
 class Hobby(Base):
     __tablename__ = "hobbies"
+    __table_args__ = {'extend_existing': True}
     
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), unique=True, nullable=False)

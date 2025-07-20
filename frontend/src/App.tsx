@@ -1,13 +1,30 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import FoundersList from './components/FoundersList';
 import SkillsList from './components/SkillsList';
 import StartupsList from './components/StartupsList';
 import HelpRequestsList from './components/HelpRequestsList';
+import AdminDashboard from './components/AdminDashboard';
+import LoginButton from './components/LoginButton';
+import LogoutButton from './components/LogoutButton';
+import Profile from './components/Profile';
+import { useAdmin } from './hooks/useAdmin';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests'>('founders');
+  const { isLoading, error, isAuthenticated } = useAuth0();
+  const { isAdmin } = useAdmin();
+  const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'admin'>('founders');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // All hooks must be called before any conditional returns
+  useEffect(() => {
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+      }
+    };
+  }, [searchTimeout]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -38,13 +55,38 @@ function App() {
     // Search is triggered immediately on click
   };
 
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) {
-        clearTimeout(searchTimeout);
-      }
-    };
-  }, [searchTimeout]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600 mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 text-lg">Authentication Error: {error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-900 mb-8">Scrappy Founders Knowledge Base</h1>
+          <p className="text-gray-600 mb-8">Please log in to access the knowledge base</p>
+          <LoginButton />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,6 +116,12 @@ function App() {
                 </button>
               </div>
             </form>
+
+            {/* User Profile and Logout */}
+            <div className="flex items-center space-x-4">
+              <Profile />
+              <LogoutButton />
+            </div>
           </div>
           <nav className="flex space-x-8 -mb-px">
             <button 
@@ -116,6 +164,18 @@ function App() {
             >
               Help Requests
             </button>
+            {isAdmin && (
+              <button 
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'admin' 
+                    ? 'border-blue-300 text-blue-100' 
+                    : 'border-transparent text-blue-200 hover:text-white hover:border-blue-400'
+                }`}
+                onClick={() => setActiveTab('admin')}
+              >
+                Admin
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -125,6 +185,7 @@ function App() {
         {activeTab === 'skills' && <SkillsList searchQuery={searchQuery} />}
         {activeTab === 'startups' && <StartupsList searchQuery={searchQuery} />}
         {activeTab === 'help-requests' && <HelpRequestsList searchQuery={searchQuery} />}
+        {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>
     </div>
   );

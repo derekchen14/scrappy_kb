@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 import models, schemas, database, crud
+from auth import get_current_user, get_current_user_optional
 import os
 import uuid
 from pathlib import Path
@@ -37,6 +38,16 @@ def get_db():
     finally:
         db.close()
 
+# Health check endpoint (no auth required)
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "API is running"}
+
+# Protected endpoint to verify authentication
+@app.get("/protected")
+def protected_route(current_user: dict = Depends(get_current_user)):
+    return {"message": "This is a protected endpoint", "user": current_user}
+
 @app.get("/")
 def read_root():
     return {"message": "Founders Community CRM API"}
@@ -49,7 +60,7 @@ def health_check():
 
 # Image upload endpoint
 @app.post("/upload-image/")
-async def upload_image(file: UploadFile = File(...)):
+async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
     # Validate file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
@@ -69,7 +80,7 @@ async def upload_image(file: UploadFile = File(...)):
 
 # Founder endpoints
 @app.post("/founders/", response_model=schemas.Founder)
-def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)):
+def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return crud.create_founder(db=db, founder=founder)
 
 @app.get("/founders/", response_model=List[schemas.Founder])
