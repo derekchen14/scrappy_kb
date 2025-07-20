@@ -6,17 +6,21 @@ This document contains the current deployment setup for the Scrappy Founders Kno
 
 ### Backend - Railway
 - **Service**: Railway
+- **Repository**: `scrappy_kb` (GitHub)
 - **Database**: PostgreSQL (automatically provisioned)
 - **Runtime**: Python 3.11+ with FastAPI
 - **Build**: Automatic from `requirements.txt`
 - **Entry Point**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+- **URL**: `https://scrappykb-production.up.railway.app`
 
 ### Frontend - Netlify  
 - **Service**: Netlify
+- **Repository**: `scrappy_kb` (GitHub)
 - **Framework**: React with TypeScript
 - **Build Command**: `npm run build`
 - **Publish Directory**: `build/`
 - **Node Version**: 16+
+- **URL**: `https://scrappykb.netlify.app`
 
 ### Database - PostgreSQL
 - **Provider**: Railway PostgreSQL
@@ -40,37 +44,37 @@ This document contains the current deployment setup for the Scrappy Founders Kno
 ### Railway (Backend):
 ```bash
 DATABASE_URL=postgresql://... (auto-provided)
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_AUDIENCE=https://your-railway-domain.com
+AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com
+AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app
 AUTH0_ALGORITHMS=RS256
 ```
 
 ### Netlify (Frontend):
 ```bash
-REACT_APP_AUTH0_DOMAIN=your-tenant.auth0.com
-REACT_APP_AUTH0_CLIENT_ID=your-spa-client-id
-REACT_APP_AUTH0_AUDIENCE=https://your-railway-domain.com
+REACT_APP_AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com
+REACT_APP_AUTH0_CLIENT_ID=os53h5vETvUvt7tUqTcYjTaEgd70fNLK
+REACT_APP_AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app
 ```
 
 ## 🔄 Deployment Process
 
 ### Automatic Deployment:
-1. **Push to GitHub** triggers automatic deploys
-2. **Railway** builds and deploys backend
-3. **Netlify** builds and deploys frontend
+1. **Push to `scrappy_kb` GitHub repo** triggers automatic deploys
+2. **Railway** builds and deploys backend from repo
+3. **Netlify** builds and deploys frontend from repo to `scrappykb.netlify.app`
 4. **Database migrations** run automatically on backend startup
 
 ### Manual Steps:
-1. Update Auth0 settings with production URLs
+1. Update Auth0 settings with production URLs (`scrappykb.netlify.app`)
 2. Set environment variables in Railway/Netlify dashboards
 3. Verify database connection and table creation
 
 ## 🧪 Testing Production
 
 ### Health Checks:
-- Backend: `https://your-railway-domain.com/health`
-- Frontend: `https://your-netlify-domain.com`
-- Auth: Login flow should redirect properly
+- Backend: `https://scrappykb-production.up.railway.app/health`
+- Frontend: `https://scrappykb.netlify.app`
+- Auth: Login flow should redirect properly between sites
 
 ### Database Verification:
 - Tables auto-created: founders, skills, startups, help_requests, hobbies

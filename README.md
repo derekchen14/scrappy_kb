@@ -41,7 +41,7 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 ### Setup Instructions
 1. **Follow the complete setup guide**: See `PRODUCTION_SETUP.md`
 2. **Test your setup**: Run `python test_auth0.py` from project root
-3. **Start development**: Backend on :8000, Frontend on :3000
+3. **Start development**: Backend on :8080, Frontend on :3000
 
 ### Local Development Commands
 
@@ -72,11 +72,16 @@ npm start
 
 ## 🚀 Production Deployment
 
-**This application is pre-configured for Railway + Netlify deployment.**
+**This application is deployed to Railway + Netlify.**
+
+### Live Application:
+- **Frontend**: https://scrappykb.netlify.app
+- **Backend**: Railway with PostgreSQL
+- **Repository**: `scrappy_kb` (GitHub)
 
 ### Current Setup:
 - **Backend**: Railway with PostgreSQL
-- **Frontend**: Netlify with automatic builds
+- **Frontend**: Netlify with automatic builds from `scrappy_kb` repo
 - **Database**: PostgreSQL automatically provisioned
 - **Auth**: Auth0 integration with environment variables
 
@@ -84,7 +89,7 @@ npm start
 1. **Configure Auth0**: Set up Auth0 application and API
 2. **Set Environment Variables**: Configure in Railway/Netlify dashboards
 3. **Deploy**: Automatic deployment via GitHub integration
-4. **Update Auth0**: Add production URLs to Auth0 settings
+4. **Update Auth0**: Add `scrappykb.netlify.app` to Auth0 settings
 
 See `PRODUCTION_SETUP.md` for detailed deployment instructions.
 

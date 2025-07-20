@@ -26,17 +26,17 @@ Create `backend/.env` for local development:
 # Database (local development)
 DATABASE_URL=sqlite:///./founders_crm.db
 
-# Auth0 Configuration (replace with your values)
-AUTH0_DOMAIN=your-tenant.auth0.com
-AUTH0_AUDIENCE=https://your-api-domain.com
+# Auth0 Configuration
+AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com
+AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app
 AUTH0_ALGORITHMS=RS256
 ```
 
 **For Railway Production:**
 Railway will automatically provide PostgreSQL via `DATABASE_URL` environment variable.
 Set these environment variables in Railway dashboard:
-- `AUTH0_DOMAIN`
-- `AUTH0_AUDIENCE` 
+- `AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com`
+- `AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app` 
 - `AUTH0_ALGORITHMS=RS256`
 
 ### 1.3 Test Backend
@@ -46,10 +46,10 @@ python test_auth0.py
 
 # Start backend
 cd backend
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8080
 ```
 
-Backend should be running at http://localhost:8000
+Backend should be running at http://localhost:8080
 
 ## 🎨 Step 2: Frontend Setup
 
@@ -62,17 +62,17 @@ npm install
 ### 2.2 Configure Environment
 Create `frontend/.env` for local development:
 ```bash
-# Auth0 Configuration (replace with your values)
-REACT_APP_AUTH0_DOMAIN=your-tenant.auth0.com
-REACT_APP_AUTH0_CLIENT_ID=your-spa-client-id
-REACT_APP_AUTH0_AUDIENCE=https://your-api-domain.com
+# Auth0 Configuration
+REACT_APP_AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com
+REACT_APP_AUTH0_CLIENT_ID=os53h5vETvUvt7tUqTcYjTaEgd70fNLK
+REACT_APP_AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app
 ```
 
 **For Netlify Production:**
 Set these environment variables in Netlify dashboard:
-- `REACT_APP_AUTH0_DOMAIN`
-- `REACT_APP_AUTH0_CLIENT_ID`
-- `REACT_APP_AUTH0_AUDIENCE`
+- `REACT_APP_AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com`
+- `REACT_APP_AUTH0_CLIENT_ID=os53h5vETvUvt7tUqTcYjTaEgd70fNLK`
+- `REACT_APP_AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app`
 
 ### 2.3 Test Frontend
 ```bash
@@ -84,19 +84,20 @@ Frontend should be running at http://localhost:3000
 
 ## 🔐 Step 3: Auth0 Setup
 
-### 3.1 Create Auth0 Application (SPA)
-1. Go to [Auth0 Dashboard](https://manage.auth0.com)
-2. Create new **Single Page Application**
-3. Configure:
-   - **Allowed Callback URLs**: `http://localhost:3000` (or your domain)
-   - **Allowed Logout URLs**: `http://localhost:3000` (or your domain)
-   - **Allowed Web Origins**: `http://localhost:3000` (or your domain)
+### 3.1 Create Auth0 Application (SPA) ✅ COMPLETED
+1. ✅ Go to [Auth0 Dashboard](https://manage.auth0.com)
+2. ✅ Create new **Single Page Application** named "Scrappy Founders KB"
+3. ✅ **Client ID**: `os53h5vETvUvt7tUqTcYjTaEgd70fNLK`
+4. Configure these settings:
+   - **Allowed Callback URLs**: `http://localhost:3000, https://scrappykb.netlify.app`
+   - **Allowed Logout URLs**: `http://localhost:3000, https://scrappykb.netlify.app`
+   - **Allowed Web Origins**: `http://localhost:3000, https://scrappykb.netlify.app`
 
 ### 3.2 Create Auth0 API
 1. Go to **APIs** in Auth0 Dashboard
 2. Create new API:
    - **Name**: Scrappy KB API
-   - **Identifier**: `https://your-api-domain.com` (or `http://localhost:8000` for local)
+   - **Identifier**: `https://scrappykb-production.up.railway.app` (or `http://localhost:8080` for local)
    - **Signing Algorithm**: RS256
 
 ### 3.3 Update Environment Files
@@ -192,20 +193,20 @@ This application is pre-configured for deployment:
 ### Railway Backend Deployment:
 1. **Database**: PostgreSQL is automatically provisioned by Railway
 2. **Environment Variables**: Set Auth0 config in Railway dashboard
-3. **Deploy**: Connect GitHub repo to Railway for automatic deployments
-4. **URL**: Railway will provide your backend API URL
+3. **Deploy**: Connect `scrappy_kb` GitHub repo to Railway for automatic deployments
+4. **URL**: Railway will provide your backend API URL (e.g., `https://your-app.railway.app`)
 
 ### Netlify Frontend Deployment:
 1. **Build Command**: `npm run build` (already configured)
 2. **Environment Variables**: Set Auth0 config in Netlify dashboard  
-3. **Deploy**: Connect GitHub repo to Netlify for automatic deployments
-4. **URL**: Netlify will provide your frontend URL
+3. **Deploy**: Connect `scrappy_kb` GitHub repo to Netlify for automatic deployments
+4. **URL**: Frontend deployed at `https://scrappykb.netlify.app`
 
 ### Auth0 Configuration:
 Update your Auth0 application settings with production URLs:
-- **Allowed Callback URLs**: `https://your-netlify-domain.com`
-- **Allowed Logout URLs**: `https://your-netlify-domain.com`
-- **API Audience**: `https://your-railway-domain.com`
+- **Allowed Callback URLs**: `https://scrappykb.netlify.app`
+- **Allowed Logout URLs**: `https://scrappykb.netlify.app`
+- **API Audience**: `https://scrappykb-production.up.railway.app`
 
 ### Database Migration:
 The application will automatically create tables and relationships on first run with PostgreSQL.
