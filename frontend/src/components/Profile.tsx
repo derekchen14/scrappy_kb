@@ -13,7 +13,7 @@ const Profile: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center space-x-3 text-white">
+    <div className="flex items-center mt-2 space-x-3 text-white">
       {user.picture && (
         <img
           src={user.picture}
