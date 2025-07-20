@@ -565,7 +565,20 @@ const FoundersList: React.FC = () => {
                 {filteredFounders.map(founder => (
                   <tr key={founder.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{founder.name}</div>
+                      <button
+                        onClick={() => {
+                          if (!isProfileVisible(founder)) {
+                            alert('This profile is marked as not visible and details cannot be viewed.');
+                            return;
+                          }
+                          setSelectedFounder(founder);
+                        }}
+                        className="text-left"
+                      >
+                        <div className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                          {founder.name}
+                        </div>
+                      </button>
                       {founder.linkedin_url && (
                         <div className="text-sm">
                           <a 
@@ -573,6 +586,7 @@ const FoundersList: React.FC = () => {
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-gray-500 hover:text-blue-600 hover:underline transition-colors"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {founder.linkedin_url}
                           </a>
