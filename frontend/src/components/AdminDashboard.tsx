@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import { Founder, Startup, Hobby } from '../types';
@@ -28,9 +28,9 @@ const AdminDashboard: React.FC = () => {
     if (isAdmin) {
       fetchAdminData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, fetchAdminData]);
 
-  const fetchAdminData = async () => {
+  const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -62,7 +62,7 @@ const AdminDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [publicAPI]);
 
   const toggleProfileVisibility = async (founderId: number, currentVisibility: boolean) => {
     try {

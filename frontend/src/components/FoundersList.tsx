@@ -41,7 +41,7 @@ const FoundersList: React.FC = () => {
     fetchSkills();
     fetchStartups();
     fetchHobbies();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchFounders = async () => {
     try {
