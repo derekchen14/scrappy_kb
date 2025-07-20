@@ -1,71 +1,63 @@
-# Founders Community CRM
+# Scrappy Founders Knowledge Base
 
-A simple CRM system for founders communities to track skills, help requests, and startups.
+A comprehensive knowledge base and CRM system for founders communities with secure authentication and admin management.
 
-## Features
+## 🚀 Features
 
-- **Founders Management**: Add, edit, and view founder profiles with social links
-- **Skills Tracking**: Manage skills offered by founders with categories
-- **Startup Profiles**: Track startup information and associate with founders
-- **Help Requests**: Manage help requests with categories, urgency levels, and status
+### Core Functionality:
+- **Founders Management**: Comprehensive profiles with images, skills, hobbies, and startup associations
+- **Skills Tracking**: Categorized skills with multi-select tagging
+- **Startup Profiles**: Detailed startup information with predefined industry/stage options
+- **Help Requests**: Community help system with categorization and status tracking
+- **Global Search**: Search across all data types with real-time filtering
 
-## Tech Stack
+### Authentication & Security:
+- **Auth0 Integration**: Secure login/logout with JWT token verification
+- **Role-Based Access**: Admin users with enhanced privileges
+- **Profile Permissions**: Users can only edit their own profiles (admins can edit any)
+- **Protected Operations**: Write operations require authentication
 
-- **Frontend**: React with TypeScript
-- **Backend**: FastAPI (Python)
-- **Database**: PostgreSQL (with SQLite fallback for development)
-- **Deployment**: Vercel (frontend) + Railway (backend)
+### Admin Features:
+- **Admin Dashboard**: Real-time statistics and user management
+- **User Management**: Toggle profile visibility, delete users
+- **Comprehensive Controls**: Edit any profile, manage all data
+- **Statistics View**: User counts, profile visibility metrics
 
-## Local Development
+## 🛠️ Tech Stack
+
+- **Frontend**: React with TypeScript + Auth0 SDK
+- **Backend**: FastAPI with Auth0 JWT verification
+- **Database**: PostgreSQL (Railway) with SQLAlchemy ORM
+- **Authentication**: Auth0 with role-based access control
+- **Deployment**: Netlify (frontend) + Railway (backend + PostgreSQL)
+
+## 🏃 Quick Start
 
 ### Prerequisites
 - Python 3.11+
 - Node.js 16+
-- npm or yarn
+- Auth0 account
 
-### Backend Setup
+### Setup Instructions
+1. **Follow the complete setup guide**: See `PRODUCTION_SETUP.md`
+2. **Test your setup**: Run `python test_auth0.py` from project root
+3. **Start development**: Backend on :8000, Frontend on :3000
 
-1. Navigate to backend directory:
-   ```bash
-   cd backend
-   ```
+### Local Development Commands
 
-2. Create and activate virtual environment:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+**Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the development server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-The API will be available at `http://localhost:8000`
-
-### Frontend Setup
-
-1. Navigate to frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the development server:
-   ```bash
-   npm start
-   ```
-
-The frontend will be available at `http://localhost:3000`
+**Frontend:**
+```bash
+cd frontend  
+npm install
+npm start
+```
 
 ## API Endpoints
 
@@ -78,31 +70,36 @@ The frontend will be available at `http://localhost:3000`
 - `GET/POST /help-requests/` - List/Create help requests
 - `GET/PUT/DELETE /help-requests/{id}` - Get/Update/Delete help request
 
-## Deployment
+## 🚀 Production Deployment
 
-### Frontend (Vercel)
+**This application is pre-configured for Railway + Netlify deployment.**
 
-1. Push code to GitHub
-2. Connect repository to Vercel
-3. Set build command to `npm run build`
-4. Set output directory to `build`
-5. Add environment variable: `REACT_APP_API_URL=<your-backend-url>`
+### Current Setup:
+- **Backend**: Railway with PostgreSQL
+- **Frontend**: Netlify with automatic builds
+- **Database**: PostgreSQL automatically provisioned
+- **Auth**: Auth0 integration with environment variables
 
-### Backend (Railway)
+### Deployment Process:
+1. **Configure Auth0**: Set up Auth0 application and API
+2. **Set Environment Variables**: Configure in Railway/Netlify dashboards
+3. **Deploy**: Automatic deployment via GitHub integration
+4. **Update Auth0**: Add production URLs to Auth0 settings
 
-1. Push code to GitHub
-2. Connect repository to Railway
-3. Add PostgreSQL database service
-4. Set environment variable: `DATABASE_URL=<postgresql-url>`
-5. Deploy from `backend` directory
+See `PRODUCTION_SETUP.md` for detailed deployment instructions.
 
-## Environment Variables
+## 🔐 Admin Access
 
-### Frontend
-- `REACT_APP_API_URL` - Backend API URL
+### Admin Users:
+- `admin@scrappyfounders.com`
+- `derekchen14@gmail.com`
+- `denis.beliauski@gmail.com`
 
-### Backend
-- `DATABASE_URL` - PostgreSQL connection string
+### Admin Capabilities:
+- Access admin dashboard with user statistics
+- Edit any user profile
+- Delete users and manage profile visibility
+- Full CRUD operations on all data
 
 ## Database Schema
 

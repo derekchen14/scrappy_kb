@@ -1,8 +1,8 @@
 // Hardcoded list of admin emails
 const ADMIN_EMAILS = [
-  'admin@scrappykb.com',
-  'derek@scrappykb.com', 
-  'founder@scrappykb.com'
+  'admin@scrappyfounders.com',
+  'derekchen14@gmail.com', 
+  'denis.beliauski@gmail.com'
 ];
 
 export const isAdminUser = (userEmail?: string): boolean => {

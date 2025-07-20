@@ -15,9 +15,9 @@ AUTH0_ALGORITHMS = os.getenv("AUTH0_ALGORITHMS", "RS256").split(",")
 
 # Hardcoded list of admin emails
 ADMIN_EMAILS = [
-    'admin@scrappykb.com',
-    'derek@scrappykb.com', 
-    'founder@scrappykb.com'
+    'admin@scrappyfounders.com',
+    'derekchen14@gmail.com', 
+    'denis.beliauski@gmail.com'
 ]
 
 security = HTTPBearer()

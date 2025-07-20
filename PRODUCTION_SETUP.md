@@ -2,11 +2,15 @@
 
 This guide will help you get the Scrappy Founders Knowledge Base running in production.
 
+**Note**: This application is already configured for deployment to Railway (backend) and Netlify (frontend) with PostgreSQL database.
+
 ## ✅ Pre-Requirements
 
 - Node.js 16+ and npm
 - Python 3.8+ and pip
 - Auth0 account (free tier works)
+- Railway account (for backend + PostgreSQL)
+- Netlify account (for frontend)
 
 ## 🔧 Step 1: Backend Setup
 
@@ -17,9 +21,9 @@ pip install -r requirements.txt
 ```
 
 ### 1.2 Configure Environment
-Create `backend/.env`:
+Create `backend/.env` for local development:
 ```bash
-# Database
+# Database (local development)
 DATABASE_URL=sqlite:///./founders_crm.db
 
 # Auth0 Configuration (replace with your values)
@@ -27,6 +31,13 @@ AUTH0_DOMAIN=your-tenant.auth0.com
 AUTH0_AUDIENCE=https://your-api-domain.com
 AUTH0_ALGORITHMS=RS256
 ```
+
+**For Railway Production:**
+Railway will automatically provide PostgreSQL via `DATABASE_URL` environment variable.
+Set these environment variables in Railway dashboard:
+- `AUTH0_DOMAIN`
+- `AUTH0_AUDIENCE` 
+- `AUTH0_ALGORITHMS=RS256`
 
 ### 1.3 Test Backend
 ```bash
@@ -49,13 +60,19 @@ npm install
 ```
 
 ### 2.2 Configure Environment
-Create `frontend/.env`:
+Create `frontend/.env` for local development:
 ```bash
 # Auth0 Configuration (replace with your values)
 REACT_APP_AUTH0_DOMAIN=your-tenant.auth0.com
 REACT_APP_AUTH0_CLIENT_ID=your-spa-client-id
 REACT_APP_AUTH0_AUDIENCE=https://your-api-domain.com
 ```
+
+**For Netlify Production:**
+Set these environment variables in Netlify dashboard:
+- `REACT_APP_AUTH0_DOMAIN`
+- `REACT_APP_AUTH0_CLIENT_ID`
+- `REACT_APP_AUTH0_AUDIENCE`
 
 ### 2.3 Test Frontend
 ```bash
@@ -88,25 +105,27 @@ Replace placeholders with your actual Auth0 values from the dashboard.
 ## 🔧 Step 4: Admin Setup
 
 ### 4.1 Configure Admin Emails
-Update the admin emails in both files:
+The admin emails are already configured:
 
 **Backend**: `backend/auth.py`
 ```python
 ADMIN_EMAILS = [
-    'your-admin@email.com',
-    'another-admin@email.com', 
-    'third-admin@email.com'
+    'admin@scrappyfounders.com',
+    'derekchen14@gmail.com', 
+    'denis.beliauski@gmail.com'
 ]
 ```
 
 **Frontend**: `frontend/src/utils/admin.ts`
 ```typescript
 const ADMIN_EMAILS = [
-  'your-admin@email.com',
-  'another-admin@email.com',
-  'third-admin@email.com'
+  'admin@scrappyfounders.com',
+  'derekchen14@gmail.com',
+  'denis.beliauski@gmail.com'
 ];
 ```
+
+These emails will have admin privileges including access to the admin dashboard, user management, and advanced controls.
 
 ## 🧪 Step 5: Testing
 
@@ -168,12 +187,27 @@ const ADMIN_EMAILS = [
 
 ## 🎯 Production Deployment
 
-For production deployment:
+This application is pre-configured for deployment:
 
-1. **Backend**: Deploy to services like Railway, Heroku, or DigitalOcean
-2. **Frontend**: Deploy to Vercel, Netlify, or similar
-3. **Database**: Consider PostgreSQL for production instead of SQLite
-4. **Environment**: Update all localhost URLs to your production domains
-5. **Auth0**: Update callback URLs to production domains
+### Railway Backend Deployment:
+1. **Database**: PostgreSQL is automatically provisioned by Railway
+2. **Environment Variables**: Set Auth0 config in Railway dashboard
+3. **Deploy**: Connect GitHub repo to Railway for automatic deployments
+4. **URL**: Railway will provide your backend API URL
+
+### Netlify Frontend Deployment:
+1. **Build Command**: `npm run build` (already configured)
+2. **Environment Variables**: Set Auth0 config in Netlify dashboard  
+3. **Deploy**: Connect GitHub repo to Netlify for automatic deployments
+4. **URL**: Netlify will provide your frontend URL
+
+### Auth0 Configuration:
+Update your Auth0 application settings with production URLs:
+- **Allowed Callback URLs**: `https://your-netlify-domain.com`
+- **Allowed Logout URLs**: `https://your-netlify-domain.com`
+- **API Audience**: `https://your-railway-domain.com`
+
+### Database Migration:
+The application will automatically create tables and relationships on first run with PostgreSQL.
 
 The application is now ready for production use! 🚀
