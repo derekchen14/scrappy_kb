@@ -7,6 +7,7 @@ export const useAdmin = () => {
   const userEmail = user?.email;
   const isAdmin = isAuthenticated && isAdminUser(userEmail);
   
+  
   return {
     isAdmin,
     userEmail,
