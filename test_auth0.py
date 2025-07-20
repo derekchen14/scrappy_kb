@@ -29,7 +29,7 @@ def test_auth0_config():
         
         if AUTH0_DOMAIN == "dev-example.auth0.com":
             print("⚠️  WARNING: Using default Auth0 domain - update .env file")
-        if AUTH0_AUDIENCE == "http://localhost:8000":
+        if AUTH0_AUDIENCE == "http://localhost:8080":
             print("ℹ️  Using localhost audience - good for local testing")
             
         return True

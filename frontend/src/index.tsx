@@ -7,7 +7,7 @@ import reportWebVitals from './reportWebVitals';
 
 const domain = process.env.REACT_APP_AUTH0_DOMAIN || 'dev-example.auth0.com';
 const clientId = process.env.REACT_APP_AUTH0_CLIENT_ID || 'example-client-id';
-const audience = process.env.REACT_APP_AUTH0_AUDIENCE || 'http://localhost:8000';
+const audience = process.env.REACT_APP_AUTH0_AUDIENCE || 'http://localhost:8080';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -20,7 +20,7 @@ root.render(
       authorizationParams={{
         redirect_uri: window.location.origin,
         audience: audience,
-        scope: "read:current_user update:current_user_metadata"
+        scope: "openid profile email read:current_user update:current_user_metadata"
       }}
     >
       <App />
