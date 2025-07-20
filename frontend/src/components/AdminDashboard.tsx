@@ -24,12 +24,6 @@ const AdminDashboard: React.FC = () => {
   const [founders, setFounders] = useState<Founder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (isAdmin) {
-      fetchAdminData();
-    }
-  }, [isAdmin, fetchAdminData]);
-
   const fetchAdminData = useCallback(async () => {
     try {
       setLoading(true);
@@ -63,6 +57,12 @@ const AdminDashboard: React.FC = () => {
       setLoading(false);
     }
   }, [publicAPI]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchAdminData();
+    }
+  }, [isAdmin, fetchAdminData]);
 
   const toggleProfileVisibility = async (founderId: number, currentVisibility: boolean) => {
     try {
