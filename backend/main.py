@@ -227,3 +227,33 @@ def delete_hobby(hobby_id: int, db: Session = Depends(get_db)):
     if deleted_hobby is None:
         raise HTTPException(status_code=404, detail="Hobby not found")
     return {"message": "Hobby deleted successfully"}
+
+# Event endpoints
+@app.post("/events/", response_model=schemas.Event)
+def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    return crud.create_event(db=db, event=event)
+
+@app.get("/events/", response_model=List[schemas.Event])
+def read_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_events(db, skip=skip, limit=limit)
+
+@app.get("/events/{event_id}", response_model=schemas.Event)
+def read_event(event_id: int, db: Session = Depends(get_db)):
+    event = crud.get_event(db, event_id=event_id)
+    if event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return event
+
+@app.put("/events/{event_id}", response_model=schemas.Event)
+def update_event(event_id: int, event: schemas.EventCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    updated_event = crud.update_event(db, event_id=event_id, event=event)
+    if updated_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return updated_event
+
+@app.delete("/events/{event_id}")
+def delete_event(event_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    deleted_event = crud.delete_event(db, event_id=event_id)
+    if deleted_event is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return {"message": "Event deleted successfully"}

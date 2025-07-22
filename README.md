@@ -9,6 +9,7 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 - **Skills Tracking**: Categorized skills with multi-select tagging
 - **Startup Profiles**: Detailed startup information with predefined industry/stage options
 - **Help Requests**: Community help system with categorization and status tracking
+- **Events Management**: Calendar-based event system with themes and attendee tracking
 - **Global Search**: Search across all data types with real-time filtering
 
 ### Authentication & Security:
@@ -39,7 +40,7 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 - Auth0 account
 
 ### Setup Instructions
-1. **Follow the complete setup guide**: See `PRODUCTION_SETUP.md`
+1. **Configure Auth0**: Set up Auth0 application with domain `dev-aj7n76ab551kb76m.us.auth0.com`
 2. **Test your setup**: Run `python test_auth0.py` from project root
 3. **Start development**: Backend on :8080, Frontend on :3000
 
@@ -49,7 +50,7 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 ```bash
 cd backend
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --port 8080
 ```
 
 **Frontend:**
@@ -69,6 +70,8 @@ npm start
 - `GET/PUT/DELETE /startups/{id}` - Get/Update/Delete startup
 - `GET/POST /help-requests/` - List/Create help requests
 - `GET/PUT/DELETE /help-requests/{id}` - Get/Update/Delete help request
+- `GET/POST /events/` - List/Create events
+- `GET/PUT/DELETE /events/{id}` - Get/Update/Delete event
 
 ## 🚀 Production Deployment
 
@@ -91,7 +94,7 @@ npm start
 3. **Deploy**: Automatic deployment via GitHub integration
 4. **Update Auth0**: Add `scrappykb.netlify.app` to Auth0 settings
 
-See `PRODUCTION_SETUP.md` for detailed deployment instructions.
+The application is fully deployed and configured for production use.
 
 ## 🔐 Admin Access
 
@@ -114,6 +117,7 @@ The application uses the following main entities:
 - **Skills**: Categorized skills that founders can offer
 - **Startups**: Company profiles with stage and industry information
 - **Help Requests**: Requests for help with categorization and status tracking
+- **Events**: Calendar events with themes, location, and attendee tracking
 
 Many-to-many relationships exist between founders and skills, and between founders and startups.
 

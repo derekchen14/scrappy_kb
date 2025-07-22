@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Founder, FounderCreate, Skill, SkillCreate, Startup, StartupCreate, HelpRequest, HelpRequestCreate, Hobby, HobbyCreate } from './types';
+import { Founder, FounderCreate, Skill, SkillCreate, Startup, StartupCreate, HelpRequest, HelpRequestCreate, Hobby, HobbyCreate, Event, EventCreate } from './types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
@@ -53,6 +53,15 @@ export const hobbyAPI = {
   create: (hobby: HobbyCreate) => api.post<Hobby>('/hobbies/', hobby),
   update: (id: number, hobby: HobbyCreate) => api.put<Hobby>(`/hobbies/${id}`, hobby),
   delete: (id: number) => api.delete(`/hobbies/${id}`),
+};
+
+// Event API
+export const eventAPI = {
+  getAll: () => api.get<Event[]>('/events/'),
+  getById: (id: number) => api.get<Event>(`/events/${id}`),
+  create: (event: EventCreate) => api.post<Event>('/events/', event),
+  update: (id: number, event: EventCreate) => api.put<Event>(`/events/${id}`, event),
+  delete: (id: number) => api.delete(`/events/${id}`),
 };
 
 // Image upload API

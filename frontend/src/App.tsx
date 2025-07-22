@@ -4,6 +4,7 @@ import FoundersList from './components/FoundersList';
 import SkillsList from './components/SkillsList';
 import StartupsList from './components/StartupsList';
 import HelpRequestsList from './components/HelpRequestsList';
+import EventsList from './components/EventsList';
 import AdminDashboard from './components/AdminDashboard';
 import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
@@ -13,7 +14,7 @@ import { useAdmin } from './hooks/useAdmin';
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0();
   const { isAdmin } = useAdmin();
-  const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'admin'>('founders');
+  const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin'>('founders');
 
 
 
@@ -107,6 +108,16 @@ function App() {
             >
               Requests
             </button>
+            <button 
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'events' 
+                  ? 'border-blue-300 text-blue-100' 
+                  : 'border-transparent text-blue-200 hover:text-white hover:border-blue-400'
+              }`}
+              onClick={() => setActiveTab('events')}
+            >
+              Events
+            </button>
             {isAdmin && (
               <button 
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -128,6 +139,7 @@ function App() {
         {activeTab === 'skills' && <SkillsList />}
         {activeTab === 'startups' && <StartupsList />}
         {activeTab === 'help-requests' && <HelpRequestsList />}
+        {activeTab === 'events' && <EventsList />}
         {activeTab === 'admin' && isAdmin && <AdminDashboard />}
       </main>
     </div>

@@ -103,3 +103,26 @@ export interface HelpRequestCreate {
   urgency?: string;
   status?: string;
 }
+
+export interface Event {
+  id: number;
+  title: string;
+  description?: string;
+  date_time: string;
+  location?: string;
+  attendees?: string;
+  theme?: string;
+  link?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventCreate {
+  title: string;
+  description?: string;
+  date_time: string;
+  location?: string;
+  attendees?: string;
+  theme?: string;
+  link?: string;
+}

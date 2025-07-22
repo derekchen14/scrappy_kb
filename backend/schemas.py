@@ -110,3 +110,24 @@ class Founder(FounderBase):
     
     class Config:
         from_attributes = True
+
+# Event schemas
+class EventBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    date_time: datetime
+    location: Optional[str] = None
+    attendees: Optional[str] = None
+    theme: Optional[str] = None
+    link: Optional[str] = None
+
+class EventCreate(EventBase):
+    pass
+
+class Event(EventBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
