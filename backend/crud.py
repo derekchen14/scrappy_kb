@@ -13,7 +13,8 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
         twitter_url=founder.twitter_url,
         github_url=founder.github_url,
         profile_image_url=founder.profile_image_url,
-        profile_visible=founder.profile_visible
+        profile_visible=founder.profile_visible,
+        startup_id=founder.startup_id
     )
     
     db.add(db_founder)
@@ -24,13 +25,6 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
     if founder.skill_ids and len(founder.skill_ids) > 0:
         skills = db.query(models.Skill).filter(models.Skill.id.in_(founder.skill_ids)).all()
         db_founder.skills = skills
-        db.commit()
-        db.refresh(db_founder)
-    
-    # Add startups
-    if founder.startup_ids and len(founder.startup_ids) > 0:
-        startups = db.query(models.Startup).filter(models.Startup.id.in_(founder.startup_ids)).all()
-        db_founder.startups = startups
         db.commit()
         db.refresh(db_founder)
     
@@ -52,9 +46,13 @@ def get_founders(db: Session, skip: int = 0, limit: int = 100):
 def update_founder(db: Session, founder_id: int, founder: schemas.FounderCreate):
     db_founder = db.query(models.Founder).filter(models.Founder.id == founder_id).first()
     if db_founder:
-        for key, value in founder.model_dump(exclude={'skill_ids', 'startup_ids', 'hobby_ids'}).items():
+        for key, value in founder.model_dump(exclude={'skill_ids', 'startup_id', 'hobby_ids'}).items():
             if value is not None:
                 setattr(db_founder, key, value)
+        
+        # Update startup_id directly
+        if founder.startup_id is not None:
+            db_founder.startup_id = founder.startup_id
         
         # Update skills
         if founder.skill_ids is not None:
@@ -63,14 +61,6 @@ def update_founder(db: Session, founder_id: int, founder: schemas.FounderCreate)
                 db_founder.skills = skills
             else:
                 db_founder.skills = []
-        
-        # Update startups
-        if founder.startup_ids is not None:
-            if len(founder.startup_ids) > 0:
-                startups = db.query(models.Startup).filter(models.Startup.id.in_(founder.startup_ids)).all()
-                db_founder.startups = startups
-            else:
-                db_founder.startups = []
         
         # Update hobbies
         if founder.hobby_ids is not None:

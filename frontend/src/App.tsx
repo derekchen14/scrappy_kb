@@ -10,11 +10,18 @@ import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
 import Profile from './components/Profile';
 import { useAdmin } from './hooks/useAdmin';
+import { Startup } from './types';
 
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0();
   const { isAdmin } = useAdmin();
   const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin'>('founders');
+  const [startupToShow, setStartupToShow] = useState<Startup | null>(null);
+
+  const navigateToStartup = (startup: Startup) => {
+    setActiveTab('startups');
+    setStartupToShow(startup);
+  };
 
 
 
@@ -54,7 +61,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-stone-50">
       <header className="bg-sky-950 shadow-sm border-b border-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -135,9 +142,9 @@ function App() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'founders' && <FoundersList />}
+        {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} />}
         {activeTab === 'skills' && <SkillsList />}
-        {activeTab === 'startups' && <StartupsList />}
+        {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} />}
         {activeTab === 'help-requests' && <HelpRequestsList />}
         {activeTab === 'events' && <EventsList />}
         {activeTab === 'admin' && isAdmin && <AdminDashboard />}

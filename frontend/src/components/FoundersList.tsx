@@ -6,7 +6,11 @@ import Modal from './Modal';
 
 type ViewType = 'table' | 'card' | 'compact';
 
-const FoundersList: React.FC = () => {
+interface FoundersListProps {
+  onStartupClick?: (startup: Startup) => void;
+}
+
+const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick }) => {
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
   const { isAdmin, canEditProfile, canDeleteUser } = useAdmin();
   const [founders, setFounders] = useState<Founder[]>([]);
@@ -21,6 +25,7 @@ const FoundersList: React.FC = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
     email: '',
@@ -32,7 +37,7 @@ const FoundersList: React.FC = () => {
     profile_image_url: '',
     profile_visible: true,
     skill_ids: [],
-    startup_ids: [],
+    startup_id: undefined,
     hobby_ids: []
   });
 
@@ -162,7 +167,7 @@ const FoundersList: React.FC = () => {
       profile_image_url: founder.profile_image_url || '',
       profile_visible: founder.profile_visible ?? true,
       skill_ids: founder.skills.map(skill => skill.id),
-      startup_ids: founder.startups.map(startup => startup.id),
+      startup_id: founder.startup?.id,
       hobby_ids: founder.hobbies.map(hobby => hobby.id)
     });
     setImagePreview(founder.profile_image_url || null);
@@ -197,7 +202,7 @@ const FoundersList: React.FC = () => {
       profile_image_url: '',
       profile_visible: true,
       skill_ids: [],
-      startup_ids: [],
+      startup_id: undefined,
       hobby_ids: []
     });
     setEditingFounder(null);
@@ -215,12 +220,10 @@ const FoundersList: React.FC = () => {
     }));
   };
 
-  const handleStartupToggle = (startupId: number) => {
+  const handleStartupChange = (startupId: number | undefined) => {
     setFormData(prev => ({
       ...prev,
-      startup_ids: prev.startup_ids?.includes(startupId)
-        ? prev.startup_ids.filter(id => id !== startupId)
-        : [...(prev.startup_ids || []), startupId]
+      startup_id: startupId
     }));
   };
 
@@ -238,12 +241,21 @@ const FoundersList: React.FC = () => {
     return text.substring(0, maxLength) + '...';
   };
 
-  const getFounderIndustries = (founder: Founder): string[] => {
-    return founder.startups.map(startup => startup.industry).filter(Boolean) as string[];
+  const getFounderIndustry = (founder: Founder): string | undefined => {
+    return founder.startup?.industry;
   };
 
   const isProfileVisible = (founder: Founder): boolean => {
     return founder.profile_visible ?? true;
+  };
+
+  const handleStartupClick = (startup: Startup) => {
+    if (onStartupClick) {
+      setSelectedFounder(null); // Close founder modal
+      onStartupClick(startup); // Navigate to startup tab and show startup modal
+    } else {
+      setSelectedStartup(startup); // Fallback to local modal
+    }
   };
 
   const filteredFounders = useMemo(() => {
@@ -261,17 +273,17 @@ const FoundersList: React.FC = () => {
         skill.name.toLowerCase().includes(query) || 
         skill.category?.toLowerCase().includes(query)
       );
-      const matchesStartups = founder.startups.some(startup => 
-        startup.name.toLowerCase().includes(query) || 
-        startup.industry?.toLowerCase().includes(query) ||
-        startup.description?.toLowerCase().includes(query)
+      const matchesStartup = founder.startup && (
+        founder.startup.name.toLowerCase().includes(query) || 
+        founder.startup.industry?.toLowerCase().includes(query) ||
+        founder.startup.description?.toLowerCase().includes(query)
       );
       const matchesHobbies = founder.hobbies.some(hobby => 
         hobby.name.toLowerCase().includes(query) || 
         hobby.category?.toLowerCase().includes(query)
       );
       
-      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartups || matchesHobbies;
+      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartup || matchesHobbies;
     });
   }, [founders, searchQuery]);
 
@@ -488,20 +500,19 @@ const FoundersList: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Startups</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="block text-sm font-medium text-gray-700">Startup</label>
+                <select
+                  value={formData.startup_id || ''}
+                  onChange={(e) => handleStartupChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="">No startup</option>
                   {startups.map(startup => (
-                    <label key={startup.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.startup_ids?.includes(startup.id) || false}
-                        onChange={() => handleStartupToggle(startup.id)}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-gray-700">{startup.name}</span>
-                    </label>
+                    <option key={startup.id} value={startup.id}>
+                      {startup.name}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -632,15 +643,16 @@ const FoundersList: React.FC = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-1">
-                        {founder.startups.slice(0, 2).map(startup => (
-                          <span key={startup.id} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                            {startup.name}
-                          </span>
-                        ))}
-                        {founder.startups.length > 2 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            +{founder.startups.length - 2}
-                          </span>
+                        {founder.startup && (
+                          <button
+                            onClick={() => handleStartupClick(founder.startup!)}
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
+                          >
+                            {founder.startup.name}
+                          </button>
+                        )}
+                        {!founder.startup && (
+                          <span className="text-xs text-gray-500">No startup</span>
                         )}
                       </div>
                     </td>
@@ -777,15 +789,16 @@ const FoundersList: React.FC = () => {
                 </div>
               )}
 
-              {founder.startups.length > 0 && (
+              {founder.startup && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startup:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {founder.startups.map(startup => (
-                      <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {startup.name}
-                      </span>
-                    ))}
+                    <button
+                      onClick={() => handleStartupClick(founder.startup!)}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
+                    >
+                      {founder.startup.name}
+                    </button>
                   </div>
                 </div>
               )}
@@ -827,11 +840,11 @@ const FoundersList: React.FC = () => {
                     <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
                       {founder.name}
                     </h3>
-                    {getFounderIndustries(founder).slice(0, 2).map((industry, index) => (
-                      <span key={index} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                        {industry}
+                    {getFounderIndustry(founder) && (
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                        {getFounderIndustry(founder)}
                       </span>
-                    ))}
+                    )}
                   </div>
                 </button>
                 
@@ -912,15 +925,16 @@ const FoundersList: React.FC = () => {
                 </div>
               )}
 
-              {selectedFounder.startups.length > 0 && (
+              {selectedFounder.startup && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startups:</h4>
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startup:</h4>
                   <div className="flex flex-wrap gap-2">
-                    {selectedFounder.startups.map(startup => (
-                      <span key={startup.id} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {startup.name}
-                      </span>
-                    ))}
+                    <button
+                      onClick={() => handleStartupClick(selectedFounder.startup!)}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
+                    >
+                      {selectedFounder.startup.name}
+                    </button>
                   </div>
                 </div>
               )}
@@ -970,6 +984,82 @@ const FoundersList: React.FC = () => {
                   Close
                 </button>
               )}
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Startup Details Modal */}
+      <Modal
+        isOpen={selectedStartup !== null}
+        onClose={() => setSelectedStartup(null)}
+        title={selectedStartup?.name || ''}
+      >
+        {selectedStartup && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedStartup.name}</h3>
+              
+              {selectedStartup.description && (
+                <p className="text-gray-700 mb-4">{selectedStartup.description}</p>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedStartup.industry && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Industry:</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                      {selectedStartup.industry}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedStartup.stage && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Stage:</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      {selectedStartup.stage}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedStartup.target_market && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Target Market:</span>
+                    <span className="text-sm text-gray-600 flex items-center">🎯 {selectedStartup.target_market}</span>
+                  </div>
+                )}
+                
+                {selectedStartup.revenue_arr && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Revenue ARR:</span>
+                    <span className="text-sm text-gray-600 flex items-center">💰 {selectedStartup.revenue_arr}</span>
+                  </div>
+                )}
+              </div>
+              
+              {selectedStartup.website_url && (
+                <div className="mt-4">
+                  <span className="text-sm font-medium text-gray-700 block mb-1">Website:</span>
+                  <a 
+                    href={selectedStartup.website_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {selectedStartup.website_url}
+                  </a>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setSelectedStartup(null)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         )}

@@ -96,7 +96,7 @@ class FounderBase(BaseModel):
 
 class FounderCreate(FounderBase):
     skill_ids: Optional[List[int]] = []
-    startup_ids: Optional[List[int]] = []
+    startup_id: Optional[int] = None
     hobby_ids: Optional[List[int]] = []
 
 class Founder(FounderBase):
@@ -105,7 +105,7 @@ class Founder(FounderBase):
     updated_at: datetime
     skills: List[Skill] = []
     help_requests: List[HelpRequest] = []
-    startups: List[Startup] = []
+    startup: Optional[Startup] = None
     hobbies: List[Hobby] = []
     
     class Config:

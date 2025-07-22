@@ -13,7 +13,7 @@ export interface Founder {
   updated_at: string;
   skills: Skill[];
   help_requests: HelpRequest[];
-  startups: Startup[];
+  startup?: Startup;
   hobbies: Hobby[];
 }
 
@@ -28,7 +28,7 @@ export interface FounderCreate {
   profile_image_url?: string;
   profile_visible?: boolean;
   skill_ids?: number[];
-  startup_ids?: number[];
+  startup_id?: number;
   hobby_ids?: number[];
 }
 

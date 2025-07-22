@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Startup, StartupCreate } from '../types';
 import { startupAPI } from '../api';
+import Modal from './Modal';
 
 interface StartupsListProps {
   searchQuery?: string;
+  startupToShow?: Startup | null;
+  onStartupShown?: () => void;
 }
 
-const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
+const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupToShow, onStartupShown }) => {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStartup, setEditingStartup] = useState<Startup | null>(null);
+  const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [formData, setFormData] = useState<StartupCreate>({
     name: '',
     description: '',
@@ -23,6 +27,15 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
   useEffect(() => {
     fetchStartups();
   }, []);
+
+  useEffect(() => {
+    if (startupToShow) {
+      setSelectedStartup(startupToShow);
+      if (onStartupShown) {
+        onStartupShown();
+      }
+    }
+  }, [startupToShow, onStartupShown]);
 
   const fetchStartups = async () => {
     try {
@@ -317,7 +330,12 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
         {filteredStartups.map(startup => (
           <div key={startup.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">{startup.name}</h3>
+              <button
+                onClick={() => setSelectedStartup(startup)}
+                className="text-left"
+              >
+                <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">{startup.name}</h3>
+              </button>
               <div className="flex space-x-2">
                 <button 
                   onClick={() => handleEdit(startup)} 
@@ -388,6 +406,94 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '' }) => {
           </div>
         ))}
       </div>
+
+      {/* Startup Details Modal */}
+      <Modal
+        isOpen={selectedStartup !== null}
+        onClose={() => setSelectedStartup(null)}
+        title={selectedStartup?.name || ''}
+      >
+        {selectedStartup && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedStartup.name}</h3>
+              
+              {selectedStartup.description && (
+                <p className="text-gray-700 mb-4">{selectedStartup.description}</p>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {selectedStartup.industry && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Industry:</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                      {selectedStartup.industry}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedStartup.stage && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Stage:</span>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                      {selectedStartup.stage}
+                    </span>
+                  </div>
+                )}
+                
+                {selectedStartup.target_market && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Target Market:</span>
+                    <span className="text-sm text-gray-600 flex items-center">🎯 {selectedStartup.target_market}</span>
+                  </div>
+                )}
+                
+                {selectedStartup.revenue_arr && (
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 block mb-1">Revenue ARR:</span>
+                    <span className="text-sm text-gray-600 flex items-center">💰 {selectedStartup.revenue_arr}</span>
+                  </div>
+                )}
+              </div>
+              
+              {selectedStartup.website_url && (
+                <div className="mt-4">
+                  <span className="text-sm font-medium text-gray-700 block mb-1">Website:</span>
+                  <a 
+                    href={selectedStartup.website_url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 underline"
+                  >
+                    {selectedStartup.website_url}
+                  </a>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setSelectedStartup(null);
+                  handleEdit(selectedStartup);
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedStartup(null);
+                  handleDelete(selectedStartup.id);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };

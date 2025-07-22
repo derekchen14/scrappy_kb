@@ -145,8 +145,6 @@ const EventsList: React.FC = () => {
     
     // First day of the month
     const firstDay = new Date(year, month, 1);
-    // Last day of the month
-    const lastDay = new Date(year, month + 1, 0);
     
     // Find the Sunday before the first day (or the first day if it's Sunday)
     const startDate = new Date(firstDay);

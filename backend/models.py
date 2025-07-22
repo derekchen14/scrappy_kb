@@ -12,14 +12,6 @@ founder_skills = Table(
     extend_existing=True
 )
 
-startup_founders = Table(
-    'startup_founders',
-    Base.metadata,
-    Column('startup_id', Integer, ForeignKey('startups.id'), primary_key=True),
-    Column('founder_id', Integer, ForeignKey('founders.id'), primary_key=True),
-    extend_existing=True
-)
-
 founder_hobbies = Table(
     'founder_hobbies',
     Base.metadata,
@@ -42,13 +34,14 @@ class Founder(Base):
     github_url = Column(String(200))
     profile_image_url = Column(String(500))
     profile_visible = Column(Boolean, default=True, nullable=False)
+    startup_id = Column(Integer, ForeignKey('startups.id'), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Relationships
     skills = relationship("Skill", secondary=founder_skills, back_populates="founders")
     help_requests = relationship("HelpRequest", back_populates="founder")
-    startups = relationship("Startup", secondary=startup_founders, back_populates="founders")
+    startup = relationship("Startup", back_populates="founders")
     hobbies = relationship("Hobby", secondary=founder_hobbies, back_populates="founders")
 
 class Skill(Base):
@@ -97,7 +90,7 @@ class Startup(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     # Relationships
-    founders = relationship("Founder", secondary=startup_founders, back_populates="startups")
+    founders = relationship("Founder", back_populates="startup")
 
 class Hobby(Base):
     __tablename__ = "hobbies"
