@@ -156,7 +156,7 @@ function App() {
         {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} />}
         {activeTab === 'help-requests' && <HelpRequestsList />}
         {activeTab === 'events' && <EventsList />}
-        {activeTab === 'admin' && isAdmin && <AdminDashboard />}
+        {activeTab === 'admin' && isAdmin && <AdminDashboard onNavigateToTab={setActiveTab} />}
       </main>
     </div>
   );

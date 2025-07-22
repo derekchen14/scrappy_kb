@@ -1,23 +1,27 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
-import { Founder, Startup, Hobby } from '../types';
+import { Founder, Startup, HelpRequest } from '../types';
 
 interface AdminStats {
   totalUsers: number;
   totalStartups: number;
-  totalHobbies: number;
+  totalHelpRequests: number;
   visibleProfiles: number;
   hiddenProfiles: number;
 }
 
-const AdminDashboard: React.FC = () => {
+interface AdminDashboardProps {
+  onNavigateToTab?: (tab: 'founders' | 'startups' | 'help-requests' | 'events' | 'admin') => void;
+}
+
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
   const { publicAPI, authenticatedAPI } = useAuthenticatedAPI();
   const { isAdmin, userEmail } = useAdmin();
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     totalStartups: 0,
-    totalHobbies: 0,
+    totalHelpRequests: 0,
     visibleProfiles: 0,
     hiddenProfiles: 0
   });
@@ -29,15 +33,15 @@ const AdminDashboard: React.FC = () => {
       setLoading(true);
       
       // Fetch all data in parallel
-      const [foundersRes, startupsRes, hobbiesRes] = await Promise.all([
+      const [foundersRes, startupsRes, helpRequestsRes] = await Promise.all([
         publicAPI.get<Founder[]>('/founders/'),
         publicAPI.get<Startup[]>('/startups/'),
-        publicAPI.get<Hobby[]>('/hobbies/')
+        publicAPI.get<HelpRequest[]>('/help-requests/')
       ]);
 
       const foundersData = foundersRes.data;
       const startupsData = startupsRes.data;
-      const hobbiesData = hobbiesRes.data;
+      const helpRequestsData = helpRequestsRes.data;
 
       // Calculate statistics
       const visibleCount = foundersData.filter(f => f.profile_visible !== false).length;
@@ -47,7 +51,7 @@ const AdminDashboard: React.FC = () => {
       setStats({
         totalUsers: foundersData.length,
         totalStartups: startupsData.length,
-        totalHobbies: hobbiesData.length,
+        totalHelpRequests: helpRequestsData.length,
         visibleProfiles: visibleCount,
         hiddenProfiles: hiddenCount
       });
@@ -133,9 +137,12 @@ const AdminDashboard: React.FC = () => {
           <div className="text-sm font-medium text-gray-700">Total Startups</div>
         </div>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="text-3xl font-bold text-purple-600">{stats.totalHobbies}</div>
-          <div className="text-sm font-medium text-gray-700">Total Hobbies</div>
+        <div 
+          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => onNavigateToTab?.('help-requests')}
+        >
+          <div className="text-3xl font-bold text-purple-600">{stats.totalHelpRequests}</div>
+          <div className="text-sm font-medium text-gray-700">Total Help Requests</div>
         </div>
         
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
