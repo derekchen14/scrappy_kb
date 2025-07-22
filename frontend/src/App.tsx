@@ -6,15 +6,18 @@ import StartupsList from './components/StartupsList';
 import HelpRequestsList from './components/HelpRequestsList';
 import EventsList from './components/EventsList';
 import AdminDashboard from './components/AdminDashboard';
+import ProfileSetupModal from './components/ProfileSetupModal';
 import LoginButton from './components/LoginButton';
 import LogoutButton from './components/LogoutButton';
 import Profile from './components/Profile';
 import { useAdmin } from './hooks/useAdmin';
+import { useProfileSetup } from './hooks/useProfileSetup';
 import { Startup } from './types';
 
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0();
   const { isAdmin } = useAdmin();
+  const { needsProfileSetup, loading: profileLoading, completeProfileSetup } = useProfileSetup();
   const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin'>('founders');
   const [startupToShow, setStartupToShow] = useState<Startup | null>(null);
 
@@ -34,7 +37,7 @@ function App() {
 
 
 
-  if (isLoading) {
+  if (isLoading || profileLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -69,6 +72,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Profile Setup Modal */}
+      <ProfileSetupModal 
+        isOpen={needsProfileSetup && !isAdmin}
+        onComplete={completeProfileSetup}
+      />
+      
       <header className="bg-sky-950 shadow-sm border-b border-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
