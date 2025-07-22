@@ -14,8 +14,11 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 
 ### Authentication & Security:
 - **Auth0 Integration**: Secure login/logout with JWT token verification
+- **Separate Login/Sign Up**: Dedicated flows for existing and new users
+- **Profile Setup**: New users must complete profile before app access
 - **Role-Based Access**: Admin users with enhanced privileges
 - **Profile Permissions**: Users can only edit their own profiles (admins can edit any)
+- **Email Protection**: Non-admin users cannot change email addresses
 - **Protected Operations**: Write operations require authentication
 
 ### Admin Features:
@@ -40,9 +43,16 @@ A comprehensive knowledge base and CRM system for founders communities with secu
 - Auth0 account
 
 ### Setup Instructions
-1. **Configure Auth0**: Set up Auth0 application with domain `dev-aj7n76ab551kb76m.us.auth0.com`
-2. **Test your setup**: Run `python test_auth0.py` from project root
-3. **Start development**: Backend on :8080, Frontend on :3000
+1. **Configure Auth0**: 
+   - Create SPA application for frontend
+   - Create Machine-to-Machine app for user management
+   - Set up Username-Password-Authentication database connection
+2. **Set Environment Variables**:
+   - Frontend: `REACT_APP_AUTH0_DOMAIN`, `REACT_APP_AUTH0_CLIENT_ID`, `REACT_APP_AUTH0_AUDIENCE`
+   - Backend: Auth0 Management API credentials for user creation
+3. **Create Auth0 Users**: Run `python setup_auth0_users.py` to create users for existing founders
+4. **Default Password**: Existing users can log in with `12scrappyfounders`
+5. **Start development**: Backend on :8080, Frontend on :3000
 
 ### Local Development Commands
 
@@ -79,20 +89,30 @@ npm start
 
 ### Live Application:
 - **Frontend**: https://scrappykb.netlify.app
-- **Backend**: Railway with PostgreSQL
+- **Backend**: https://scrappykb-production.up.railway.app
 - **Repository**: `scrappy_kb` (GitHub)
 
 ### Current Setup:
-- **Backend**: Railway with PostgreSQL
+- **Backend**: Railway with PostgreSQL (auto-provisioned)
 - **Frontend**: Netlify with automatic builds from `scrappy_kb` repo
-- **Database**: PostgreSQL automatically provisioned
-- **Auth**: Auth0 integration with environment variables
+- **Database**: PostgreSQL with auto-migration on startup
+- **Auth**: Auth0 with domain `dev-aj7n76ab551kb76m.us.auth0.com`
+
+### Environment Variables:
+**Railway (Backend):**
+- `DATABASE_URL` (auto-provided)
+- `AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com`
+- `AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app`
+
+**Netlify (Frontend):**
+- `REACT_APP_AUTH0_DOMAIN=dev-aj7n76ab551kb76m.us.auth0.com`
+- `REACT_APP_AUTH0_CLIENT_ID=os53h5vETvUvt7tUqTcYjTaEgd70fNLK`
+- `REACT_APP_AUTH0_AUDIENCE=https://scrappykb-production.up.railway.app`
 
 ### Deployment Process:
-1. **Configure Auth0**: Set up Auth0 application and API
-2. **Set Environment Variables**: Configure in Railway/Netlify dashboards
-3. **Deploy**: Automatic deployment via GitHub integration
-4. **Update Auth0**: Add `scrappykb.netlify.app` to Auth0 settings
+1. **Push to GitHub**: Automatic deployment to both Railway and Netlify
+2. **Database Migration**: Auto-creates tables on backend startup
+3. **Auth0 Configuration**: Already configured for production domains
 
 The application is fully deployed and configured for production use.
 
@@ -119,7 +139,7 @@ The application uses the following main entities:
 - **Help Requests**: Requests for help with categorization and status tracking
 - **Events**: Calendar events with themes, location, and attendee tracking
 
-Many-to-many relationships exist between founders and skills, and between founders and startups.
+Many-to-many relationships exist between founders and skills, and between founders and hobbies. Founders have a one-to-one relationship with startups (each founder can have 0 or 1 startup).
 
 ## Contributing
 
