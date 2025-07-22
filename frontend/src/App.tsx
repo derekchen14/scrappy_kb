@@ -7,7 +7,7 @@ import HelpRequestsList from './components/HelpRequestsList';
 import EventsList from './components/EventsList';
 import AdminDashboard from './components/AdminDashboard';
 import ProfileSetupModal from './components/ProfileSetupModal';
-import LoginButton from './components/LoginButton';
+import AuthButtons from './components/AuthButtons';
 import LogoutButton from './components/LogoutButton';
 import Profile from './components/Profile';
 import { useAdmin } from './hooks/useAdmin';
@@ -61,10 +61,10 @@ function App() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto">
           <h1 className="text-4xl font-bold text-gray-900 mb-8">Scrappy Founders Knowledge Base</h1>
-          <p className="text-gray-600 mb-8">Please log in to access the knowledge base</p>
-          <LoginButton />
+          <p className="text-gray-600 mb-8">Join our community of founders</p>
+          <AuthButtons />
         </div>
       </div>
     );
