@@ -185,16 +185,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
               {founders.map(founder => (
                 <tr key={founder.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {founder.profile_image_url && (
-                        <img 
-                          src={`http://localhost:8000${founder.profile_image_url}`}
-                          alt={founder.name}
-                          className="w-8 h-8 object-cover rounded-full border border-gray-300 mr-3"
-                        />
-                      )}
-                      <div className="text-sm font-medium text-gray-900">{founder.name}</div>
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{founder.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {founder.email}
