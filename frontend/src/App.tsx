@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import FoundersList from './components/FoundersList';
 import SkillsList from './components/SkillsList';
@@ -22,6 +22,13 @@ function App() {
     setActiveTab('startups');
     setStartupToShow(startup);
   };
+
+  // Redirect non-admin users away from admin-only tabs
+  useEffect(() => {
+    if (!isAdmin && (activeTab === 'skills' || activeTab === 'admin')) {
+      setActiveTab('founders');
+    }
+  }, [isAdmin, activeTab]);
 
 
 
@@ -85,16 +92,18 @@ function App() {
             >
               Founders
             </button>
-            <button 
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'skills' 
-                  ? 'border-blue-300 text-blue-100' 
-                  : 'border-transparent text-blue-200 hover:text-white hover:border-blue-400'
-              }`}
-              onClick={() => setActiveTab('skills')}
-            >
-              Skills
-            </button>
+            {isAdmin && (
+              <button 
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'skills' 
+                    ? 'border-blue-300 text-blue-100' 
+                    : 'border-transparent text-blue-200 hover:text-white hover:border-blue-400'
+                }`}
+                onClick={() => setActiveTab('skills')}
+              >
+                Skills
+              </button>
+            )}
             <button 
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'startups' 
@@ -143,7 +152,7 @@ function App() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} />}
-        {activeTab === 'skills' && <SkillsList />}
+        {activeTab === 'skills' && isAdmin && <SkillsList />}
         {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} />}
         {activeTab === 'help-requests' && <HelpRequestsList />}
         {activeTab === 'events' && <EventsList />}
