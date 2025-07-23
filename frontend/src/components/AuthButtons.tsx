@@ -40,14 +40,6 @@ const AuthButtons: React.FC = () => {
           Sign Up
         </button>
       </div>
-      <div className="text-center">
-        <p className="text-gray-600 text-sm">
-          Existing users can log in with email: <span className="font-mono">yourname@test.com</span>
-        </p>
-        <p className="text-gray-600 text-sm">
-          Default password: <span className="font-mono font-semibold">12scrappyfounders</span>
-        </p>
-      </div>
     </div>
   );
 };

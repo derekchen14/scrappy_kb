@@ -7,7 +7,10 @@ import models, schemas, database, crud
 from auth import get_current_user, get_current_user_optional
 import os
 import uuid
+import requests
+import json
 from pathlib import Path
+from pydantic import BaseModel
 
 app = FastAPI(title="Scrappy Founders Knowledge Base")
 
@@ -43,20 +46,15 @@ def get_db():
 def health_check():
     return {"status": "healthy", "message": "API is running"}
 
+# Root endpoint
+@app.get("/")
+def read_root():
+    return {"message": "Scrappy Founders Knowledge Base API"}
+
 # Protected endpoint to verify authentication
 @app.get("/protected")
 def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": "This is a protected endpoint", "user": current_user}
-
-@app.get("/")
-def read_root():
-    return {"message": "Founders Community CRM API"}
-
-# Health check
-
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
 
 # Image upload endpoint
 @app.post("/upload-image/")
@@ -257,3 +255,58 @@ def delete_event(event_id: int, db: Session = Depends(get_db), current_user: dic
     if deleted_event is None:
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted successfully"}
+
+# User profile matching and claiming endpoints
+@app.get("/api/my-profile")
+def get_my_profile(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get the current user's claimed founder profile, or find unclaimed profile by email."""
+    user_email = current_user.get("email")
+    user_id = current_user.get("sub")
+    
+    if not user_email or not user_id:
+        raise HTTPException(status_code=400, detail="User email or ID not found in token")
+    
+    # First check if user has already claimed a profile
+    claimed_founder = crud.get_founder_by_auth0_user_id(db, user_id)
+    if claimed_founder:
+        return {"founder": claimed_founder, "status": "claimed"}
+    
+    # If not claimed, look for unclaimed profile with matching email
+    unclaimed_founder = crud.get_unclaimed_founder_by_email(db, user_email)
+    if unclaimed_founder:
+        return {"founder": unclaimed_founder, "status": "available"}
+    
+    # No matching founder profile found
+    return {"founder": None, "status": "none"}
+
+@app.post("/api/claim-profile/{founder_id}")
+def claim_profile(founder_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Claim an unclaimed founder profile."""
+    user_email = current_user.get("email")
+    user_id = current_user.get("sub")
+    
+    if not user_email or not user_id:
+        raise HTTPException(status_code=400, detail="User email or ID not found in token")
+    
+    # Check if user has already claimed a profile
+    existing_claim = crud.get_founder_by_auth0_user_id(db, user_id)
+    if existing_claim:
+        raise HTTPException(status_code=400, detail="User has already claimed a profile")
+    
+    # Get the founder profile
+    founder = crud.get_founder(db, founder_id)
+    if not founder:
+        raise HTTPException(status_code=404, detail="Founder profile not found")
+    
+    # Check if profile is already claimed
+    if founder.auth0_user_id:
+        raise HTTPException(status_code=400, detail="Profile has already been claimed")
+    
+    # Check if email matches
+    if founder.email.lower() != user_email.lower():
+        raise HTTPException(status_code=403, detail="Email does not match profile")
+    
+    # Claim the profile
+    claimed_founder = crud.claim_founder_profile(db, founder_id, user_id)
+    return {"founder": claimed_founder, "message": "Profile claimed successfully"}
+

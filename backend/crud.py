@@ -14,6 +14,7 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
         github_url=founder.github_url,
         profile_image_url=founder.profile_image_url,
         profile_visible=founder.profile_visible,
+        auth0_user_id=founder.auth0_user_id,
         startup_id=founder.startup_id
     )
     
@@ -79,6 +80,27 @@ def delete_founder(db: Session, founder_id: int):
     if db_founder:
         db.delete(db_founder)
         db.commit()
+    return db_founder
+
+# User profile matching functions
+def get_founder_by_auth0_user_id(db: Session, auth0_user_id: str):
+    """Get founder profile by Auth0 user ID (for claimed profiles)."""
+    return db.query(models.Founder).filter(models.Founder.auth0_user_id == auth0_user_id).first()
+
+def get_unclaimed_founder_by_email(db: Session, email: str):
+    """Get unclaimed founder profile by email."""
+    return db.query(models.Founder).filter(
+        models.Founder.email.ilike(email),
+        models.Founder.auth0_user_id.is_(None)
+    ).first()
+
+def claim_founder_profile(db: Session, founder_id: int, auth0_user_id: str):
+    """Claim a founder profile by linking it to an Auth0 user."""
+    db_founder = db.query(models.Founder).filter(models.Founder.id == founder_id).first()
+    if db_founder:
+        db_founder.auth0_user_id = auth0_user_id
+        db.commit()
+        db.refresh(db_founder)
     return db_founder
 
 # Skill CRUD operations

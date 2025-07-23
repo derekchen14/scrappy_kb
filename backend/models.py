@@ -34,6 +34,7 @@ class Founder(Base):
     github_url = Column(String(200))
     profile_image_url = Column(String(500))
     profile_visible = Column(Boolean, default=True, nullable=False)
+    auth0_user_id = Column(String(100), unique=True, nullable=True)  # Links founder to Auth0 user
     startup_id = Column(Integer, ForeignKey('startups.id'), nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

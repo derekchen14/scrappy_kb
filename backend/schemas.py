@@ -86,6 +86,7 @@ class FounderBase(BaseModel):
     github_url: Optional[str] = None
     profile_image_url: Optional[str] = None
     profile_visible: Optional[bool] = True
+    auth0_user_id: Optional[str] = None
     
     @field_validator('linkedin_url')
     @classmethod

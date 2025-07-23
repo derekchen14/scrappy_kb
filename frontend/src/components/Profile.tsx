@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
-import PasswordChangeModal from './PasswordChangeModal';
 
 const Profile: React.FC = () => {
   const { user, isAuthenticated, isLoading } = useAuth0();
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 
   if (isLoading) {
@@ -14,11 +12,6 @@ const Profile: React.FC = () => {
   if (!isAuthenticated || !user) {
     return null;
   }
-
-  const isAuth0DatabaseUser = () => {
-    // Check if user is using Auth0 database (not social login)
-    return user?.sub?.startsWith('auth0|');
-  };
 
   return (
     <div className="relative">
@@ -42,27 +35,9 @@ const Profile: React.FC = () => {
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
           <div className="py-1">
-            <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
+            <div className="px-4 py-2 text-sm text-gray-700">
               <div className="font-medium">{user.name}</div>
               <div className="text-gray-500">{user.email}</div>
-            </div>
-            
-            {isAuth0DatabaseUser() && (
-              <button
-                onClick={() => {
-                  setShowPasswordModal(true);
-                  setShowDropdown(false);
-                }}
-                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                Change Password
-              </button>
-            )}
-            
-            <div className="border-t border-gray-100">
-              <div className="px-4 py-2 text-xs text-gray-500">
-                {isAuth0DatabaseUser() ? 'Database Account' : 'Social Login'}
-              </div>
             </div>
           </div>
         </div>
@@ -75,11 +50,6 @@ const Profile: React.FC = () => {
           onClick={() => setShowDropdown(false)}
         />
       )}
-
-      <PasswordChangeModal 
-        isOpen={showPasswordModal}
-        onClose={() => setShowPasswordModal(false)}
-      />
     </div>
   );
 };
