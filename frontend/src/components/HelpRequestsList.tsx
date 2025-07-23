@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { HelpRequest, HelpRequestCreate, Founder } from '../types';
 import { helpRequestAPI, founderAPI } from '../api';
+import { useAuth0 } from '@auth0/auth0-react';
+import { useAdmin } from '../hooks/useAdmin';
 
 interface HelpRequestsListProps {
   searchQuery?: string;
@@ -8,6 +10,8 @@ interface HelpRequestsListProps {
 }
 
 const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', onFounderClick }) => {
+  const { user } = useAuth0();
+  const { isAdmin } = useAdmin();
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
   const [founders, setFounders] = useState<Founder[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -113,6 +117,21 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
       }
     }
   }, [founders, onFounderClick]);
+
+  const canEditRequest = useCallback((request: HelpRequest) => {
+    // Admin can edit any request
+    if (isAdmin) {
+      return true;
+    }
+    
+    // Check if current user is the founder who made the request
+    if (user?.email) {
+      const requestFounder = founders.find(f => f.id === request.founder_id);
+      return requestFounder?.email === user.email;
+    }
+    
+    return false;
+  }, [isAdmin, user, founders]);
 
   const getUrgencyClass = (urgency: string) => {
     switch (urgency) {
@@ -278,20 +297,22 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
           <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
-              <div className="flex space-x-2">
-                <button 
-                  onClick={() => handleEdit(request)} 
-                  className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                >
-                  Edit
-                </button>
-                <button 
-                  onClick={() => handleDelete(request.id)} 
-                  className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
+              {canEditRequest(request) && (
+                <div className="flex space-x-2">
+                  <button 
+                    onClick={() => handleEdit(request)} 
+                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(request.id)} 
+                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
             
             <p className="text-sm text-gray-600 mb-3">
