@@ -128,7 +128,18 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
     // Check if current user is the founder who made the request
     if (user?.email) {
       const requestFounder = founders.find(f => f.id === request.founder_id);
-      return requestFounder?.email === user.email;
+      
+      // Debug logging
+      console.log('Permission check:', {
+        userEmail: user.email,
+        requestFounderId: request.founder_id,
+        requestFounder: requestFounder,
+        requestFounderEmail: requestFounder?.email,
+        emailMatch: requestFounder?.email?.toLowerCase() === user.email.toLowerCase(),
+        foundersLength: founders.length
+      });
+      
+      return requestFounder?.email?.toLowerCase() === user.email.toLowerCase();
     }
     
     return false;
@@ -136,7 +147,7 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   const getCurrentUserFounder = useCallback(() => {
     if (user?.email) {
-      return founders.find(f => f.email === user.email);
+      return founders.find(f => f.email?.toLowerCase() === user.email.toLowerCase());
     }
     return null;
   }, [user, founders]);
