@@ -88,8 +88,9 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
   };
 
   const resetForm = () => {
+    const currentFounder = getCurrentUserFounder();
     setFormData({
-      founder_id: 0,
+      founder_id: currentFounder ? currentFounder.id : 0,
       title: '',
       description: '',
       category: '',
@@ -132,6 +133,13 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
     
     return false;
   }, [isAdmin, user, founders]);
+
+  const getCurrentUserFounder = useCallback(() => {
+    if (user?.email) {
+      return founders.find(f => f.email === user.email);
+    }
+    return null;
+  }, [user, founders]);
 
   const getUrgencyClass = (urgency: string) => {
     switch (urgency) {
@@ -189,19 +197,27 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
             
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">Founder *</label>
-                <select
-                  value={formData.founder_id}
-                  onChange={(e) => setFormData({...formData, founder_id: parseInt(e.target.value)})}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value={0}>Select a founder</option>
-                  {founders.map(founder => (
-                    <option key={founder.id} value={founder.id}>
-                      {founder.name}
-                    </option>
-                  ))}
-                </select>
+                {editingRequest ? (
+                  // Show dropdown for editing (admins might need to change founder)
+                  <select
+                    value={formData.founder_id}
+                    onChange={(e) => setFormData({...formData, founder_id: parseInt(e.target.value)})}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value={0}>Select a founder</option>
+                    {founders.map(founder => (
+                      <option key={founder.id} value={founder.id}>
+                        {founder.name}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  // Show current user name for new requests
+                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
+                    {getCurrentUserFounder()?.name || 'Current User'}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
