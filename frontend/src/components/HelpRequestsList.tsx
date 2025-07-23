@@ -135,11 +135,11 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         requestFounderId: request.founder_id,
         requestFounder: requestFounder,
         requestFounderEmail: requestFounder?.email,
-        emailMatch: requestFounder?.email?.toLowerCase() === user.email.toLowerCase(),
+        emailMatch: requestFounder?.email?.toLowerCase() === user.email?.toLowerCase(),
         foundersLength: founders.length
       });
       
-      return requestFounder?.email?.toLowerCase() === user.email.toLowerCase();
+      return requestFounder?.email?.toLowerCase() === user.email?.toLowerCase();
     }
     
     return false;
@@ -147,7 +147,7 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   const getCurrentUserFounder = useCallback(() => {
     if (user?.email) {
-      return founders.find(f => f.email?.toLowerCase() === user.email.toLowerCase());
+      return founders.find(f => f.email?.toLowerCase() === user.email?.toLowerCase());
     }
     return null;
   }, [user, founders]);
