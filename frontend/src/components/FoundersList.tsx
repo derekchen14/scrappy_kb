@@ -8,9 +8,11 @@ type ViewType = 'table' | 'card' | 'compact';
 
 interface FoundersListProps {
   onStartupClick?: (startup: Startup) => void;
+  founderToShow?: Founder | null;
+  onFounderShown?: () => void;
 }
 
-const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick }) => {
+const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToShow, onFounderShown }) => {
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
   const { isAdmin, canEditProfile, canDeleteUser } = useAdmin();
   const [founders, setFounders] = useState<Founder[]>([]);
@@ -47,6 +49,15 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick }) => {
     fetchStartups();
     fetchHobbies();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (founderToShow) {
+      setSelectedFounder(founderToShow);
+      if (onFounderShown) {
+        onFounderShown();
+      }
+    }
+  }, [founderToShow, onFounderShown]);
 
   const fetchFounders = async () => {
     try {

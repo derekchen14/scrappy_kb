@@ -103,6 +103,10 @@ def claim_founder_profile(db: Session, founder_id: int, auth0_user_id: str):
         db.refresh(db_founder)
     return db_founder
 
+def get_founders_by_startup_id(db: Session, startup_id: int):
+    """Get all founders associated with a specific startup."""
+    return db.query(models.Founder).filter(models.Founder.startup_id == startup_id).all()
+
 # Skill CRUD operations
 def create_skill(db: Session, skill: schemas.SkillCreate):
     db_skill = models.Skill(**skill.model_dump())

@@ -35,6 +35,7 @@ export const startupAPI = {
   create: (startup: StartupCreate) => api.post<Startup>('/startups/', startup),
   update: (id: number, startup: StartupCreate) => api.put<Startup>(`/startups/${id}`, startup),
   delete: (id: number) => api.delete(`/startups/${id}`),
+  getFounders: (id: number) => api.get<Founder[]>(`/startups/${id}/founders`),
 };
 
 // Help Request API

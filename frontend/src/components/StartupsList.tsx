@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Startup, StartupCreate } from '../types';
+import { Startup, StartupCreate, Founder } from '../types';
 import { startupAPI } from '../api';
 import Modal from './Modal';
 
@@ -7,13 +7,15 @@ interface StartupsListProps {
   searchQuery?: string;
   startupToShow?: Startup | null;
   onStartupShown?: () => void;
+  onFounderClick?: (founder: Founder) => void;
 }
 
-const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupToShow, onStartupShown }) => {
+const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupToShow, onStartupShown, onFounderClick }) => {
   const [startups, setStartups] = useState<Startup[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingStartup, setEditingStartup] = useState<Startup | null>(null);
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
+  const [startupFounders, setStartupFounders] = useState<Founder[]>([]);
   const [formData, setFormData] = useState<StartupCreate>({
     name: '',
     description: '',
@@ -27,6 +29,14 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupTo
   useEffect(() => {
     fetchStartups();
   }, []);
+
+  useEffect(() => {
+    if (selectedStartup) {
+      fetchStartupFounders(selectedStartup.id);
+    } else {
+      setStartupFounders([]);
+    }
+  }, [selectedStartup]);
 
   useEffect(() => {
     if (startupToShow) {
@@ -43,6 +53,16 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupTo
       setStartups(response.data);
     } catch (error) {
       console.error('Error fetching startups:', error);
+    }
+  };
+
+  const fetchStartupFounders = async (startupId: number) => {
+    try {
+      const response = await startupAPI.getFounders(startupId);
+      setStartupFounders(response.data);
+    } catch (error) {
+      console.error('Failed to fetch startup founders:', error);
+      setStartupFounders([]);
     }
   };
 
@@ -98,6 +118,13 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupTo
     });
     setEditingStartup(null);
     setShowForm(false);
+  };
+
+  const handleFounderClick = (founder: Founder) => {
+    if (onFounderClick) {
+      setSelectedStartup(null); // Close startup modal
+      onFounderClick(founder); // Navigate to founders tab and show founder modal
+    }
   };
 
   const startupStages = [
@@ -467,6 +494,24 @@ const StartupsList: React.FC<StartupsListProps> = ({ searchQuery = '', startupTo
                   >
                     {selectedStartup.website_url}
                   </a>
+                </div>
+              )}
+
+              {/* Founders Section */}
+              {startupFounders.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Founders ({startupFounders.length})</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {startupFounders.map((founder) => (
+                      <span
+                        key={founder.id}
+                        onClick={() => handleFounderClick(founder)}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer transition-colors"
+                      >
+                        {founder.name}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

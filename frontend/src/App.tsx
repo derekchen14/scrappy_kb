@@ -12,7 +12,7 @@ import LogoutButton from './components/LogoutButton';
 import Profile from './components/Profile';
 import { useAdmin } from './hooks/useAdmin';
 import { useProfileSetup } from './hooks/useProfileSetup';
-import { Startup } from './types';
+import { Startup, Founder } from './types';
 
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0();
@@ -20,10 +20,16 @@ function App() {
   const { needsProfileSetup, loading: profileLoading, completeProfileSetup } = useProfileSetup();
   const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin'>('founders');
   const [startupToShow, setStartupToShow] = useState<Startup | null>(null);
+  const [founderToShow, setFounderToShow] = useState<Founder | null>(null);
 
   const navigateToStartup = (startup: Startup) => {
     setActiveTab('startups');
     setStartupToShow(startup);
+  };
+
+  const navigateToFounder = (founder: Founder) => {
+    setActiveTab('founders');
+    setFounderToShow(founder);
   };
 
   // Redirect non-admin users away from admin-only tabs
@@ -160,9 +166,9 @@ function App() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} />}
+        {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} founderToShow={founderToShow} onFounderShown={() => setFounderToShow(null)} />}
         {activeTab === 'skills' && isAdmin && <SkillsList />}
-        {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} />}
+        {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} onFounderClick={navigateToFounder} />}
         {activeTab === 'help-requests' && <HelpRequestsList />}
         {activeTab === 'events' && <EventsList />}
         {activeTab === 'admin' && isAdmin && <AdminDashboard onNavigateToTab={setActiveTab} />}

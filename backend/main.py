@@ -166,6 +166,16 @@ def delete_startup(startup_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Startup not found")
     return {"message": "Startup deleted successfully"}
 
+@app.get("/startups/{startup_id}/founders", response_model=List[schemas.Founder])
+def get_startup_founders(startup_id: int, db: Session = Depends(get_db)):
+    """Get all founders associated with a specific startup."""
+    startup = crud.get_startup(db, startup_id=startup_id)
+    if startup is None:
+        raise HTTPException(status_code=404, detail="Startup not found")
+    
+    founders = crud.get_founders_by_startup_id(db, startup_id=startup_id)
+    return founders
+
 # Help Request endpoints
 @app.post("/help-requests/", response_model=schemas.HelpRequest)
 def create_help_request(help_request: schemas.HelpRequestCreate, db: Session = Depends(get_db)):
