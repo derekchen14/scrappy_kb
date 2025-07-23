@@ -608,36 +608,52 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 {filteredFounders.map(founder => (
                   <tr key={founder.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => {
-                          if (!isProfileVisible(founder)) {
-                            alert('This profile is marked as not visible and details cannot be viewed.');
-                            return;
-                          }
-                          setSelectedFounder(founder);
-                        }}
-                        className="text-left"
-                      >
-                        <div className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
-                          {founder.name}
-                        </div>
-                      </button>
-                      {founder.linkedin_url && (
-                        <div className="text-sm">
-                          <a 
-                            href={founder.linkedin_url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-gray-500 hover:text-blue-600 hover:underline transition-colors"
-                            onClick={(e) => e.stopPropagation()}
+                      <div className="flex items-center space-x-3">
+                        {founder.profile_image_url && (
+                          <img
+                            src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${founder.profile_image_url}`}
+                            alt={founder.name}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        )}
+                        <div>
+                          <button
+                            onClick={() => {
+                              if (!isProfileVisible(founder)) {
+                                alert('This profile is marked as not visible and details cannot be viewed.');
+                                return;
+                              }
+                              setSelectedFounder(founder);
+                            }}
+                            className="text-left"
                           >
-                            {founder.linkedin_url}
-                          </a>
+                            <div className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                              {founder.name}
+                            </div>
+                          </button>
+                          {isProfileVisible(founder) && founder.linkedin_url && (
+                            <div className="text-sm">
+                              <a 
+                                href={founder.linkedin_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-gray-500 hover:text-blue-600 hover:underline transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {founder.linkedin_url}
+                              </a>
+                            </div>
+                          )}
+                          {!isProfileVisible(founder) && (
+                            <div className="text-sm text-gray-400">
+                              (profile hidden)
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {founder.email}
+                      {isProfileVisible(founder) ? founder.email : ""}
                     </td>
                     {!isAdmin && (
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -729,7 +745,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 <div className="flex items-center space-x-4">
                   {founder.profile_image_url && (
                     <img 
-                      src={`http://localhost:8000${founder.profile_image_url}`}
+                      src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${founder.profile_image_url}`}
                       alt={founder.name}
                       className="w-16 h-16 object-cover rounded-full border-2 border-gray-300"
                     />
@@ -756,12 +772,14 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 </div>
               </div>
               
-              <p className="text-gray-600 mb-2">{founder.email}</p>
+              {isProfileVisible(founder) && (
+                <p className="text-gray-600 mb-2">{founder.email}</p>
+              )}
               {founder.bio && <p className="text-gray-700 mb-3">{founder.bio}</p>}
               {founder.location && <p className="text-gray-500 mb-3 flex items-center">📍 {founder.location}</p>}
               
               <div className="flex space-x-4 mb-4">
-                {founder.linkedin_url && (
+                {isProfileVisible(founder) && founder.linkedin_url && (
                   <a 
                     href={founder.linkedin_url} 
                     target="_blank" 
@@ -771,7 +789,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                     LinkedIn
                   </a>
                 )}
-                {founder.twitter_url && (
+                {isProfileVisible(founder) && founder.twitter_url && (
                   <a 
                     href={founder.twitter_url} 
                     target="_blank" 
@@ -781,7 +799,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                     Twitter
                   </a>
                 )}
-                {founder.github_url && (
+                {isProfileVisible(founder) && founder.github_url && (
                   <a 
                     href={founder.github_url} 
                     target="_blank" 
@@ -885,8 +903,21 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
         {selectedFounder && (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedFounder.name}</h3>
-              <p className="text-gray-600 mb-4">{selectedFounder.email}</p>
+              <div className="flex items-center space-x-4 mb-4">
+                {selectedFounder.profile_image_url && (
+                  <img
+                    src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${selectedFounder.profile_image_url}`}
+                    alt={selectedFounder.name}
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                  />
+                )}
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">{selectedFounder.name}</h3>
+                  {isProfileVisible(selectedFounder) && (
+                    <p className="text-gray-600">{selectedFounder.email}</p>
+                  )}
+                </div>
+              </div>
               
               {selectedFounder.bio && (
                 <p className="text-gray-700 mb-4">{selectedFounder.bio}</p>
@@ -897,7 +928,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
               )}
               
               <div className="flex space-x-4 mb-4">
-                {selectedFounder.linkedin_url && (
+                {isProfileVisible(selectedFounder) && selectedFounder.linkedin_url && (
                   <a 
                     href={selectedFounder.linkedin_url} 
                     target="_blank" 
@@ -907,7 +938,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                     LinkedIn
                   </a>
                 )}
-                {selectedFounder.twitter_url && (
+                {isProfileVisible(selectedFounder) && selectedFounder.twitter_url && (
                   <a 
                     href={selectedFounder.twitter_url} 
                     target="_blank" 
@@ -917,7 +948,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                     Twitter
                   </a>
                 )}
-                {selectedFounder.github_url && (
+                {isProfileVisible(selectedFounder) && selectedFounder.github_url && (
                   <a 
                     href={selectedFounder.github_url} 
                     target="_blank" 
