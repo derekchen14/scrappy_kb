@@ -89,6 +89,14 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   const resetForm = () => {
     const currentFounder = getCurrentUserFounder();
+    
+    // Debug logging
+    console.log('resetForm:', {
+      currentFounder: currentFounder,
+      founderId: currentFounder ? currentFounder.id : 0,
+      foundersLoaded: founders.length > 0
+    });
+    
     setFormData({
       founder_id: currentFounder ? currentFounder.id : 0,
       title: '',
@@ -147,7 +155,17 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   const getCurrentUserFounder = useCallback(() => {
     if (user?.email) {
-      return founders.find(f => f.email?.toLowerCase() === user.email?.toLowerCase());
+      const foundFounder = founders.find(f => f.email?.toLowerCase() === user.email?.toLowerCase());
+      
+      // Debug logging
+      console.log('getCurrentUserFounder:', {
+        userEmail: user.email,
+        foundersCount: founders.length,
+        founderEmails: founders.map(f => f.email),
+        foundFounder: foundFounder
+      });
+      
+      return foundFounder;
     }
     return null;
   }, [user, founders]);
