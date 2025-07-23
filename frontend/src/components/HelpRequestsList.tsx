@@ -211,7 +211,22 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900">Help Requests</h2>
         <button 
-          onClick={() => setShowForm(true)} 
+          onClick={() => {
+            const currentFounder = getCurrentUserFounder();
+            console.log('Opening form - setting founder_id to:', currentFounder?.id);
+            
+            // Set the form data with current user's founder ID
+            setFormData({
+              founder_id: currentFounder ? currentFounder.id : 0,
+              title: '',
+              description: '',
+              category: '',
+              urgency: 'Medium',
+              status: 'Open'
+            });
+            setEditingRequest(null);
+            setShowForm(true);
+          }} 
           className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
         >
           Add Help Request
