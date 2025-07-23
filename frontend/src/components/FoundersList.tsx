@@ -15,6 +15,15 @@ interface FoundersListProps {
 const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToShow, onFounderShown }) => {
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
   const { isAdmin, canEditProfile, canDeleteUser } = useAdmin();
+
+  // Helper function to handle image URLs (both relative and absolute)
+  const getImageUrl = (imageUrl: string) => {
+    if (!imageUrl) return '';
+    if (imageUrl.startsWith('http')) {
+      return imageUrl; // Already a complete URL
+    }
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${imageUrl}`;
+  };
   const [founders, setFounders] = useState<Founder[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [startups, setStartups] = useState<Startup[]>([]);
@@ -611,7 +620,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                       <div className="flex items-center space-x-3">
                         {founder.profile_image_url && (
                           <img
-                            src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${founder.profile_image_url}`}
+                            src={getImageUrl(founder.profile_image_url)}
                             alt={founder.name}
                             className="h-10 w-10 rounded-full object-cover"
                           />
@@ -745,7 +754,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 <div className="flex items-center space-x-4">
                   {founder.profile_image_url && (
                     <img 
-                      src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${founder.profile_image_url}`}
+                      src={getImageUrl(founder.profile_image_url)}
                       alt={founder.name}
                       className="w-16 h-16 object-cover rounded-full border-2 border-gray-300"
                     />
@@ -906,7 +915,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
               <div className="flex items-center space-x-4 mb-4">
                 {selectedFounder.profile_image_url && (
                   <img
-                    src={`${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${selectedFounder.profile_image_url}`}
+                    src={getImageUrl(selectedFounder.profile_image_url)}
                     alt={selectedFounder.name}
                     className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
                   />
