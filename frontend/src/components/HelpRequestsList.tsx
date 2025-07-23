@@ -4,9 +4,10 @@ import { helpRequestAPI, founderAPI } from '../api';
 
 interface HelpRequestsListProps {
   searchQuery?: string;
+  onFounderClick?: (founder: Founder) => void;
 }
 
-const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' }) => {
+const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', onFounderClick }) => {
   const [helpRequests, setHelpRequests] = useState<HelpRequest[]>([]);
   const [founders, setFounders] = useState<Founder[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -103,6 +104,15 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' })
     const founder = founders.find(f => f.id === founderId);
     return founder ? founder.name : 'Unknown';
   }, [founders]);
+
+  const handleFounderClick = useCallback((founderId: number) => {
+    if (onFounderClick) {
+      const founder = founders.find(f => f.id === founderId);
+      if (founder) {
+        onFounderClick(founder);
+      }
+    }
+  }, [founders, onFounderClick]);
 
   const getUrgencyClass = (urgency: string) => {
     switch (urgency) {
@@ -285,7 +295,13 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '' })
             </div>
             
             <p className="text-sm text-gray-600 mb-3">
-              <span className="font-medium">Requested by:</span> {getFounderName(request.founder_id)}
+              <span className="font-medium">Requested by:</span> 
+              <span 
+                onClick={() => handleFounderClick(request.founder_id)}
+                className="text-blue-600 hover:text-blue-800 cursor-pointer hover:underline transition-colors ml-1"
+              >
+                {getFounderName(request.founder_id)}
+              </span>
             </p>
             
             <p className="text-gray-700 mb-4">{request.description}</p>

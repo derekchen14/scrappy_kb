@@ -169,7 +169,7 @@ function App() {
         {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} founderToShow={founderToShow} onFounderShown={() => setFounderToShow(null)} />}
         {activeTab === 'skills' && isAdmin && <SkillsList />}
         {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} onFounderClick={navigateToFounder} />}
-        {activeTab === 'help-requests' && <HelpRequestsList />}
+        {activeTab === 'help-requests' && <HelpRequestsList onFounderClick={navigateToFounder} />}
         {activeTab === 'events' && <EventsList />}
         {activeTab === 'admin' && isAdmin && <AdminDashboard onNavigateToTab={setActiveTab} />}
       </main>
