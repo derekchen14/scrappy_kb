@@ -32,11 +32,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
     try {
       setLoading(true);
       
-      // Fetch all data in parallel
+      // Fetch all data in parallel with higher limits to get all records
       const [foundersRes, startupsRes, helpRequestsRes] = await Promise.all([
-        publicAPI.get<Founder[]>('/founders/'),
-        publicAPI.get<Startup[]>('/startups/'),
-        publicAPI.get<HelpRequest[]>('/help-requests/')
+        publicAPI.get<Founder[]>('/founders/?limit=1000'),
+        publicAPI.get<Startup[]>('/startups/?limit=1000'),
+        publicAPI.get<HelpRequest[]>('/help-requests/?limit=1000')
       ]);
 
       const foundersData = foundersRes.data;
