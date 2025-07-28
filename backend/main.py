@@ -101,10 +101,46 @@ def update_founder(founder_id: int, founder: schemas.FounderCreate, db: Session 
 
 @app.delete("/founders/{founder_id}")
 def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    deleted_founder = crud.delete_founder(db, founder_id=founder_id)
-    if deleted_founder is None:
-        raise HTTPException(status_code=404, detail="Founder not found")
-    return {"message": "Founder deleted successfully"}
+    from auth import is_admin_user
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    try:
+        # Check if user is admin
+        user_email = current_user.get('email', '')
+        logger.info(f"Delete founder request from user: {user_email} for founder ID: {founder_id}")
+        
+        if not is_admin_user(user_email):
+            logger.warning(f"Non-admin user {user_email} attempted to delete founder {founder_id}")
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+        
+        # Check if founder exists
+        founder = crud.get_founder(db, founder_id=founder_id)
+        if founder is None:
+            logger.warning(f"Attempt to delete non-existent founder {founder_id}")
+            raise HTTPException(status_code=404, detail="Founder not found")
+        
+        # Check for related help requests
+        help_requests_count = db.query(models.HelpRequest).filter(models.HelpRequest.founder_id == founder_id).count()
+        if help_requests_count > 0:
+            logger.warning(f"Cannot delete founder {founder_id}: {help_requests_count} help requests exist")
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot delete founder: {help_requests_count} help request(s) are associated with this founder. Delete help requests first."
+            )
+        
+        # Delete the founder
+        deleted_founder = crud.delete_founder(db, founder_id=founder_id)
+        logger.info(f"Successfully deleted founder {founder_id} by admin {user_email}")
+        return {"message": "Founder deleted successfully"}
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error deleting founder {founder_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 # Skill endpoints
 @app.post("/skills/", response_model=schemas.Skill)
