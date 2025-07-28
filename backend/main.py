@@ -23,8 +23,21 @@ UPLOAD_DIR.mkdir(exist_ok=True)
 @app.get("/uploads/{filename}")
 async def serve_uploaded_file(filename: str):
     file_path = UPLOAD_DIR / filename
+    print(f"Looking for file: {file_path}")
+    print(f"File exists: {file_path.exists()}")
+    print(f"Upload directory contents: {list(UPLOAD_DIR.glob('*')) if UPLOAD_DIR.exists() else 'Directory does not exist'}")
+    
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
+        # For now, return a 404 but with CORS headers so the frontend can handle it gracefully
+        raise HTTPException(
+            status_code=404, 
+            detail="File not found",
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "*",
+            }
+        )
     
     # Return file with proper CORS headers
     return FileResponse(
@@ -65,6 +78,62 @@ def health_check():
 @app.get("/")
 def read_root():
     return {"message": "Scrappy Founders Knowledge Base API"}
+
+# Admin endpoint to list all uploaded files
+@app.get("/admin/list-uploads")
+def list_uploads(current_user: dict = Depends(get_current_user)):
+    from auth import is_admin_user
+    
+    # Check if user is admin
+    user_email = current_user.get('email', '')
+    if not is_admin_user(user_email):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    if not UPLOAD_DIR.exists():
+        return {"message": "Uploads directory does not exist", "files": []}
+    
+    files = []
+    for file_path in UPLOAD_DIR.glob('*'):
+        if file_path.is_file():
+            files.append({
+                "filename": file_path.name,
+                "size": file_path.stat().st_size,
+                "url": f"/uploads/{file_path.name}"
+            })
+    
+    return {
+        "uploads_directory": str(UPLOAD_DIR.absolute()),
+        "total_files": len(files),
+        "files": files
+    }
+
+# Admin endpoint to clean up missing profile images
+@app.post("/admin/cleanup-missing-images")
+def cleanup_missing_images(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    from auth import is_admin_user
+    
+    # Check if user is admin
+    user_email = current_user.get('email', '')
+    if not is_admin_user(user_email):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    # Find founders with profile images that don't exist on disk
+    founders = db.query(models.Founder).filter(models.Founder.profile_image_url.isnot(None)).all()
+    cleaned_count = 0
+    
+    for founder in founders:
+        if founder.profile_image_url:
+            # Extract filename from URL (e.g., "/uploads/filename.png" -> "filename.png")
+            filename = founder.profile_image_url.split('/')[-1]
+            file_path = UPLOAD_DIR / filename
+            
+            if not file_path.exists():
+                print(f"Cleaning missing image for founder {founder.id}: {founder.profile_image_url}")
+                founder.profile_image_url = None
+                cleaned_count += 1
+    
+    db.commit()
+    return {"message": f"Cleaned up {cleaned_count} missing profile images"}
 
 # Protected endpoint to verify authentication
 @app.get("/protected")
