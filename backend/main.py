@@ -100,7 +100,7 @@ def update_founder(founder_id: int, founder: schemas.FounderCreate, db: Session 
     return updated_founder
 
 @app.delete("/founders/{founder_id}")
-def delete_founder(founder_id: int, db: Session = Depends(get_db)):
+def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     deleted_founder = crud.delete_founder(db, founder_id=founder_id)
     if deleted_founder is None:
         raise HTTPException(status_code=404, detail="Founder not found")
