@@ -119,19 +119,22 @@ def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user:
             logger.warning(f"Attempt to delete non-existent founder {founder_id}")
             raise HTTPException(status_code=404, detail="Founder not found")
         
-        # Check for related help requests
-        help_requests_count = db.query(models.HelpRequest).filter(models.HelpRequest.founder_id == founder_id).count()
-        if help_requests_count > 0:
-            logger.warning(f"Cannot delete founder {founder_id}: {help_requests_count} help requests exist")
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Cannot delete founder: {help_requests_count} help request(s) are associated with this founder. Delete help requests first."
-            )
+        # Cascade delete: Remove all associated help requests first
+        help_requests = db.query(models.HelpRequest).filter(models.HelpRequest.founder_id == founder_id).all()
+        help_requests_count = len(help_requests)
+        for help_request in help_requests:
+            db.delete(help_request)
         
-        # Delete the founder
+        # Delete the founder (this will automatically handle the startup relationship and many-to-many relationships)
         deleted_founder = crud.delete_founder(db, founder_id=founder_id)
-        logger.info(f"Successfully deleted founder {founder_id} by admin {user_email}")
-        return {"message": "Founder deleted successfully"}
+        
+        # Note: No need to explicitly commit here as crud.delete_founder already commits
+        
+        logger.info(f"Successfully deleted founder {founder_id} and {help_requests_count} associated help requests by admin {user_email}")
+        return {
+            "message": "Founder deleted successfully", 
+            "details": f"Also removed {help_requests_count} associated help requests"
+        }
         
     except HTTPException:
         # Re-raise HTTP exceptions as-is
