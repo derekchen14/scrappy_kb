@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import models, schemas, database, crud
@@ -18,8 +19,22 @@ app = FastAPI(title="Scrappy Founders Knowledge Base")
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# Mount static files for serving uploaded images
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Custom endpoint to serve uploaded images with CORS headers
+@app.get("/uploads/{filename}")
+async def serve_uploaded_file(filename: str):
+    file_path = UPLOAD_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Return file with proper CORS headers
+    return FileResponse(
+        path=file_path,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # CORS middleware
 app.add_middleware(
