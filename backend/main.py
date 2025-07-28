@@ -101,7 +101,7 @@ def update_founder(founder_id: int, founder: schemas.FounderCreate, db: Session 
 
 @app.delete("/founders/{founder_id}")
 def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    from auth import is_admin_user
+    from auth import is_admin_user, ADMIN_EMAILS
     import logging
     
     logger = logging.getLogger(__name__)
@@ -110,6 +110,9 @@ def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user:
         # Check if user is admin
         user_email = current_user.get('email', '')
         logger.info(f"Delete founder request from user: {user_email} for founder ID: {founder_id}")
+        logger.info(f"Current user JWT payload: {current_user}")
+        logger.info(f"Admin emails list: {ADMIN_EMAILS}")
+        logger.info(f"Is admin check result: {is_admin_user(user_email)}")
         
         if not is_admin_user(user_email):
             logger.warning(f"Non-admin user {user_email} attempted to delete founder {founder_id}")
