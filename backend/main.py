@@ -79,16 +79,9 @@ def health_check():
 def read_root():
     return {"message": "Scrappy Founders Knowledge Base API"}
 
-# Admin endpoint to list all uploaded files
-@app.get("/admin/list-uploads")
-def list_uploads(current_user: dict = Depends(get_current_user)):
-    from auth import is_admin_user
-    
-    # Check if user is admin
-    user_email = current_user.get('email', '')
-    if not is_admin_user(user_email):
-        raise HTTPException(status_code=403, detail="Admin privileges required")
-    
+# Public endpoint to list uploaded files (for debugging)
+@app.get("/uploads/")
+def list_uploads():
     if not UPLOAD_DIR.exists():
         return {"message": "Uploads directory does not exist", "files": []}
     
@@ -97,14 +90,12 @@ def list_uploads(current_user: dict = Depends(get_current_user)):
         if file_path.is_file():
             files.append({
                 "filename": file_path.name,
-                "size": file_path.stat().st_size,
                 "url": f"/uploads/{file_path.name}"
             })
     
     return {
-        "uploads_directory": str(UPLOAD_DIR.absolute()),
         "total_files": len(files),
-        "files": files
+        "files": sorted(files, key=lambda x: x["filename"])
     }
 
 # Admin endpoint to clean up missing profile images
