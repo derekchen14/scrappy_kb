@@ -74,6 +74,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     """
     token = credentials.credentials
     payload = auth0_bearer.verify_jwt(token)
+    
+    # If email is not in JWT payload, fetch it from userinfo endpoint
+    if 'email' not in payload:
+        try:
+            userinfo_url = f"https://{AUTH0_DOMAIN}/userinfo"
+            headers = {"Authorization": f"Bearer {token}"}
+            response = requests.get(userinfo_url, headers=headers)
+            if response.status_code == 200:
+                userinfo = response.json()
+                payload['email'] = userinfo.get('email', '')
+        except Exception as e:
+            # Silently fail - email will remain empty
+            pass
+    
     return payload
 
 def require_auth(f):
