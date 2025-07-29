@@ -79,52 +79,80 @@ def health_check():
 def read_root():
     return {"message": "Scrappy Founders Knowledge Base API"}
 
-# Public endpoint to list uploaded files (for debugging)
-@app.get("/uploads/")
-def list_uploads():
-    if not UPLOAD_DIR.exists():
-        return {"message": "Uploads directory does not exist", "files": []}
+# Documentation endpoint - How image storage works
+@app.get("/admin/image-storage-info")
+def image_storage_info(db: Session = Depends(get_db)):
+    """
+    Documents how image storage works in this application
+    """
     
-    files = []
-    for file_path in UPLOAD_DIR.glob('*'):
-        if file_path.is_file():
-            files.append({
-                "filename": file_path.name,
-                "url": f"/uploads/{file_path.name}"
+    # Get all founders with their image URLs
+    founders_with_images = db.query(models.Founder).filter(models.Founder.profile_image_url.isnot(None)).all()
+    
+    # Check what's actually on disk
+    disk_files = []
+    if UPLOAD_DIR.exists():
+        for file_path in UPLOAD_DIR.glob('*'):
+            if file_path.is_file():
+                disk_files.append(file_path.name)
+    
+    # Analyze the founders' image URLs
+    db_image_info = []
+    for founder in founders_with_images:
+        if founder.profile_image_url:
+            # Check if it's a relative path or absolute URL
+            url = founder.profile_image_url
+            is_relative = url.startswith('/uploads/')
+            is_absolute = url.startswith('http')
+            
+            # Extract filename if possible
+            filename = None
+            if '/' in url:
+                filename = url.split('/')[-1]
+            
+            db_image_info.append({
+                "founder_id": founder.id,
+                "founder_name": founder.name,
+                "profile_image_url": url,
+                "is_relative_path": is_relative,
+                "is_absolute_url": is_absolute,
+                "extracted_filename": filename,
+                "file_exists_on_disk": filename in disk_files if filename else False
             })
     
     return {
-        "total_files": len(files),
-        "files": sorted(files, key=lambda x: x["filename"])
+        "documentation": {
+            "image_upload_process": {
+                "1": "Images are uploaded via POST /upload-image/ endpoint",
+                "2": "Files are saved to UPLOAD_DIR (./uploads/)",  
+                "3": "Unique filename is generated using uuid.uuid4()",
+                "4": "Endpoint returns {'image_url': '/uploads/filename.ext'}",
+                "5": "Frontend stores this URL in founder.profile_image_url"
+            },
+            "image_serving_process": {
+                "1": "Images served via GET /uploads/{filename} endpoint",
+                "2": "Frontend calls getImageUrl() helper function",
+                "3": "If URL starts with 'http', returns as-is (absolute URL)",
+                "4": "If URL is relative, prepends API_URL to make it absolute"
+            },
+            "storage_locations": {
+                "backend_directory": str(UPLOAD_DIR.absolute()) if UPLOAD_DIR.exists() else "Directory does not exist",
+                "served_via": "Custom FastAPI endpoint at /uploads/{filename}",
+                "cors_headers": "Added via custom endpoint (not StaticFiles)"
+            }
+        },
+        "current_state": {
+            "upload_directory_exists": UPLOAD_DIR.exists(),
+            "files_on_disk": {
+                "count": len(disk_files),
+                "filenames": sorted(disk_files)
+            },
+            "database_records": {
+                "founders_with_images": len(founders_with_images),
+                "image_details": db_image_info
+            }
+        }
     }
-
-# Admin endpoint to clean up missing profile images
-@app.post("/admin/cleanup-missing-images")
-def cleanup_missing_images(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    from auth import is_admin_user
-    
-    # Check if user is admin
-    user_email = current_user.get('email', '')
-    if not is_admin_user(user_email):
-        raise HTTPException(status_code=403, detail="Admin privileges required")
-    
-    # Find founders with profile images that don't exist on disk
-    founders = db.query(models.Founder).filter(models.Founder.profile_image_url.isnot(None)).all()
-    cleaned_count = 0
-    
-    for founder in founders:
-        if founder.profile_image_url:
-            # Extract filename from URL (e.g., "/uploads/filename.png" -> "filename.png")
-            filename = founder.profile_image_url.split('/')[-1]
-            file_path = UPLOAD_DIR / filename
-            
-            if not file_path.exists():
-                print(f"Cleaning missing image for founder {founder.id}: {founder.profile_image_url}")
-                founder.profile_image_url = None
-                cleaned_count += 1
-    
-    db.commit()
-    return {"message": f"Cleaned up {cleaned_count} missing profile images"}
 
 # Protected endpoint to verify authentication
 @app.get("/protected")

@@ -5,6 +5,7 @@ import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
 
 type ViewType = 'table' | 'card' | 'compact';
+type SortType = 'none' | 'asc' | 'desc';
 
 interface FoundersListProps {
   onStartupClick?: (startup: Startup) => void;
@@ -17,13 +18,13 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
   const { isAdmin, canEditProfile, canDeleteUser } = useAdmin();
 
   // Helper function to handle image URLs (both relative and absolute)
-  const getImageUrl = (imageUrl: string) => {
-    if (!imageUrl) return '';
-    if (imageUrl.startsWith('http')) {
-      return imageUrl; // Already a complete URL
-    }
-    return `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${imageUrl}`;
-  };
+  // const getImageUrl = (imageUrl: string) => {
+  //   if (!imageUrl) return '';
+  //   if (imageUrl.startsWith('http')) {
+  //     return imageUrl; // Already a complete URL
+  //   }
+  //   return `${process.env.REACT_APP_API_URL || 'http://localhost:8080'}${imageUrl}`;
+  // };
   const [founders, setFounders] = useState<Founder[]>([]);
   const [skills, setSkills] = useState<Skill[]>([]);
   const [startups, setStartups] = useState<Startup[]>([]);
@@ -36,6 +37,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortType, setSortType] = useState<SortType>('none');
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
@@ -269,6 +271,26 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     return founder.profile_visible ?? true;
   };
 
+  const handleNameSort = () => {
+    if (sortType === 'none') {
+      setSortType('asc');
+    } else if (sortType === 'asc') {
+      setSortType('desc');
+    } else {
+      setSortType('none');
+    }
+  };
+
+  const getSortIcon = () => {
+    if (sortType === 'asc') {
+      return '▲';
+    } else if (sortType === 'desc') {
+      return '▼';
+    } else {
+      return '';
+    }
+  };
+
   const handleStartupClick = (startup: Startup) => {
     if (onStartupClick) {
       setSelectedFounder(null); // Close founder modal
@@ -279,33 +301,43 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
   };
 
   const filteredFounders = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return founders;
-    }
+    // First filter by search query
+    let result = founders;
     
-    const query = searchQuery.toLowerCase();
-    return founders.filter(founder => {
-      const matchesName = founder.name.toLowerCase().includes(query);
-      const matchesEmail = founder.email.toLowerCase().includes(query);
-      const matchesBio = founder.bio?.toLowerCase().includes(query);
-      const matchesLocation = founder.location?.toLowerCase().includes(query);
-      const matchesSkills = founder.skills.some(skill => 
-        skill.name.toLowerCase().includes(query) || 
-        skill.category?.toLowerCase().includes(query)
-      );
-      const matchesStartup = founder.startup && (
-        founder.startup.name.toLowerCase().includes(query) || 
-        founder.startup.industry?.toLowerCase().includes(query) ||
-        founder.startup.description?.toLowerCase().includes(query)
-      );
-      const matchesHobbies = founder.hobbies.some(hobby => 
-        hobby.name.toLowerCase().includes(query) || 
-        hobby.category?.toLowerCase().includes(query)
-      );
-      
-      return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartup || matchesHobbies;
-    });
-  }, [founders, searchQuery]);
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = founders.filter(founder => {
+        const matchesName = founder.name.toLowerCase().includes(query);
+        const matchesEmail = founder.email.toLowerCase().includes(query);
+        const matchesBio = founder.bio?.toLowerCase().includes(query);
+        const matchesLocation = founder.location?.toLowerCase().includes(query);
+        const matchesSkills = founder.skills.some(skill => 
+          skill.name.toLowerCase().includes(query) || 
+          skill.category?.toLowerCase().includes(query)
+        );
+        const matchesStartup = founder.startup && (
+          founder.startup.name.toLowerCase().includes(query) || 
+          founder.startup.industry?.toLowerCase().includes(query) ||
+          founder.startup.description?.toLowerCase().includes(query)
+        );
+        const matchesHobbies = founder.hobbies.some(hobby => 
+          hobby.name.toLowerCase().includes(query) || 
+          hobby.category?.toLowerCase().includes(query)
+        );
+        
+        return matchesName || matchesEmail || matchesBio || matchesLocation || matchesSkills || matchesStartup || matchesHobbies;
+      });
+    }
+
+    // Then sort by name if requested
+    if (sortType === 'asc') {
+      result = [...result].sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortType === 'desc') {
+      result = [...result].sort((a, b) => b.name.localeCompare(a.name));
+    }
+
+    return result;
+  }, [founders, searchQuery, sortType]);
 
   return (
     <div className="space-y-6">
@@ -587,7 +619,16 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Name
+                    #
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <button
+                      onClick={handleNameSort}
+                      className="flex items-center space-x-1 hover:text-gray-700 transition-colors"
+                    >
+                      <span>NAME</span>
+                      <span className="text-xs">{getSortIcon()}</span>
+                    </button>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Email
@@ -614,17 +655,20 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredFounders.map(founder => (
+                {filteredFounders.map((founder, index) => (
                   <tr key={founder.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {index + 1}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
-                        {founder.profile_image_url && (
+                        {/* {founder.profile_image_url && (
                           <img
                             src={getImageUrl(founder.profile_image_url)}
                             alt={founder.name}
                             className="h-10 w-10 rounded-full object-cover"
                           />
-                        )}
+                        )} */}
                         <div>
                           <button
                             onClick={() => {
@@ -752,13 +796,13 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
             <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center space-x-4">
-                  {founder.profile_image_url && (
+                  {/* {founder.profile_image_url && (
                     <img 
                       src={getImageUrl(founder.profile_image_url)}
                       alt={founder.name}
                       className="w-16 h-16 object-cover rounded-full border-2 border-gray-300"
                     />
-                  )}
+                  )} */}
                   <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
                 </div>
                 <div className="flex space-x-2">
@@ -913,13 +957,13 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
           <div className="space-y-6">
             <div>
               <div className="flex items-center space-x-4 mb-4">
-                {selectedFounder.profile_image_url && (
+                {/* {selectedFounder.profile_image_url && (
                   <img
                     src={getImageUrl(selectedFounder.profile_image_url)}
                     alt={selectedFounder.name}
                     className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
                   />
-                )}
+                )} */}
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">{selectedFounder.name}</h3>
                   {isProfileVisible(selectedFounder) && (
