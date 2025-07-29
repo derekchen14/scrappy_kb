@@ -9,6 +9,7 @@ export interface Founder {
   github_url?: string;
   profile_image_url?: string;
   profile_visible?: boolean;
+  auth0_user_id?: string;
   created_at: string;
   updated_at: string;
   skills: Skill[];
@@ -27,6 +28,7 @@ export interface FounderCreate {
   github_url?: string;
   profile_image_url?: string;
   profile_visible?: boolean;
+  auth0_user_id?: string;
   skill_ids?: number[];
   startup_id?: number;
   hobby_ids?: number[];

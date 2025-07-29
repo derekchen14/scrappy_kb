@@ -51,6 +51,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     github_url: '',
     profile_image_url: '',
     profile_visible: true,
+    auth0_user_id: undefined,
     skill_ids: [],
     startup_id: undefined,
     hobby_ids: []
@@ -163,8 +164,22 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
       }
       fetchFounders();
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving founder:', error);
+      
+      // More detailed error logging
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+        alert(`Error saving profile: ${error.response.data?.message || error.response.data?.detail || 'Server error'}. Please try again.`);
+      } else if (error.request) {
+        console.error('Request made but no response:', error.request);
+        alert('Error saving profile: Unable to connect to server. This may be a CORS or network issue. Please try again.');
+      } else {
+        console.error('Error setting up request:', error.message);
+        alert(`Error saving profile: ${error.message}. Please try again.`);
+      }
     }
   };
 
@@ -190,6 +205,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
       github_url: founder.github_url || '',
       profile_image_url: founder.profile_image_url || '',
       profile_visible: founder.profile_visible ?? true,
+      auth0_user_id: founder.auth0_user_id,
       skill_ids: founder.skills.map(skill => skill.id),
       startup_id: founder.startup?.id,
       hobby_ids: founder.hobbies.map(hobby => hobby.id)
@@ -225,6 +241,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
       github_url: '',
       profile_image_url: '',
       profile_visible: true,
+      auth0_user_id: undefined,
       skill_ids: [],
       startup_id: undefined,
       hobby_ids: []

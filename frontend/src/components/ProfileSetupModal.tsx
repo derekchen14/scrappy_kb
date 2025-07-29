@@ -34,6 +34,7 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
     github_url: existingData?.github_url || '',
     profile_image_url: existingData?.profile_image_url || '',
     profile_visible: existingData?.profile_visible ?? true,
+    auth0_user_id: existingData?.auth0_user_id || user?.sub,
     skill_ids: existingData?.skill_ids || [],
     startup_id: existingData?.startup_id,
     hobby_ids: existingData?.hobby_ids || []

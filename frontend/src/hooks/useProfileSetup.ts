@@ -5,7 +5,7 @@ import { Founder } from '../types';
 
 export const useProfileSetup = () => {
   const { user, isAuthenticated } = useAuth0();
-  const { publicAPI } = useAuthenticatedAPI();
+  const { authenticatedAPI } = useAuthenticatedAPI();
   const [needsProfileSetup, setNeedsProfileSetup] = useState(false);
   const [userFounder, setUserFounder] = useState<Founder | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,17 +18,18 @@ export const useProfileSetup = () => {
       }
 
       try {
-        // Check if user has a founder profile
-        const response = await publicAPI.get<Founder[]>('/founders/');
-        const founders = response.data;
-        const existingFounder = founders.find(f => f.email === user.email);
+        // Use the new backend endpoint that handles profile linking
+        const response = await authenticatedAPI.post('/auth/check-profile');
+        const { has_profile, profile_linked, founder } = response.data;
 
-        if (existingFounder) {
-          setUserFounder(existingFounder);
+        console.log('Profile check result:', { has_profile, profile_linked, founder });
+
+        if (has_profile && founder) {
+          setUserFounder(founder);
           // Check if profile is complete (has required fields)
-          const isComplete = existingFounder.name && 
-                           existingFounder.email && 
-                           existingFounder.linkedin_url;
+          const isComplete = founder.name && 
+                           founder.email && 
+                           founder.linkedin_url;
           setNeedsProfileSetup(!isComplete);
         } else {
           // No founder profile exists, needs setup
@@ -45,7 +46,7 @@ export const useProfileSetup = () => {
     };
 
     checkProfileSetup();
-  }, [isAuthenticated, user?.email, publicAPI]);
+  }, [isAuthenticated, user?.email, authenticatedAPI]);
 
   const completeProfileSetup = () => {
     setNeedsProfileSetup(false);

@@ -182,7 +182,82 @@ async def upload_image(file: UploadFile = File(...), current_user: dict = Depend
 # Founder endpoints
 @app.post("/founders/", response_model=schemas.Founder)
 def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    return crud.create_founder(db=db, founder=founder)
+    try:
+        print(f"Creating founder with data: {founder.dict()}")
+        print(f"Current user: {current_user}")
+        
+        # Set auth0_user_id from current user if not provided
+        if not founder.auth0_user_id and current_user:
+            founder.auth0_user_id = current_user.get('sub')
+            print(f"Set auth0_user_id to: {founder.auth0_user_id}")
+        
+        return crud.create_founder(db=db, founder=founder)
+    except Exception as e:
+        print(f"Error creating founder: {str(e)}")
+        print(f"Error type: {type(e)}")
+        
+        # Handle specific database errors
+        if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e).lower():
+            raise HTTPException(status_code=400, detail="A founder with this email already exists")
+        elif "NOT NULL constraint failed" in str(e):
+            raise HTTPException(status_code=400, detail="Required field is missing")
+        elif "FOREIGN KEY constraint failed" in str(e):
+            raise HTTPException(status_code=400, detail="Invalid reference to startup or other entity")
+        else:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+@app.post("/auth/check-profile")
+def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """
+    Check if the authenticated user has an existing founder profile.
+    If they do, link their Auth0 account to it. If not, return profile setup needed.
+    """
+    try:
+        user_email = current_user.get('email')
+        auth0_user_id = current_user.get('sub')
+        
+        if not user_email:
+            raise HTTPException(status_code=400, detail="User email not found in token")
+        
+        print(f"Checking profile for user: {user_email}, auth0_id: {auth0_user_id}")
+        
+        # Check if user already has a linked profile
+        existing_by_auth0 = db.query(models.Founder).filter(models.Founder.auth0_user_id == auth0_user_id).first()
+        if existing_by_auth0:
+            print(f"Found existing profile linked to Auth0 ID: {existing_by_auth0.name}")
+            return {
+                "has_profile": True,
+                "profile_linked": True,
+                "founder": existing_by_auth0
+            }
+        
+        # Check if there's an unlinked profile with matching email
+        existing_by_email = db.query(models.Founder).filter(models.Founder.email == user_email).first()
+        if existing_by_email:
+            print(f"Found unlinked profile with matching email: {existing_by_email.name}")
+            # Link the Auth0 account to the existing profile
+            existing_by_email.auth0_user_id = auth0_user_id
+            db.commit()
+            db.refresh(existing_by_email)
+            print(f"Successfully linked Auth0 account to existing profile")
+            
+            return {
+                "has_profile": True,
+                "profile_linked": True,
+                "founder": existing_by_email
+            }
+        
+        # No existing profile found
+        print(f"No existing profile found for {user_email}")
+        return {
+            "has_profile": False,
+            "profile_linked": False,
+            "founder": None
+        }
+        
+    except Exception as e:
+        print(f"Error checking user profile: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error checking profile: {str(e)}")
 
 @app.get("/founders/", response_model=List[schemas.Founder])
 def read_founders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
