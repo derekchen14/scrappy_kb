@@ -177,6 +177,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
                   Profile Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Has_Auth0_ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -197,6 +200,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
                         : 'bg-red-100 text-red-800'
                     }`}>
                       {founder.profile_visible !== false ? 'Visible' : 'Hidden'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      founder.auth0_user_id 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {founder.auth0_user_id ? 'Yes' : 'No'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">

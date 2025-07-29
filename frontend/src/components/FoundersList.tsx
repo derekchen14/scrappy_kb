@@ -651,9 +651,6 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    #
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button
                       onClick={handleNameSort}
                       className="flex items-center space-x-1 hover:text-gray-700 transition-colors"
@@ -689,9 +686,6 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
               <tbody className="bg-white divide-y divide-gray-200">
                 {paginatedFounders.map((founder, index) => (
                   <tr key={founder.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
-                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center space-x-3">
                         {/* {founder.profile_image_url && (
