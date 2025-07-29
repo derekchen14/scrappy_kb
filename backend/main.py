@@ -186,10 +186,13 @@ def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)
         print(f"Creating founder with data: {founder.dict()}")
         print(f"Current user: {current_user}")
         
-        # Set auth0_user_id from current user if not provided
-        if not founder.auth0_user_id and current_user:
+        # Only set auth0_user_id from current user if not provided AND user is creating their own profile
+        # For admin-created profiles, leave auth0_user_id as None until the actual user logs in
+        if not founder.auth0_user_id and current_user and founder.email == current_user.get('email'):
             founder.auth0_user_id = current_user.get('sub')
             print(f"Set auth0_user_id to: {founder.auth0_user_id}")
+        else:
+            print(f"Not setting auth0_user_id (admin creating profile for someone else)")
         
         return crud.create_founder(db=db, founder=founder)
     except Exception as e:
@@ -197,14 +200,20 @@ def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)
         print(f"Error type: {type(e)}")
         
         # Handle specific database errors
-        if "UNIQUE constraint failed" in str(e) or "duplicate key" in str(e).lower():
-            raise HTTPException(status_code=400, detail="A founder with this email already exists")
-        elif "NOT NULL constraint failed" in str(e):
+        error_str = str(e)
+        if "UNIQUE constraint failed" in error_str or "duplicate key" in error_str.lower():
+            if "email" in error_str.lower():
+                raise HTTPException(status_code=400, detail="A founder with this email already exists")
+            elif "auth0_user_id" in error_str.lower():
+                raise HTTPException(status_code=400, detail="Your account is already linked to another founder profile. You may have an existing profile with a different email address.")
+            else:
+                raise HTTPException(status_code=400, detail=f"Duplicate constraint violation: {error_str}")
+        elif "NOT NULL constraint failed" in error_str:
             raise HTTPException(status_code=400, detail="Required field is missing")
-        elif "FOREIGN KEY constraint failed" in str(e):
+        elif "FOREIGN KEY constraint failed" in error_str:
             raise HTTPException(status_code=400, detail="Invalid reference to startup or other entity")
         else:
-            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Database error: {error_str}")
 
 @app.post("/auth/check-profile")
 def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
@@ -262,6 +271,35 @@ def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depen
 @app.get("/founders/", response_model=List[schemas.Founder])
 def read_founders(skip: int = 0, limit: int = 10000, db: Session = Depends(get_db)):
     return crud.get_founders(db, skip=skip, limit=limit)
+
+@app.get("/debug/check-email/{email}")
+def debug_check_email(email: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """Debug endpoint to check if an email exists in the database"""
+    try:
+        # Check for exact match
+        exact_match = db.query(models.Founder).filter(models.Founder.email == email).first()
+        # Check for case-insensitive match
+        case_insensitive = db.query(models.Founder).filter(models.Founder.email.ilike(email)).all()
+        
+        return {
+            "email_searched": email,
+            "exact_match": {
+                "found": exact_match is not None,
+                "founder": exact_match.name if exact_match else None,
+                "visible": exact_match.profile_visible if exact_match else None,
+                "id": exact_match.id if exact_match else None
+            },
+            "case_insensitive_matches": [
+                {
+                    "email": f.email,
+                    "name": f.name,
+                    "visible": f.profile_visible,
+                    "id": f.id
+                } for f in case_insensitive
+            ]
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 @app.get("/founders/{founder_id}", response_model=schemas.Founder)
 def read_founder(founder_id: int, db: Session = Depends(get_db)):
