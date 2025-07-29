@@ -39,7 +39,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
   const [searchQuery, setSearchQuery] = useState('');
   const [sortType, setSortType] = useState<SortType>('none');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(100);
+  const [itemsPerPage] = useState(20);
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
