@@ -260,7 +260,7 @@ def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depen
         raise HTTPException(status_code=500, detail=f"Error checking profile: {str(e)}")
 
 @app.get("/founders/", response_model=List[schemas.Founder])
-def read_founders(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_founders(skip: int = 0, limit: int = 10000, db: Session = Depends(get_db)):
     return crud.get_founders(db, skip=skip, limit=limit)
 
 @app.get("/founders/{founder_id}", response_model=schemas.Founder)
