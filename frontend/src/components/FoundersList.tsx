@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
@@ -186,7 +186,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     }
   };
 
-  const handleEdit = (founder: Founder, skipVisibilityCheck = false) => {
+  const handleEdit = useCallback((founder: Founder, skipVisibilityCheck = false) => {
     if (!canEditProfile(founder.email)) {
       alert('You can only edit your own profile.');
       return;
@@ -215,7 +215,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     });
     setImagePreview(founder.profile_image_url || null);
     setShowForm(true);
-  };
+  }, [canEditProfile, isProfileVisible]);
 
   const handleDelete = async (id: number) => {
     if (!canDeleteUser()) {
@@ -241,7 +241,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
         onEditFounderShown();
       }
     }
-  }, [editFounderToShow, onEditFounderShown]);
+  }, [editFounderToShow, onEditFounderShown, handleEdit]);
 
   const resetForm = () => {
     setFormData({
