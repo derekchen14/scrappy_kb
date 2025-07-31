@@ -21,6 +21,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin'>('founders');
   const [startupToShow, setStartupToShow] = useState<Startup | null>(null);
   const [founderToShow, setFounderToShow] = useState<Founder | null>(null);
+  const [editFounderToShow, setEditFounderToShow] = useState<Founder | null>(null);
 
   const navigateToStartup = (startup: Startup) => {
     setActiveTab('startups');
@@ -30,6 +31,16 @@ function App() {
   const navigateToFounder = (founder: Founder) => {
     setActiveTab('founders');
     setFounderToShow(founder);
+  };
+
+  const handleViewProfile = (founder: Founder) => {
+    setActiveTab('founders');
+    setFounderToShow(founder);
+  };
+
+  const handleEditProfile = (founder: Founder) => {
+    setActiveTab('founders');
+    setEditFounderToShow(founder);
   };
 
   // Redirect non-admin users away from admin-only tabs
@@ -92,7 +103,11 @@ function App() {
 
             {/* User Profile and Logout */}
             <div className="flex items-center space-x-4">
-              <Profile />
+              <Profile 
+                onViewProfile={handleViewProfile}
+                onEditProfile={handleEditProfile}
+                onStartupClick={navigateToStartup}
+              />
               <LogoutButton />
             </div>
           </div>
@@ -166,7 +181,7 @@ function App() {
       </header>
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} founderToShow={founderToShow} onFounderShown={() => setFounderToShow(null)} />}
+        {activeTab === 'founders' && <FoundersList onStartupClick={navigateToStartup} founderToShow={founderToShow} onFounderShown={() => setFounderToShow(null)} editFounderToShow={editFounderToShow} onEditFounderShown={() => setEditFounderToShow(null)} />}
         {activeTab === 'skills' && isAdmin && <SkillsList />}
         {activeTab === 'startups' && <StartupsList startupToShow={startupToShow} onStartupShown={() => setStartupToShow(null)} onFounderClick={navigateToFounder} />}
         {activeTab === 'help-requests' && <HelpRequestsList onFounderClick={navigateToFounder} />}

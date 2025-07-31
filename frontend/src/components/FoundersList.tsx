@@ -11,9 +11,11 @@ interface FoundersListProps {
   onStartupClick?: (startup: Startup) => void;
   founderToShow?: Founder | null;
   onFounderShown?: () => void;
+  editFounderToShow?: Founder | null;
+  onEditFounderShown?: () => void;
 }
 
-const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToShow, onFounderShown }) => {
+const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToShow, onFounderShown, editFounderToShow, onEditFounderShown }) => {
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
   const { isAdmin, canEditProfile, canDeleteUser } = useAdmin();
 
@@ -72,6 +74,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
       }
     }
   }, [founderToShow, onFounderShown]);
+
 
   const fetchFounders = async () => {
     try {
@@ -183,13 +186,13 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     }
   };
 
-  const handleEdit = (founder: Founder) => {
+  const handleEdit = (founder: Founder, skipVisibilityCheck = false) => {
     if (!canEditProfile(founder.email)) {
       alert('You can only edit your own profile.');
       return;
     }
     
-    if (!isProfileVisible(founder)) {
+    if (!skipVisibilityCheck && !isProfileVisible(founder)) {
       alert('This profile is marked as not visible and cannot be edited from this view.');
       return;
     }
@@ -229,6 +232,16 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
       }
     }
   };
+
+  // Handle edit founder from external trigger (e.g., Profile dropdown)
+  useEffect(() => {
+    if (editFounderToShow) {
+      handleEdit(editFounderToShow, true); // Skip visibility check for own profile
+      if (onEditFounderShown) {
+        onEditFounderShown();
+      }
+    }
+  }, [editFounderToShow, onEditFounderShown]);
 
   const resetForm = () => {
     setFormData({
@@ -1109,7 +1122,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 )}
               </div>
 
-              {selectedFounder.skills.length > 0 && (
+              {selectedFounder.skills && selectedFounder.skills.length > 0 && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
                   <div className="flex flex-wrap gap-2">
@@ -1136,7 +1149,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
                 </div>
               )}
 
-              {selectedFounder.hobbies.length > 0 && (
+              {selectedFounder.hobbies && selectedFounder.hobbies.length > 0 && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-gray-700 mb-2">Hobbies:</h4>
                   <div className="flex flex-wrap gap-2">
