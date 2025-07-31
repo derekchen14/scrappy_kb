@@ -215,7 +215,7 @@ const FoundersList: React.FC<FoundersListProps> = ({ onStartupClick, founderToSh
     });
     setImagePreview(founder.profile_image_url || null);
     setShowForm(true);
-  }, [canEditProfile, isProfileVisible]);
+  }, [canEditProfile]);
 
   const handleDelete = async (id: number) => {
     if (!canDeleteUser()) {
