@@ -395,7 +395,7 @@ def create_startup(startup: schemas.StartupCreate, db: Session = Depends(get_db)
     return crud.create_startup(db=db, startup=startup)
 
 @app.get("/startups/", response_model=List[schemas.Startup])
-def read_startups(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+def read_startups(skip: int = 0, limit: int = 1000, db: Session = Depends(get_db)):
     return crud.get_startups(db, skip=skip, limit=limit)
 
 @app.get("/startups/{startup_id}", response_model=schemas.Startup)

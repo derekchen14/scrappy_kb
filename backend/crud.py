@@ -148,8 +148,8 @@ def create_startup(db: Session, startup: schemas.StartupCreate):
 def get_startup(db: Session, startup_id: int):
     return db.query(models.Startup).filter(models.Startup.id == startup_id).first()
 
-def get_startups(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Startup).offset(skip).limit(limit).all()
+def get_startups(db: Session, skip: int = 0, limit: int = 1000):
+    return db.query(models.Startup).order_by(models.Startup.created_at.desc()).offset(skip).limit(limit).all()
 
 def update_startup(db: Session, startup_id: int, startup: schemas.StartupCreate):
     db_startup = db.query(models.Startup).filter(models.Startup.id == startup_id).first()
