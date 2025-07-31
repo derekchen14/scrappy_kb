@@ -15,12 +15,6 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
   const [showDropdown, setShowDropdown] = useState(false);
   const [myProfile, setMyProfile] = useState<Founder | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchMyProfile();
-    }
-  }, [isAuthenticated, fetchMyProfile]);
-
   const fetchMyProfile = useCallback(async () => {
     try {
       const response = await authenticatedAPI.get('/api/my-profile');
@@ -29,6 +23,12 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
       console.error('Error fetching my profile:', error);
     }
   }, [authenticatedAPI]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchMyProfile();
+    }
+  }, [isAuthenticated, fetchMyProfile]);
 
   const handleViewProfile = () => {
     if (myProfile && onViewProfile) {
