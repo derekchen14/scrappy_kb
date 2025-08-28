@@ -9,7 +9,6 @@ interface CustomSelectProps<T extends string> {
   placeholder?: string;
   className?: string;
   label?: string;
-  maxHeight?: number;
 }
 
 function CustomSelect<T extends string>({
@@ -19,7 +18,6 @@ function CustomSelect<T extends string>({
   placeholder = 'Select…',
   className = '',
   label,
-  maxHeight = 200,
 }: CustomSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -79,38 +77,27 @@ function CustomSelect<T extends string>({
           id={`listbox-${idBase}`}
           role="listbox"
           className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
-          style={{ maxHeight: `${maxHeight}px` }}
         >
-          <div className="overflow-y-auto" style={{ maxHeight: `${maxHeight}px` }}>
-            {options.map(opt => {
-              const selected = value === opt.value;
-              return (
-                <div
-                  key={opt.value}
-                  role="option"
-                  aria-selected={selected}
-                  tabIndex={0}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                    buttonRef.current?.focus();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onChange(opt.value);
-                      setOpen(false);
-                      buttonRef.current?.focus();
-                    }
-                  }}
-                  className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors
-                    ${selected ? 'bg-blue-50 font-medium text-blue-900' : 'text-gray-900'}`}
-                >
-                  {opt.label}
-                </div>
-              );
-            })}
-          </div>
+          {options.map(opt => {
+            const selected = value === opt.value;
+            return (
+              <div
+                key={opt.value}
+                role="option"
+                aria-selected={selected}
+                tabIndex={0}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                  buttonRef.current?.focus();
+                }}
+                className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 
+                  ${selected ? 'bg-blue-50 font-medium text-blue-900' : 'text-gray-900'}`}
+              >
+                {opt.label}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
