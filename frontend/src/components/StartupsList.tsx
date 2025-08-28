@@ -4,6 +4,7 @@ import Modal from './Modal';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import { startupAPI } from '../api';
+import CustomSelect from './CustomSelect';
 
 interface StartupsListProps {
   searchQuery?: string;
@@ -118,7 +119,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
       const response = await publicAPI.get<Startup[]>('/startups/');
       setStartups(response.data);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error fetching startups:', error);
       setErr('Failed to load startups. Please try again.');
     } finally {
@@ -137,7 +137,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
         const response = await startupAPI.getFounders(startupId);
         setStartupFounders(response.data as Founder[]);
       } catch (error) {
-        // eslint-disable-next-line no-console
         console.error('Failed to fetch startup founders:', error);
         setStartupFounders([]);
       } finally {
@@ -147,7 +146,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
     []
   );
 
-  // When a startup is selected, load founders
   useEffect(() => {
     if (selectedStartup) {
       fetchStartupFounders(selectedStartup.id);
@@ -156,7 +154,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
     }
   }, [selectedStartup, fetchStartupFounders]);
 
-  // Open modal when parent asks to show a specific startup
   useEffect(() => {
     if (startupToShow) {
       setSelectedStartup(startupToShow);
@@ -181,7 +178,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
       await fetchStartups();
       resetForm();
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error saving startup:', error);
       setErr('Failed to save startup. Please try again.');
     }
@@ -208,7 +204,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
       await authenticatedAPI.delete(`/startups/${id}`);
       await fetchStartups();
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error deleting startup:', error);
       setErr('Failed to delete startup. Please try again.');
     }
@@ -230,7 +225,7 @@ const StartupsList: React.FC<StartupsListProps> = ({
 
   const handleFounderPillClick = (founder: Founder) => {
     if (onFounderClick) {
-      setSelectedStartup(null); // close modal before navigating
+      setSelectedStartup(null);
       onFounderClick(founder);
     }
   };
@@ -268,7 +263,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900">Startups</h2>
         <button
@@ -287,7 +281,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
         </div>
       )}
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -318,35 +311,21 @@ const StartupsList: React.FC<StartupsListProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Industry</label>
-                <select
+                <CustomSelect
+                  label="Industry"
                   value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select an industry</option>
-                  {industries.map((industry) => (
-                    <option key={industry} value={industry}>
-                      {industry}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, industry: v || '' })}
+                  options={[{ label: 'Select an industry', value: '' }, ...industries.map((i) => ({ label: i, value: i }))]}
+                />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Stage</label>
-                <select
+                <CustomSelect
+                  label="Stage"
                   value={formData.stage}
-                  onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select a stage</option>
-                  {startupStages.map((stage) => (
-                    <option key={stage} value={stage}>
-                      {stage}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, stage: v || '' })}
+                  options={[{ label: 'Select a stage', value: '' }, ...startupStages.map((s) => ({ label: s, value: s }))]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -366,35 +345,21 @@ const StartupsList: React.FC<StartupsListProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Target Market</label>
-                <select
+                <CustomSelect
+                  label="Target Market"
                   value={formData.target_market}
-                  onChange={(e) => setFormData({ ...formData, target_market: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select a target market</option>
-                  {targetMarkets.map((market) => (
-                    <option key={market} value={market}>
-                      {market}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, target_market: v || '' })}
+                  options={[{ label: 'Select a target market', value: '' }, ...targetMarkets.map((m) => ({ label: m, value: m }))]}
+                />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Revenue ARR</label>
-                <select
+                <CustomSelect
+                  label="Revenue ARR"
                   value={formData.revenue_arr}
-                  onChange={(e) => setFormData({ ...formData, revenue_arr: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select revenue range</option>
-                  {revenueOptions.map((revenue) => (
-                    <option key={revenue} value={revenue}>
-                      {revenue}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setFormData({ ...formData, revenue_arr: v || '' })}
+                  options={[{ label: 'Select revenue range', value: '' }, ...revenueOptions.map((r) => ({ label: r, value: r }))]}
+                />
               </div>
 
               <div className="flex justify-end space-x-4 pt-4">
@@ -418,7 +383,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
         </div>
       )}
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStartups.map((startup) => (
           <div key={startup.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -499,7 +463,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
         ))}
       </div>
 
-      {/* Startup Details Modal */}
       <Modal
         isOpen={selectedStartup !== null}
         onClose={() => setSelectedStartup(null)}
@@ -562,7 +525,6 @@ const StartupsList: React.FC<StartupsListProps> = ({
                 </div>
               )}
 
-              {/* Founders */}
               <div className="mt-6">
                 <h4 className="text-sm font-medium text-gray-700 mb-3">
                   Founders

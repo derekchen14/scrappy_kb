@@ -2,6 +2,135 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import { Founder, Startup, HelpRequest } from '../types';
+import CustomSelect from './CustomSelect';
+
+/* =========================
+   FileUploader (Admin only)
+   - Drag & drop or click
+   - Accepts CSV / Excel / PDF
+   - Sends FormData to POST /founders
+   ========================= */
+interface FileUploaderProps {
+  onUploaded?: () => void;
+  disabled?: boolean;
+}
+
+const ACCEPTED_MIME = [
+  // CSV
+  'text/csv',
+  'application/csv',
+  'text/plain',
+  // Excel
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // PDF
+  'application/pdf',
+];
+
+const ACCEPT_ATTR = [
+  '.csv',
+  '.xls',
+  '.xlsx',
+  '.pdf',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/pdf',
+  'text/csv',
+].join(',');
+
+function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
+  const { authenticatedAPI } = useAuthenticatedAPI();
+  const [dragOver, setDragOver] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    const isAccepted =
+      ACCEPTED_MIME.includes(file.type) ||
+      /\.csv$/i.test(file.name) ||
+      /\.xlsx?$/i.test(file.name) ||
+      /\.pdf$/i.test(file.name);
+
+    if (!isAccepted) {
+      setMsg('Unsupported file type. Please upload CSV, Excel, or PDF.');
+      return;
+    }
+
+    setBusy(true);
+    setMsg(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+
+      // Placeholder API call (backend to be implemented)
+      await authenticatedAPI.post('/founders', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setMsg('Upload successful. Parsing has been queued.');
+      onUploaded?.();
+    } catch (e: any) {
+      console.error('Upload failed', e);
+      setMsg('Upload failed. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV / Excel / PDF)</label>
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          handleFiles(e.dataTransfer.files);
+        }}
+        className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition
+          ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-white'} 
+          ${busy || disabled ? 'opacity-60' : 'hover:bg-gray-50'}`}
+      >
+        <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+        <div className="text-sm text-gray-700">
+          Drag & drop your file here, or{' '}
+          <button
+            type="button"
+            className="font-medium text-blue-600 hover:underline focus:outline-none"
+            onClick={() => inputRef.current?.click()}
+            disabled={busy || disabled}
+          >
+            browse
+          </button>
+        </div>
+        <div className="text-xs text-gray-500">Max 25MB • CSV, XLS, XLSX, PDF</div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept={ACCEPT_ATTR}
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+          disabled={busy || disabled}
+        />
+      </div>
+      {msg && <p className="text-xs text-gray-600">{msg}</p>}
+    </div>
+  );
+}
+
+/* =========================
+   Admin Dashboard
+   ========================= */
 
 interface AdminStats {
   totalUsers: number;
@@ -37,10 +166,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
   const [query, setQuery] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden' | 'no-auth0'>('all');
 
-  // Row-level mutation flags (disable buttons while saving)
+  // Row-level mutation flags
   const [mutating, setMutating] = useState<Record<number, boolean>>({});
 
-  // Abort in-flight fetch on re-run / unmount
+  // Abort in-flight fetch
   const fetchAbort = useRef<AbortController | null>(null);
 
   const nf = useMemo(() => new Intl.NumberFormat(), []);
@@ -50,7 +179,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
       setErrorMsg(null);
       setLoading(true);
 
-      // cancel any previous run
       fetchAbort.current?.abort();
       const controller = new AbortController();
       fetchAbort.current = controller;
@@ -65,15 +193,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
       const startupsData = startupsRes.data;
       const helpRequestsData = helpRequestsRes.data;
 
-      // Derive visibility counts (fixed TS2364: use if/else, not a ternary assignment)
       let visible = 0;
       let hidden = 0;
       for (const f of foundersData) {
-        if (f.profile_visible !== false) {
-          visible += 1;
-        } else {
-          hidden += 1;
-        }
+        if (f.profile_visible !== false) visible += 1;
+        else hidden += 1;
       }
 
       setFounders(foundersData);
@@ -88,7 +212,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
     } catch (err: any) {
       const code = err?.code || err?.name;
       if (code === 'ERR_CANCELED' || code === 'CanceledError' || code === 'AbortError') {
-        // ignored — new fetch started or unmounted
+        // ignored
       } else {
         console.error('Error fetching admin data:', err);
         setErrorMsg('Failed to load admin data. Please try again.');
@@ -123,16 +247,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
     });
   }, [founders, query, visibilityFilter]);
 
-  // Recompute visible/hidden cards live if founders change (fixed TS2364)
+  // Recompute live visibility
   const liveVisibility = useMemo(() => {
     let vis = 0;
     let hid = 0;
     for (const f of founders) {
-      if (f.profile_visible !== false) {
-        vis += 1;
-      } else {
-        hid += 1;
-      }
+      if (f.profile_visible !== false) vis += 1;
+      else hid += 1;
     }
     return { vis, hid };
   }, [founders]);
@@ -149,7 +270,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
       const previous = target.profile_visible !== false;
       const next = !currentVisibility;
 
-      // optimistic update
       setRowMutating(founderId, true);
       setFounders((prev) =>
         prev.map((f) => (f.id === founderId ? { ...f, profile_visible: next } : f))
@@ -162,7 +282,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
         });
       } catch (err) {
         console.error('Error toggling profile visibility:', err);
-        // revert on error
         setFounders((prev) =>
           prev.map((f) => (f.id === founderId ? { ...f, profile_visible: previous } : f))
         );
@@ -183,7 +302,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
         return;
       }
 
-      // optimistic remove
       setRowMutating(founderId, true);
       const snapshot = founders;
       setFounders((prev) => prev.filter((f) => f.id !== founderId));
@@ -193,7 +311,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
         setStats((s) => ({ ...s, totalUsers: s.totalUsers - 1 }));
       } catch (err) {
         console.error('Error deleting user:', err);
-        setFounders(snapshot); // revert
+        setFounders(snapshot);
         setErrorMsg('Failed to delete user. Please retry.');
       } finally {
         setRowMutating(founderId, false);
@@ -251,6 +369,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
         </div>
       )}
 
+      {/* Admin-only bulk import */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 className="text-xl font-semibold text-gray-900">Bulk import founders</h2>
+        <p className="text-gray-600 mb-4">
+          Upload a CSV/Excel/PDF table to parse and create records.
+        </p>
+        <FileUploader onUploaded={fetchAdminData} />
+      </div>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
@@ -285,7 +412,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -293,17 +420,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
             placeholder="Search by name or email"
             className="w-full sm:w-72 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <select
+          <CustomSelect
+            label="Visibility"
             value={visibilityFilter}
-            onChange={(e) => setVisibilityFilter(e.target.value as any)}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Filter visibility"
-          >
-            <option value="all">All</option>
-            <option value="visible">Visible only</option>
-            <option value="hidden">Hidden only</option>
-            <option value="no-auth0">No Auth0 linked</option>
-          </select>
+            onChange={setVisibilityFilter}
+            options={[
+              { label: 'All', value: 'all' },
+              { label: 'Visible only', value: 'visible' },
+              { label: 'Hidden only', value: 'hidden' },
+              { label: 'No Auth0 linked', value: 'no-auth0' },
+            ]}
+          />
         </div>
         <div className="text-xs text-gray-500">
           Showing {nf.format(filteredFounders.length)} of {nf.format(founders.length)}

@@ -3,6 +3,7 @@ import { Event, EventCreate } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
+import CustomSelect from './CustomSelect';
 
 type ViewType = 'card' | 'compact' | 'calendar';
 
@@ -326,20 +327,17 @@ const EventsList: React.FC = () => {
                 </div>
               </div>
 
+              {/* Theme — replaced native select with CustomSelect */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Theme</label>
-                <select
-                  value={formData.theme}
-                  onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select a theme</option>
-                  {THEMES.map((theme) => (
-                    <option key={theme} value={theme}>
-                      {theme}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Theme"
+                  value={formData.theme || 'roundtable'}
+                  onChange={(v) => setFormData({ ...formData, theme: v })}
+                  options={[
+                    { label: 'Select a theme', value: '' },
+                    ...THEMES.map(t => ({ label: t, value: t })),
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -450,7 +448,7 @@ const EventsList: React.FC = () => {
                 week.map((day, dayIndex) => (
                   <div
                     key={`${weekIndex}-${dayIndex}`}
-                    className={`min-h-[120px] bg-white p-2 ${
+                    className={`min-h[120px] min-h-[120px] bg-white p-2 ${
                       !day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
                     } ${day.isToday ? 'ring-1 ring-blue-300' : ''}`}
                   >
@@ -601,7 +599,7 @@ const EventsList: React.FC = () => {
       )}
 
       {/* Event Details Modal */}
-      <Modal isOpen={selectedEvent !== null} onClose={() => setSelectedEvent(null)} title={selectedEvent?.title || ''}>
+      <Modal isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} title={selectedEvent?.title || ''}>
         {selectedEvent && (
           <div className="space-y-6">
             <div>

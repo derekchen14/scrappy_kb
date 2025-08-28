@@ -3,6 +3,7 @@ import { Skill, SkillCreate } from '../types';
 import Modal from './Modal';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
+import CustomSelect from './CustomSelect';
 
 interface SkillsListProps {
   searchQuery?: string;
@@ -35,7 +36,6 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
       const response = await publicAPI.get<Skill[]>('/skills/');
       setSkills(response.data);
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error fetching skills:', error);
       setErr('Failed to load skills. Please try again.');
     } finally {
@@ -64,7 +64,6 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
       await fetchSkills();
       resetForm();
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error saving skill:', error);
       setErr('Failed to save skill. Please try again.');
     }
@@ -87,7 +86,6 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
       await authenticatedAPI.delete(`/skills/${id}`);
       await fetchSkills();
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error deleting skill:', error);
       setErr('Failed to delete skill. Please try again.');
     }
@@ -165,19 +163,12 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select a category</option>
-                  {skillCategories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Category"
+                  value={formData.category || ''}
+                  onChange={(v) => setFormData({ ...formData, category: v || '' })}
+                  options={[{ label: 'Select a category', value: '' }, ...skillCategories.map((c) => ({ label: c, value: c }))]}
+                />
               </div>
 
               <div className="space-y-2">

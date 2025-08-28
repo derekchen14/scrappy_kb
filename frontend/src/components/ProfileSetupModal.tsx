@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
+import CustomSelect from './CustomSelect';
 
 interface ProfileSetupModalProps {
   isOpen: boolean;
@@ -9,11 +10,7 @@ interface ProfileSetupModalProps {
   existingData?: Partial<FounderCreate>;
 }
 
-const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
-  isOpen,
-  onComplete,
-  existingData,
-}) => {
+const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onComplete, existingData }) => {
   const { user } = useAuth0();
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
 
@@ -42,7 +39,6 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
     hobby_ids: existingData?.hobby_ids || [],
   });
 
-  // Keep form data in sync when modal opens / props change
   useEffect(() => {
     if (!isOpen) return;
     setFormData({
@@ -76,7 +72,6 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
       setStartups(startupsRes.data);
       setHobbies(hobbiesRes.data);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Error fetching options:', err);
       setErrorText('Failed to load dropdown options. Please retry.');
     }
@@ -102,18 +97,15 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
 
   const uploadImage = async (): Promise<string | null> => {
     if (!selectedImage) return null;
-
     setUploadingImage(true);
     try {
-      const fd = new FormData(); // avoid shadowing state 'formData'
+      const fd = new FormData();
       fd.append('file', selectedImage);
-
       const response = await authenticatedAPI.post('/upload-image/', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       return response.data.image_url as string;
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error('Error uploading image:', err);
       setErrorText('Image upload failed. You can try again or continue without a photo.');
       return null;
@@ -125,26 +117,18 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorText(null);
-
-    // Basic required validation
     if (!formData.name.trim() || !formData.email.trim() || !formData.linkedin_url.trim()) {
       setErrorText('Please fill in all required fields (Name, Email, LinkedIn URL).');
       return;
     }
-
     setSubmitting(true);
     try {
       const finalData: FounderCreate = { ...formData };
-
-      // Upload image if selected
       if (selectedImage) {
         const imageUrl = await uploadImage();
         if (imageUrl) finalData.profile_image_url = imageUrl;
       }
-
-      // Create or update
       if (existingData) {
-        // Try to find an existing founder by email; update if found, otherwise create
         const foundersRes = await publicAPI.get<Founder[]>('/founders/');
         const existingFounder = foundersRes.data.find((f) => f.email === formData.email);
         if (existingFounder) {
@@ -155,10 +139,8 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
       } else {
         await authenticatedAPI.post('/founders/', finalData);
       }
-
       onComplete();
     } catch (err: any) {
-      // eslint-disable-next-line no-console
       console.error('Error saving profile:', err);
       const msg =
         err?.response?.data?.message ||
@@ -318,11 +300,7 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
             />
             {imagePreview && (
               <div className="mt-2">
-                <img
-                  src={imagePreview}
-                  alt="Preview"
-                  className="w-20 h-20 object-cover rounded-full border-2 border-gray-300"
-                />
+                <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-full border-2 border-gray-300" />
               </div>
             )}
           </div>
@@ -358,21 +336,12 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Startup</label>
-            <select
-              value={formData.startup_id ?? ''}
-              onChange={(e) =>
-                handleStartupChange(e.target.value ? parseInt(e.target.value, 10) : undefined)
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            >
-              <option value="">No startup</option>
-              {startups.map((startup) => (
-                <option key={startup.id} value={startup.id}>
-                  {startup.name}
-                </option>
-              ))}
-            </select>
+            <CustomSelect
+              label="Startup"
+              value={formData.startup_id ? String(formData.startup_id) : ''}
+              onChange={(v) => handleStartupChange(v ? parseInt(v, 10) : undefined)}
+              options={[{ label: 'No startup', value: '' }, ...startups.map((s) => ({ label: s.name, value: String(s.id) }))]}
+            />
           </div>
 
           <div className="space-y-2">

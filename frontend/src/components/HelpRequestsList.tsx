@@ -3,6 +3,7 @@ import { HelpRequest, HelpRequestCreate, Founder } from '../types';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAdmin } from '../hooks/useAdmin';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
+import CustomSelect from './CustomSelect';
 
 interface HelpRequestsListProps {
   searchQuery?: string;
@@ -34,14 +35,12 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
     status: 'Open',
   });
 
-  // Derive current user's Founder record (if any)
   const currentFounder = useMemo(() => {
     const email = user?.email?.toLowerCase();
     if (!email) return null;
     return founders.find((f) => f.email?.toLowerCase() === email) || null;
   }, [user?.email, founders]);
 
-  // Build a quick lookup map to avoid O(n) searches in render
   const foundersById = useMemo(() => {
     const m = new Map<number, Founder>();
     founders.forEach((f) => m.set(f.id, f));
@@ -73,7 +72,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
     [foundersById, onFounderClick]
   );
 
-  // Fetch data
   useEffect(() => {
     let ignore = false;
     const load = async () => {
@@ -89,7 +87,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         setFounders(foundersRes.data);
       } catch (e) {
         if (!ignore) setErr('Failed to load help requests. Please try again.');
-        // eslint-disable-next-line no-console
         console.error(e);
       } finally {
         if (!ignore) setLoading(false);
@@ -106,7 +103,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
       const res = await publicAPI.get<HelpRequest[]>('/help-requests/');
       setHelpRequests(res.data);
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.error(e);
       setErr('Failed to refresh help requests.');
     }
@@ -158,7 +154,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         await authenticatedAPI.delete(`/help-requests/${id}`);
         await refreshRequests();
       } catch (e) {
-        // eslint-disable-next-line no-console
         console.error(e);
         setErr('Failed to delete help request.');
       }
@@ -169,8 +164,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-
-      // Basic validation
       if (!formData.founder_id) {
         alert('No founder associated with this request. Please contact an admin.');
         return;
@@ -179,7 +172,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         alert('Title and Description are required.');
         return;
       }
-
       try {
         if (editingRequest) {
           await authenticatedAPI.put(`/help-requests/${editingRequest.id}`, formData);
@@ -189,7 +181,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         await refreshRequests();
         resetForm();
       } catch (e: any) {
-        // eslint-disable-next-line no-console
         console.error(e);
         const msg =
           e?.response?.data?.message ||
@@ -231,7 +222,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
   const filteredHelpRequests = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return helpRequests;
-
     return helpRequests.filter((r) => {
       const founderName = getFounderName(r.founder_id).toLowerCase();
       return (
@@ -256,10 +246,8 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold text-gray-900">Help Requests</h2>
-
         <button
           onClick={startCreate}
           className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50"
@@ -272,7 +260,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
       {err && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{err}</div>}
 
-      {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -282,21 +269,16 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
               </h3>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Founder *</label>
                 {editingRequest || isAdmin ? (
-                  <select
-                    value={formData.founder_id}
-                    onChange={(e) => setFormData({ ...formData, founder_id: parseInt(e.target.value, 10) || 0 })}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  >
-                    <option value={0}>Select a founder</option>
-                    {founders.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.name}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    label="Founder *"
+                    value={String(formData.founder_id || 0)}
+                    onChange={(v) => setFormData({ ...formData, founder_id: parseInt(v || '0', 10) || 0 })}
+                    options={[
+                      { label: 'Select a founder', value: '0' },
+                      ...founders.map((f) => ({ label: f.name, value: String(f.id) })),
+                    ]}
+                  />
                 ) : (
                   <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
                     {currentFounder?.name || 'Current User'}
@@ -327,49 +309,30 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">Select a category</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Category"
+                  value={formData.category || ''}
+                  onChange={(v) => setFormData({ ...formData, category: v || '' })}
+                  options={[{ label: 'Select a category', value: '' }, ...categories.map((c) => ({ label: c, value: c }))]}
+                />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Urgency</label>
-                <select
-                  value={formData.urgency}
-                  onChange={(e) => setFormData({ ...formData, urgency: e.target.value as (typeof urgencyLevels)[number] })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  {urgencyLevels.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Urgency"
+                  value={formData.urgency || 'Medium'}
+                  onChange={(v) => setFormData({ ...formData, urgency: v as (typeof urgencyLevels)[number] })}
+                  options={urgencyLevels.map((u) => ({ label: u, value: u }))}
+                />
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  value={formData.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value as (typeof statusOptions)[number] })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Status"
+                  value={formData.status || 'Open'}
+                  onChange={(v) => setFormData({ ...formData, status: v as (typeof statusOptions)[number] })}
+                  options={statusOptions.map((s) => ({ label: s, value: s }))}
+                />
               </div>
 
               <div className="flex justify-end space-x-4 pt-4">
@@ -389,7 +352,6 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
         </div>
       )}
 
-      {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredHelpRequests.map((request) => (
           <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

@@ -3,6 +3,7 @@ import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
+import CustomSelect from './CustomSelect';
 
 type ViewType = 'table' | 'card' | 'compact';
 type SortType = 'none' | 'asc' | 'desc';
@@ -590,20 +591,17 @@ const FoundersList: React.FC<FoundersListProps> = ({
                 </div>
               </div>
 
+              {/* Startup — replaced native select with CustomSelect */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Startup</label>
-                <select
-                  value={formData.startup_id || ''}
-                  onChange={(e) => handleStartupChange(e.target.value ? parseInt(e.target.value) : undefined)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">No startup</option>
-                  {startups.map((startup) => (
-                    <option key={startup.id} value={startup.id}>
-                      {startup.name}
-                    </option>
-                  ))}
-                </select>
+                <CustomSelect
+                  label="Startup"
+                  value={formData.startup_id != null ? String(formData.startup_id) : ''}
+                  onChange={(v) => handleStartupChange(v ? parseInt(v, 10) : undefined)}
+                  options={[
+                    { label: 'No startup', value: '' },
+                    ...startups.map((s) => ({ label: s.name, value: String(s.id) })),
+                  ]}
+                />
               </div>
 
               <div className="space-y-2">
