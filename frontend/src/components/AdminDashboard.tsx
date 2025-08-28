@@ -45,111 +45,6 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
   const [msg, setMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const parseCSV = async (file: File): Promise<Record<string, any>[]> => {
-    const Papa = (await import('papaparse')).default;
-    return new Promise((resolve, reject) => {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (h) => h.trim(),
-        complete: (res) => resolve(res.data as Record<string, any>[]),
-        error: (err) => reject(err),
-      });
-    });
-  };
-
-  const parseXLS = async (file: File): Promise<Record<string, any>[]> => {
-    const XLSX = await import('xlsx');
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type: 'array' });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    return XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
-  };
-
-  const pick = (row: Record<string, any>, keys: string[]): string => {
-    for (const k of keys) {
-      const found = Object.keys(row).find(
-        (rk) => rk.toLowerCase().trim() === k.toLowerCase().trim()
-      );
-      if (found) return String(row[found] ?? '').trim();
-    }
-    return '';
-  };
-
-  const toBool = (v: string) => {
-    const s = v.toLowerCase();
-    if (['true', 'yes', 'y', '1', 'visible'].includes(s)) return true;
-    if (['false', 'no', 'n', '0', 'hidden'].includes(s)) return false;
-    return true;
-  };
-
-  const splitTags = (v: string): string[] =>
-    v
-      .split(/[;,]/g)
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-  const normalizeRows = (rows: Record<string, any>[]) => {
-    return rows.map((r) => {
-      const name = pick(r, ['Name', 'Full Name']);
-      const email = pick(r, ['Email', 'E-mail']);
-      const linkedin_url = pick(r, ['LinkedIn URL', 'LinkedIn', 'LinkedIn Profile']);
-      const bio = pick(r, ['Bio', 'About']);
-      const location = pick(r, ['Location', 'City']);
-      const twitter_url = pick(r, ['Twitter', 'Twitter URL', 'X']);
-      const github_url = pick(r, ['GitHub', 'GitHub URL']);
-      const profile_image_url = pick(r, ['Photo', 'Profile Image', 'Profile Image URL']);
-      const profile_visible = pick(r, ['Profile Visible']).length
-        ? toBool(pick(r, ['Profile Visible']))
-        : true;
-
-      const skills = splitTags(
-        pick(r, [
-          'Skills',
-          'One thing YOU CAN HELP with (your specialization/passion)',
-        ])
-      );
-
-      const hobbies = splitTags(
-        pick(r, ['Hobbies', 'One thing you love doing outside your startup?'])
-      );
-
-      const startup_name = pick(r, ['Startup Name', 'Company', 'Venture']);
-      const startup_description = pick(r, [
-        'Startup Description',
-        'Describe what your startup does (in 1 sentence)',
-      ]);
-      const startup_industry = pick(r, ['Industry', 'What is your startup industry?']);
-      const startup_stage = pick(r, ['Stage', 'Where are you now (stage)?']);
-      const startup_website_url = pick(r, ['Website', 'Website URL']);
-      const startup_target_market = pick(r, ['Target Market', 'Who are you building for?']);
-      const startup_revenue_arr = pick(r, ['Current revenue (ARR $)', 'Revenue ARR']);
-
-      return {
-        name,
-        email,
-        linkedin_url,
-        bio: bio || undefined,
-        location: location || undefined,
-        twitter_url: twitter_url || undefined,
-        github_url: github_url || undefined,
-        profile_image_url: profile_image_url || undefined,
-        profile_visible,
-
-        skills,
-        hobbies,
-
-        startup_name: startup_name || undefined,
-        startup_description: startup_description || undefined,
-        startup_industry: startup_industry || undefined,
-        startup_stage: startup_stage || undefined,
-        startup_website_url: startup_website_url || undefined,
-        startup_target_market: startup_target_market || undefined,
-        startup_revenue_arr: startup_revenue_arr || undefined,
-      };
-    });
-  };
-
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
@@ -157,53 +52,30 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
     const isAccepted =
       ACCEPTED_MIME.includes(file.type) ||
       /\.csv$/i.test(file.name) ||
-      /\.xlsx?$/i.test(file.name);
+      /\.xlsx?$/i.test(file.name) ||
+      /\.pdf$/i.test(file.name);
 
     if (!isAccepted) {
-      setMsg('Unsupported file type. Please upload CSV or Excel.');
+      setMsg('Unsupported file type. Please upload CSV, Excel, or PDF.');
       return;
     }
 
     setBusy(true);
     setMsg(null);
     try {
-      let raw: Record<string, any>[] = [];
-      if (/\.csv$/i.test(file.name) || file.type === 'text/csv') {
-        raw = await parseCSV(file);
-      } else {
-        raw = await parseXLS(file);
-      }
+      const form = new FormData();
+      form.append('file', file);
 
-      const rows = normalizeRows(raw).filter(
-        (r) => r.name && r.email && r.linkedin_url
-      );
+      // Placeholder API call (backend to be implemented)
+      await authenticatedAPI.post('/founders', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
-      if (rows.length === 0) {
-        setMsg('No valid rows found. Ensure Name, Email, and LinkedIn URL are present.');
-        setBusy(false);
-        return;
-      }
-
-      const payload = {
-        rows,
-        create_missing_skills: true,
-        create_missing_hobbies: true,
-        create_missing_startups: true,
-      };
-
-      const res = await authenticatedAPI.post('/founders/import', payload);
-      const { created, updated, errors } = res.data || {};
-      const suffix = errors?.length ? ` • ${errors.length} errors` : '';
-      setMsg(`Import complete: ${created || 0} created, ${updated || 0} updated${suffix}.`);
+      setMsg('Upload successful. Parsing has been queued.');
       onUploaded?.();
     } catch (e: any) {
-      console.error('Upload/parse failed', e);
-      const apiMsg =
-        e?.response?.data?.detail ||
-        e?.response?.data?.message ||
-        e?.message ||
-        'Upload failed.';
-      setMsg(apiMsg);
+      console.error('Upload failed', e);
+      setMsg('Upload failed. Please try again.');
     } finally {
       setBusy(false);
     }
@@ -211,7 +83,7 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV / Excel)</label>
+      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV / Excel / PDF)</label>
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -241,7 +113,7 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
             browse
           </button>
         </div>
-        <div className="text-xs text-gray-500">Max 25MB • CSV, XLS, XLSX</div>
+        <div className="text-xs text-gray-500">Max 25MB • CSV, XLS, XLSX, PDF</div>
         <input
           ref={inputRef}
           type="file"

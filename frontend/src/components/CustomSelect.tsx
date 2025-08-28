@@ -57,7 +57,7 @@ function CustomSelect<T extends string>({
         aria-expanded={open}
         aria-controls={`listbox-${idBase}`}
         onClick={() => setOpen(o => !o)}
-        className="w-full inline-flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-56 inline-flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <span className={selected ? '' : 'text-gray-400'}>
           {selected ? selected.label : placeholder}
@@ -76,7 +76,7 @@ function CustomSelect<T extends string>({
           ref={listRef}
           id={`listbox-${idBase}`}
           role="listbox"
-          className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          className="absolute z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
         >
           {options.map(opt => {
             const selected = value === opt.value;
