@@ -313,7 +313,7 @@ const StartupsList: React.FC<StartupsListProps> = ({
               <div className="space-y-2">
                 <CustomSelect
                   label="Industry"
-                  value={formData.industry}
+                  value={formData.industry || ''}
                   onChange={(v) => setFormData({ ...formData, industry: v || '' })}
                   options={[{ label: 'Select an industry', value: '' }, ...industries.map((i) => ({ label: i, value: i }))]}
                 />
@@ -322,7 +322,7 @@ const StartupsList: React.FC<StartupsListProps> = ({
               <div className="space-y-2">
                 <CustomSelect
                   label="Stage"
-                  value={formData.stage}
+                  value={formData.stage || ''}
                   onChange={(v) => setFormData({ ...formData, stage: v || '' })}
                   options={[{ label: 'Select a stage', value: '' }, ...startupStages.map((s) => ({ label: s, value: s }))]}
                 />
@@ -347,7 +347,7 @@ const StartupsList: React.FC<StartupsListProps> = ({
               <div className="space-y-2">
                 <CustomSelect
                   label="Target Market"
-                  value={formData.target_market}
+                  value={formData.target_market || ''}
                   onChange={(v) => setFormData({ ...formData, target_market: v || '' })}
                   options={[{ label: 'Select a target market', value: '' }, ...targetMarkets.map((m) => ({ label: m, value: m }))]}
                 />
@@ -356,7 +356,7 @@ const StartupsList: React.FC<StartupsListProps> = ({
               <div className="space-y-2">
                 <CustomSelect
                   label="Revenue ARR"
-                  value={formData.revenue_arr}
+                  value={formData.revenue_arr || ''}
                   onChange={(v) => setFormData({ ...formData, revenue_arr: v || '' })}
                   options={[{ label: 'Select revenue range', value: '' }, ...revenueOptions.map((r) => ({ label: r, value: r }))]}
                 />

@@ -191,40 +191,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     }
   }, [authenticatedAPI, selectedImage]);
 
-  const handleSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      try {
-        let finalForm = { ...formData };
-
-        if (selectedImage) {
-          const imageUrl = await uploadImage();
-          if (imageUrl) finalForm.profile_image_url = imageUrl;
-        }
-
-        if (editingFounder) {
-          await authenticatedAPI.put(`/founders/${editingFounder.id}`, finalForm);
-        } else {
-          await authenticatedAPI.post('/founders/', finalForm);
-        }
-        await fetchFounders();
-        resetForm();
-      } catch (error: any) {
-        console.error('Error saving founder:', error);
-        if (error?.response) {
-          alert(
-            `Error saving profile: ${error.response.data?.message || error.response.data?.detail || 'Server error'}.`
-          );
-        } else if (error?.request) {
-          alert('Error saving profile: Unable to connect to server. Please check your network.');
-        } else {
-          alert(`Error saving profile: ${error?.message || 'Unknown error'}.`);
-        }
-      }
-    },
-    [authenticatedAPI, editingFounder, formData, selectedImage, uploadImage, fetchFounders]
-  );
-
   const handleDelete = useCallback(
     async (id: number) => {
       if (!canDeleteUser()) {
@@ -265,6 +231,40 @@ const FoundersList: React.FC<FoundersListProps> = ({
     setSelectedImage(null);
     setImagePreview(null);
   }, []);
+
+    const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      try {
+        let finalForm = { ...formData };
+
+        if (selectedImage) {
+          const imageUrl = await uploadImage();
+          if (imageUrl) finalForm.profile_image_url = imageUrl;
+        }
+
+        if (editingFounder) {
+          await authenticatedAPI.put(`/founders/${editingFounder.id}`, finalForm);
+        } else {
+          await authenticatedAPI.post('/founders/', finalForm);
+        }
+        await fetchFounders();
+        resetForm();
+      } catch (error: any) {
+        console.error('Error saving founder:', error);
+        if (error?.response) {
+          alert(
+            `Error saving profile: ${error.response.data?.message || error.response.data?.detail || 'Server error'}.`
+          );
+        } else if (error?.request) {
+          alert('Error saving profile: Unable to connect to server. Please check your network.');
+        } else {
+          alert(`Error saving profile: ${error?.message || 'Unknown error'}.`);
+        }
+      }
+    },
+    [authenticatedAPI, editingFounder, formData, selectedImage, uploadImage, fetchFounders, resetForm]
+  );
 
   const handleSkillToggle = useCallback((skillId: number) => {
     setFormData((prev) => ({
