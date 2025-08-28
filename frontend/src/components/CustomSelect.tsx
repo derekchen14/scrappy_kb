@@ -9,6 +9,7 @@ interface CustomSelectProps<T extends string> {
   placeholder?: string;
   className?: string;
   label?: string;
+  maxHeight?: number; // New prop for max height
 }
 
 function CustomSelect<T extends string>({
@@ -18,6 +19,7 @@ function CustomSelect<T extends string>({
   placeholder = 'Select…',
   className = '',
   label,
+  maxHeight = 200, // Default max height
 }: CustomSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -57,7 +59,7 @@ function CustomSelect<T extends string>({
         aria-expanded={open}
         aria-controls={`listbox-${idBase}`}
         onClick={() => setOpen(o => !o)}
-        className="w-56 inline-flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full inline-flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <span className={selected ? '' : 'text-gray-400'}>
           {selected ? selected.label : placeholder}
@@ -76,28 +78,39 @@ function CustomSelect<T extends string>({
           ref={listRef}
           id={`listbox-${idBase}`}
           role="listbox"
-          className="absolute z-20 mt-2 w-56 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          style={{ maxHeight: `${maxHeight}px` }}
         >
-          {options.map(opt => {
-            const selected = value === opt.value;
-            return (
-              <div
-                key={opt.value}
-                role="option"
-                aria-selected={selected}
-                tabIndex={0}
-                onClick={() => {
-                  onChange(opt.value);
-                  setOpen(false);
-                  buttonRef.current?.focus();
-                }}
-                className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 
-                  ${selected ? 'bg-blue-50 font-medium text-blue-900' : 'text-gray-900'}`}
-              >
-                {opt.label}
-              </div>
-            );
-          })}
+          <div className="overflow-y-auto" style={{ maxHeight: `${maxHeight}px` }}>
+            {options.map(opt => {
+              const selected = value === opt.value;
+              return (
+                <div
+                  key={opt.value}
+                  role="option"
+                  aria-selected={selected}
+                  tabIndex={0}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                    buttonRef.current?.focus();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onChange(opt.value);
+                      setOpen(false);
+                      buttonRef.current?.focus();
+                    }
+                  }}
+                  className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors
+                    ${selected ? 'bg-blue-50 font-medium text-blue-900' : 'text-gray-900'}`}
+                >
+                  {opt.label}
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
