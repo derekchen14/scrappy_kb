@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 
 type Option<T extends string> = { label: string; value: T };
 
@@ -20,9 +20,6 @@ function CustomSelect<T extends string>({
   label,
 }: CustomSelectProps<T>) {
   const [open, setOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState<number>(() =>
-    Math.max(0, options.findIndex(o => o.value === value))
-  );
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const idBase = useMemo(() => Math.random().toString(36).slice(2), []);
