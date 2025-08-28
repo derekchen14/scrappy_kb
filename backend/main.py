@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 import models, schemas, database, crud
 from auth import get_current_user, get_current_user_optional
 import os
@@ -13,24 +13,25 @@ import json
 from pathlib import Path
 from pydantic import BaseModel
 
+# NEW: helpers for import
+import csv
+import io
+import re
+
 app = FastAPI(title="Scrappy Founders Knowledge Base")
 
-# Create uploads directory if it doesn't exist
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# Custom endpoint to serve uploaded images with CORS headers
 @app.get("/uploads/{filename}")
 async def serve_uploaded_file(filename: str):
     file_path = UPLOAD_DIR / filename
     print(f"Looking for file: {file_path}")
     print(f"File exists: {file_path.exists()}")
     print(f"Upload directory contents: {list(UPLOAD_DIR.glob('*')) if UPLOAD_DIR.exists() else 'Directory does not exist'}")
-    
     if not file_path.exists():
-        # For now, return a 404 but with CORS headers so the frontend can handle it gracefully
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail="File not found",
             headers={
                 "Access-Control-Allow-Origin": "*",
@@ -38,8 +39,6 @@ async def serve_uploaded_file(filename: str):
                 "Access-Control-Allow-Headers": "*",
             }
         )
-    
-    # Return file with proper CORS headers
     return FileResponse(
         path=file_path,
         headers={
@@ -49,7 +48,6 @@ async def serve_uploaded_file(filename: str):
         }
     )
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -58,10 +56,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Create tables
 models.Base.metadata.create_all(bind=database.engine)
 
-# Dependency
 def get_db():
     db = database.SessionLocal()
     try:
@@ -69,47 +65,31 @@ def get_db():
     finally:
         db.close()
 
-# Health check endpoint (no auth required)
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "message": "API is running"}
 
-# Root endpoint
 @app.get("/")
 def read_root():
     return {"message": "Scrappy Founders Knowledge Base API"}
 
-# Documentation endpoint - How image storage works
 @app.get("/admin/image-storage-info")
 def image_storage_info(db: Session = Depends(get_db)):
-    """
-    Documents how image storage works in this application
-    """
-    
-    # Get all founders with their image URLs
     founders_with_images = db.query(models.Founder).filter(models.Founder.profile_image_url.isnot(None)).all()
-    
-    # Check what's actually on disk
     disk_files = []
     if UPLOAD_DIR.exists():
         for file_path in UPLOAD_DIR.glob('*'):
             if file_path.is_file():
                 disk_files.append(file_path.name)
-    
-    # Analyze the founders' image URLs
     db_image_info = []
     for founder in founders_with_images:
         if founder.profile_image_url:
-            # Check if it's a relative path or absolute URL
             url = founder.profile_image_url
             is_relative = url.startswith('/uploads/')
             is_absolute = url.startswith('http')
-            
-            # Extract filename if possible
             filename = None
             if '/' in url:
                 filename = url.split('/')[-1]
-            
             db_image_info.append({
                 "founder_id": founder.id,
                 "founder_name": founder.name,
@@ -119,12 +99,11 @@ def image_storage_info(db: Session = Depends(get_db)):
                 "extracted_filename": filename,
                 "file_exists_on_disk": filename in disk_files if filename else False
             })
-    
     return {
         "documentation": {
             "image_upload_process": {
                 "1": "Images are uploaded via POST /upload-image/ endpoint",
-                "2": "Files are saved to UPLOAD_DIR (./uploads/)",  
+                "2": "Files are saved to UPLOAD_DIR (./uploads/)",
                 "3": "Unique filename is generated using uuid.uuid4()",
                 "4": "Endpoint returns {'image_url': '/uploads/filename.ext'}",
                 "5": "Frontend stores this URL in founder.profile_image_url"
@@ -154,52 +133,36 @@ def image_storage_info(db: Session = Depends(get_db)):
         }
     }
 
-# Protected endpoint to verify authentication
 @app.get("/protected")
 def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": "This is a protected endpoint", "user": current_user}
 
-# Image upload endpoint
 @app.post("/upload-image/")
 async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
-    # Validate file type
     if not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail="File must be an image")
-    
-    # Generate unique filename
     file_extension = file.filename.split(".")[-1] if file.filename else "jpg"
     unique_filename = f"{uuid.uuid4()}.{file_extension}"
     file_path = UPLOAD_DIR / unique_filename
-    
-    # Save file
     with open(file_path, "wb") as buffer:
         content = await file.read()
         buffer.write(content)
-    
-    # Return the URL that can be used to access the image
     return {"image_url": f"/uploads/{unique_filename}"}
 
-# Founder endpoints
 @app.post("/founders/", response_model=schemas.Founder)
 def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     try:
         print(f"Creating founder with data: {founder.dict()}")
         print(f"Current user: {current_user}")
-        
-        # Only set auth0_user_id from current user if not provided AND user is creating their own profile
-        # For admin-created profiles, leave auth0_user_id as None until the actual user logs in
         if not founder.auth0_user_id and current_user and founder.email == current_user.get('email'):
             founder.auth0_user_id = current_user.get('sub')
             print(f"Set auth0_user_id to: {founder.auth0_user_id}")
         else:
             print(f"Not setting auth0_user_id (admin creating profile for someone else)")
-        
         return crud.create_founder(db=db, founder=founder)
     except Exception as e:
         print(f"Error creating founder: {str(e)}")
         print(f"Error type: {type(e)}")
-        
-        # Handle specific database errors
         error_str = str(e)
         if "UNIQUE constraint failed" in error_str or "duplicate key" in error_str.lower():
             if "email" in error_str.lower():
@@ -217,20 +180,12 @@ def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)
 
 @app.post("/auth/check-profile")
 def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    """
-    Check if the authenticated user has an existing founder profile.
-    If they do, link their Auth0 account to it. If not, return profile setup needed.
-    """
     try:
         user_email = current_user.get('email')
         auth0_user_id = current_user.get('sub')
-        
         if not user_email:
             raise HTTPException(status_code=400, detail="User email not found in token")
-        
         print(f"Checking profile for user: {user_email}, auth0_id: {auth0_user_id}")
-        
-        # Check if user already has a linked profile
         existing_by_auth0 = db.query(models.Founder).filter(models.Founder.auth0_user_id == auth0_user_id).first()
         if existing_by_auth0:
             print(f"Found existing profile linked to Auth0 ID: {existing_by_auth0.name}")
@@ -239,31 +194,24 @@ def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depen
                 "profile_linked": True,
                 "founder": existing_by_auth0
             }
-        
-        # Check if there's an unlinked profile with matching email
         existing_by_email = db.query(models.Founder).filter(models.Founder.email == user_email).first()
         if existing_by_email:
             print(f"Found unlinked profile with matching email: {existing_by_email.name}")
-            # Link the Auth0 account to the existing profile
             existing_by_email.auth0_user_id = auth0_user_id
             db.commit()
             db.refresh(existing_by_email)
             print(f"Successfully linked Auth0 account to existing profile")
-            
             return {
                 "has_profile": True,
                 "profile_linked": True,
                 "founder": existing_by_email
             }
-        
-        # No existing profile found
         print(f"No existing profile found for {user_email}")
         return {
             "has_profile": False,
             "profile_linked": False,
             "founder": None
         }
-        
     except Exception as e:
         print(f"Error checking user profile: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error checking profile: {str(e)}")
@@ -274,13 +222,9 @@ def read_founders(skip: int = 0, limit: int = 10000, db: Session = Depends(get_d
 
 @app.get("/debug/check-email/{email}")
 def debug_check_email(email: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    """Debug endpoint to check if an email exists in the database"""
     try:
-        # Check for exact match
         exact_match = db.query(models.Founder).filter(models.Founder.email == email).first()
-        # Check for case-insensitive match
         case_insensitive = db.query(models.Founder).filter(models.Founder.email.ilike(email)).all()
-        
         return {
             "email_searched": email,
             "exact_match": {
@@ -319,47 +263,230 @@ def update_founder(founder_id: int, founder: schemas.FounderCreate, db: Session 
 def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     from auth import is_admin_user, ADMIN_EMAILS
     import logging
-    
     logger = logging.getLogger(__name__)
-    
     try:
-        # Check if user is admin
         user_email = current_user.get('email', '')
-        
         if not is_admin_user(user_email):
             raise HTTPException(status_code=403, detail="Admin privileges required")
-        
-        # Check if founder exists
         founder = crud.get_founder(db, founder_id=founder_id)
         if founder is None:
             logger.warning(f"Attempt to delete non-existent founder {founder_id}")
             raise HTTPException(status_code=404, detail="Founder not found")
-        
-        # Cascade delete: Remove all associated help requests first
         help_requests = db.query(models.HelpRequest).filter(models.HelpRequest.founder_id == founder_id).all()
         help_requests_count = len(help_requests)
         for help_request in help_requests:
             db.delete(help_request)
-        
-        # Delete the founder (this will automatically handle the startup relationship and many-to-many relationships)
         deleted_founder = crud.delete_founder(db, founder_id=founder_id)
-        
-        # Note: No need to explicitly commit here as crud.delete_founder already commits
-        
         logger.info(f"Successfully deleted founder {founder_id} and {help_requests_count} associated help requests by admin {user_email}")
         return {
-            "message": "Founder deleted successfully", 
+            "message": "Founder deleted successfully",
             "details": f"Also removed {help_requests_count} associated help requests"
         }
-        
     except HTTPException:
-        # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
         logger.error(f"Unexpected error deleting founder {founder_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
-# Skill endpoints
+# ---------- NEW: CSV Import Endpoint for Founders ----------
+
+@app.post("/founders/import")
+async def import_founders_from_csv(
+    file: UploadFile = File(...),
+    dry_run: bool = False,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Import founders from a CSV generated from your Google Sheet / form.
+    - Dedupe by email (case-insensitive).
+    - Creates/updates Startup, Skill(s), Hobby(ies) by name.
+    - On dry_run, parses and validates but does not write to DB.
+    Returns a summary and per-row results.
+    """
+    from auth import is_admin_user
+
+    user_email = current_user.get("email") or ""
+    if not is_admin_user(user_email):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+
+    # Read bytes and decode safely (support BOM)
+    try:
+        content = await file.read()
+        text = content.decode("utf-8-sig")
+    except Exception:
+        try:
+            text = content.decode("utf-8")
+        except Exception:
+            raise HTTPException(status_code=400, detail="Could not decode file as UTF-8")
+
+    # Parse CSV
+    try:
+        reader = csv.DictReader(io.StringIO(text))
+        rows = list(reader)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid CSV: {e}")
+
+    # Column map (case-insensitive; supports several variants)
+    def pick(row: Dict[str, Any], *cands: str) -> str:
+        if not row:
+            return ""
+        lower_map = { (k or "").strip().lower(): (v or "").strip() for k, v in row.items() }
+        for c in cands:
+            if c.lower() in lower_map:
+                return lower_map[c.lower()]
+        # Try partial/loose matches
+        for k, v in lower_map.items():
+            for c in cands:
+                if c.lower() in k:
+                    return v
+        return ""
+
+    def split_list(val: str) -> List[str]:
+        if not val:
+            return []
+        # split by comma or semicolon; keep slashes inside tokens
+        parts = re.split(r"[;,]", val)
+        return [p.strip() for p in parts if p and p.strip()]
+
+    # Simple get-or-create helpers
+    def get_or_create_skill(name: str) -> models.Skill:
+        obj = db.query(models.Skill).filter(models.Skill.name.ilike(name)).first()
+        if obj:
+            return obj
+        obj = models.Skill(name=name, category=None, description=None)
+        db.add(obj); db.commit(); db.refresh(obj)
+        return obj
+
+    def get_or_create_hobby(name: str) -> models.Hobby:
+        obj = db.query(models.Hobby).filter(models.Hobby.name.ilike(name)).first()
+        if obj:
+            return obj
+        obj = models.Hobby(name=name, category=None, description=None)
+        db.add(obj); db.commit(); db.refresh(obj)
+        return obj
+
+    def get_or_create_startup(name: str) -> models.Startup:
+        obj = db.query(models.Startup).filter(models.Startup.name.ilike(name)).first()
+        if obj:
+            return obj
+        obj = models.Startup(name=name)
+        db.add(obj); db.commit(); db.refresh(obj)
+        return obj
+
+    summary = {
+        "processed": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "errors": 0,
+        "dry_run": dry_run,
+        "details": []  # per-row info
+    }
+
+    for idx, row in enumerate(rows, start=2):  # header = line 1
+        try:
+            name = pick(row, "Name")
+            email = pick(row, "Email")
+            if not email:
+                summary["skipped"] += 1
+                summary["details"].append({"row": idx, "status": "skipped", "reason": "missing email"})
+                continue
+
+            linkedin = pick(row, "LinkedIn", "LinkedIn URL", "LinkedIn Profile")
+            bio = pick(row, "Bio")
+            location = pick(row, "Location")
+
+            startup_name = pick(row, "Startup", "Startup Name", "Company", "Venture")
+            startup_desc = pick(row, "Describe what your startup does", "Startup Description", "Description")
+            stage = pick(row, "Where are you now", "Stage")
+            industry = pick(row, "What is your startup industry", "Industry")
+            target_market = pick(row, "Who are you building for", "Target Market")
+            revenue_arr = pick(row, "Current revenue (ARR $)", "Revenue ARR")
+
+            skills_offered = split_list(pick(row, "One thing YOU CAN HELP", "Help Offered"))
+            skills_needed = split_list(pick(row, "Something you want other founders to HELP YOU", "Help Needed"))
+            hobbies = split_list(pick(row, "One thing you love doing outside your startup", "Hobbies"))
+
+            # Build relations (ids)
+            skill_ids: List[int] = []
+            for s in skills_offered + skills_needed:
+                if not s:
+                    continue
+                obj = get_or_create_skill(s)
+                skill_ids.append(obj.id)
+
+            hobby_ids: List[int] = []
+            for h in hobbies:
+                if not h:
+                    continue
+                obj = get_or_create_hobby(h)
+                hobby_ids.append(obj.id)
+
+            startup_id: Optional[int] = None
+            if startup_name:
+                st = get_or_create_startup(startup_name)
+                # Fill extra startup fields if empty or new info is present
+                updated = False
+                if startup_desc and (not st.description):
+                    st.description = startup_desc; updated = True
+                if stage and (not st.stage):
+                    st.stage = stage; updated = True
+                if industry and (not st.industry):
+                    st.industry = industry; updated = True
+                if target_market and (not st.target_market):
+                    st.target_market = target_market; updated = True
+                if revenue_arr and (not st.revenue_arr):
+                    st.revenue_arr = revenue_arr; updated = True
+                if updated and not dry_run:
+                    db.commit(); db.refresh(st)
+                startup_id = st.id
+
+            payload = schemas.FounderCreate(
+                name=name or email.split("@")[0],
+                email=email,
+                bio=bio or "",
+                location=location or "",
+                linkedin_url=linkedin or "",
+                twitter_url="",
+                github_url="",
+                profile_image_url="",
+                profile_visible=True,
+                auth0_user_id=None,
+                skill_ids=skill_ids,
+                startup_id=startup_id,
+                hobby_ids=hobby_ids,
+            )
+
+            if dry_run:
+                summary["processed"] += 1
+                summary["details"].append({"row": idx, "status": "ok", "action": "would upsert", "email": email})
+                continue
+
+            existing = crud.get_founder_by_email(db, email)
+            if existing:
+                crud.update_founder(db, existing.id, payload)
+                summary["updated"] += 1
+                action = "updated"
+                founder_id = existing.id
+            else:
+                created = crud.create_founder(db, payload)
+                summary["created"] += 1
+                action = "created"
+                founder_id = created.id
+
+            summary["processed"] += 1
+            summary["details"].append({"row": idx, "status": "ok", "action": action, "email": email, "id": founder_id})
+
+        except Exception as e:
+            summary["errors"] += 1
+            summary["details"].append({"row": idx, "status": "error", "error": str(e)})
+            # Don’t fail the whole import; continue
+
+    return summary
+
+# ---------- Skills ----------
+
 @app.post("/skills/", response_model=schemas.Skill)
 def create_skill(skill: schemas.SkillCreate, db: Session = Depends(get_db)):
     return crud.create_skill(db=db, skill=skill)
@@ -389,7 +516,8 @@ def delete_skill(skill_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Skill not found")
     return {"message": "Skill deleted successfully"}
 
-# Startup endpoints
+# ---------- Startups ----------
+
 @app.post("/startups/", response_model=schemas.Startup)
 def create_startup(startup: schemas.StartupCreate, db: Session = Depends(get_db)):
     return crud.create_startup(db=db, startup=startup)
@@ -421,15 +549,14 @@ def delete_startup(startup_id: int, db: Session = Depends(get_db)):
 
 @app.get("/startups/{startup_id}/founders", response_model=List[schemas.Founder])
 def get_startup_founders(startup_id: int, db: Session = Depends(get_db)):
-    """Get all founders associated with a specific startup."""
     startup = crud.get_startup(db, startup_id=startup_id)
     if startup is None:
         raise HTTPException(status_code=404, detail="Startup not found")
-    
     founders = crud.get_founders_by_startup_id(db, startup_id=startup_id)
     return founders
 
-# Help Request endpoints
+# ---------- Help Requests ----------
+
 @app.post("/help-requests/", response_model=schemas.HelpRequest)
 def create_help_request(help_request: schemas.HelpRequestCreate, db: Session = Depends(get_db)):
     return crud.create_help_request(db=db, help_request=help_request)
@@ -459,7 +586,8 @@ def delete_help_request(help_request_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Help request not found")
     return {"message": "Help request deleted successfully"}
 
-# Hobby endpoints
+# ---------- Hobbies ----------
+
 @app.post("/hobbies/", response_model=schemas.Hobby)
 def create_hobby(hobby: schemas.HobbyCreate, db: Session = Depends(get_db)):
     return crud.create_hobby(db=db, hobby=hobby)
@@ -489,7 +617,8 @@ def delete_hobby(hobby_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Hobby not found")
     return {"message": "Hobby deleted successfully"}
 
-# Event endpoints
+# ---------- Events ----------
+
 @app.post("/events/", response_model=schemas.Event)
 def create_event(event: schemas.EventCreate, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     return crud.create_event(db=db, event=event)
@@ -519,57 +648,37 @@ def delete_event(event_id: int, db: Session = Depends(get_db), current_user: dic
         raise HTTPException(status_code=404, detail="Event not found")
     return {"message": "Event deleted successfully"}
 
-# User profile matching and claiming endpoints
+# ---------- Claiming / Profile lookup ----------
+
 @app.get("/api/my-profile")
 def get_my_profile(current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get the current user's claimed founder profile, or find unclaimed profile by email."""
     user_email = current_user.get("email")
     user_id = current_user.get("sub")
-    
     if not user_email or not user_id:
         raise HTTPException(status_code=400, detail="User email or ID not found in token")
-    
-    # First check if user has already claimed a profile
     claimed_founder = crud.get_founder_by_auth0_user_id(db, user_id)
     if claimed_founder:
         return {"founder": claimed_founder, "status": "claimed"}
-    
-    # If not claimed, look for unclaimed profile with matching email
     unclaimed_founder = crud.get_unclaimed_founder_by_email(db, user_email)
     if unclaimed_founder:
         return {"founder": unclaimed_founder, "status": "available"}
-    
-    # No matching founder profile found
     return {"founder": None, "status": "none"}
 
 @app.post("/api/claim-profile/{founder_id}")
 def claim_profile(founder_id: int, current_user: dict = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Claim an unclaimed founder profile."""
     user_email = current_user.get("email")
     user_id = current_user.get("sub")
-    
     if not user_email or not user_id:
         raise HTTPException(status_code=400, detail="User email or ID not found in token")
-    
-    # Check if user has already claimed a profile
     existing_claim = crud.get_founder_by_auth0_user_id(db, user_id)
     if existing_claim:
         raise HTTPException(status_code=400, detail="User has already claimed a profile")
-    
-    # Get the founder profile
     founder = crud.get_founder(db, founder_id)
     if not founder:
         raise HTTPException(status_code=404, detail="Founder profile not found")
-    
-    # Check if profile is already claimed
     if founder.auth0_user_id:
         raise HTTPException(status_code=400, detail="Profile has already been claimed")
-    
-    # Check if email matches
     if founder.email.lower() != user_email.lower():
         raise HTTPException(status_code=403, detail="Email does not match profile")
-    
-    # Claim the profile
     claimed_founder = crud.claim_founder_profile(db, founder_id, user_id)
     return {"founder": claimed_founder, "message": "Profile claimed successfully"}
-
