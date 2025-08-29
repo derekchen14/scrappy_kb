@@ -112,6 +112,11 @@ class Founder(FounderBase):
     class Config:
         from_attributes = True
 
+class FounderUploadResponse(BaseModel):
+    message: str
+    created_count: int
+    errors: List[str]
+
 # Event schemas
 class EventBase(BaseModel):
     title: str
