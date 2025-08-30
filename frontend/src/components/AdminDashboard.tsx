@@ -6,7 +6,7 @@ import CustomSelect from './CustomSelect';
 
 /* =========================
    FileUploader (Admin only) - UPDATED
-   - Now handles detailed API response for CSV uploads
+   Handles detailed API response for CSV uploads
    ========================= */
 interface FileUploaderProps {
   onUploaded?: () => void;
