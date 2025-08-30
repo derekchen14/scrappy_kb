@@ -5,85 +5,84 @@ import { Founder, Startup, HelpRequest } from '../types';
 import CustomSelect from './CustomSelect';
 
 /* =========================
-   FileUploader (Admin only)
-   - Drag & drop or click
-   - Accepts CSV / Excel / PDF
-   - Sends FormData to POST /founders
+   FileUploader (Admin only) - UPDATED
+   Handles detailed API response for CSV uploads
    ========================= */
 interface FileUploaderProps {
   onUploaded?: () => void;
   disabled?: boolean;
 }
 
+// Restrict to CSV MIME types
 const ACCEPTED_MIME = [
-  // CSV
   'text/csv',
   'application/csv',
-  'text/plain',
-  // Excel
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  // PDF
-  'application/pdf',
+  'text/plain', // Often used for CSV
 ];
 
-const ACCEPT_ATTR = [
-  '.csv',
-  '.xls',
-  '.xlsx',
-  '.pdf',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/pdf',
-  'text/csv',
-].join(',');
+// Update accept attribute for file input
+const ACCEPT_ATTR = '.csv,text/csv';
+
+// Define a type for the upload result state
+interface UploadResult {
+  created_count: number;
+  errors: string[];
+}
 
 function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
   const { authenticatedAPI } = useAuthenticatedAPI();
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  // State to hold structured upload results
+  const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const file = files[0];
 
-    const isAccepted =
-      ACCEPTED_MIME.includes(file.type) ||
-      /\.csv$/i.test(file.name) ||
-      /\.xlsx?$/i.test(file.name) ||
-      /\.pdf$/i.test(file.name);
+    // Updated validation for CSV files only
+    const isAccepted = ACCEPTED_MIME.includes(file.type) || /\.csv$/i.test(file.name);
 
     if (!isAccepted) {
-      setMsg('Unsupported file type. Please upload CSV, Excel, or PDF.');
-      return;
+        setUploadResult({ created_count: 0, errors: ['Unsupported file type. Please upload a CSV file.'] });
+        return;
     }
 
     setBusy(true);
-    setMsg(null);
+    setUploadResult(null); // Clear previous results
     try {
       const form = new FormData();
       form.append('file', file);
 
-      // Placeholder API call (backend to be implemented)
-      await authenticatedAPI.post('/founders', form, {
+      // 1. --- API ENDPOINT UPDATED ---
+      // Use the new endpoint for CSV uploads
+      const response = await authenticatedAPI.post<UploadResult>('/founders/upload-csv', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setMsg('Upload successful. Parsing has been queued.');
-      onUploaded?.();
+      // 2. --- DETAILED RESPONSE HANDLING ---
+      // Set the structured result from the API
+      setUploadResult(response.data);
+      
+      // Refresh parent data if at least one founder was created
+      if (response.data.created_count > 0) {
+        onUploaded?.();
+      }
+
     } catch (e: any) {
       console.error('Upload failed', e);
-      setMsg('Upload failed. Please try again.');
+      // Handle network or server errors
+      const errorMsg = e.response?.data?.detail || 'Upload failed. Please check the file format and try again.';
+      setUploadResult({ created_count: 0, errors: [errorMsg] });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV / Excel / PDF)</label>
+    <div className="space-y-4">
+      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV only)</label>
       <div
         onDragOver={(e) => {
           e.preventDefault();
@@ -103,7 +102,7 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
           <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
         <div className="text-sm text-gray-700">
-          Drag & drop your file here, or{' '}
+          Drag & drop your CSV file here, or{' '}
           <button
             type="button"
             className="font-medium text-blue-600 hover:underline focus:outline-none"
@@ -113,7 +112,8 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
             browse
           </button>
         </div>
-        <div className="text-xs text-gray-500">Max 25MB • CSV, XLS, XLSX, PDF</div>
+        {/* 3. --- UI TEXT UPDATED --- */}
+        <div className="text-xs text-gray-500">Max 25MB • CSV only</div>
         <input
           ref={inputRef}
           type="file"
@@ -123,13 +123,38 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
           disabled={busy || disabled}
         />
       </div>
-      {msg && <p className="text-xs text-gray-600">{msg}</p>}
+
+      {/* 4. --- DETAILED RESULT DISPLAY --- */}
+      {uploadResult && (
+        <div className="text-sm space-y-3">
+          {uploadResult.created_count > 0 && (
+            <div className="rounded-md bg-green-50 p-3">
+              <p className="font-medium text-green-800">
+                Successfully created {uploadResult.created_count} new founder(s).
+              </p>
+            </div>
+          )}
+          {uploadResult.errors.length > 0 && (
+            <div className="rounded-md bg-red-50 p-3">
+              <p className="font-medium text-red-800 mb-2">
+                Encountered {uploadResult.errors.length} error(s):
+              </p>
+              <ul className="list-disc list-inside space-y-1 text-red-700 max-h-48 overflow-y-auto">
+                {uploadResult.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
+
 /* =========================
-   Admin Dashboard
+   Admin Dashboard (No changes needed below this line)
    ========================= */
 
 interface AdminStats {
@@ -373,7 +398,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <h2 className="text-xl font-semibold text-gray-900">Bulk import founders</h2>
         <p className="text-gray-600 mb-4">
-          Upload a CSV/Excel/PDF table to parse and create records.
+          Upload a CSV table to parse and create new founder records. The process will skip any founders whose email already exists.
         </p>
         <FileUploader onUploaded={fetchAdminData} />
       </div>
