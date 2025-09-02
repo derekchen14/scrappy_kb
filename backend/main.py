@@ -5,7 +5,8 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import models, schemas, database, crud
-from auth import get_current_user, get_current_user_optional
+# --- IMPORT is_admin_user for the new endpoint ---
+from auth import get_current_user, get_current_user_optional, is_admin_user
 import os
 import uuid
 import requests
@@ -215,6 +216,36 @@ def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)
         else:
             raise HTTPException(status_code=500, detail=f"Database error: {error_str}")
 
+@app.post("/founders/upload-csv", response_model=schemas.FounderUploadResponse)
+async def upload_founders_csv(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    (Admin Only) Allows bulk creation of founders from a CSV file.
+    """
+    # 1. Admin Authorization Check
+    user_email = current_user.get('email', '')
+    if not is_admin_user(user_email):
+        raise HTTPException(status_code=403, detail="Admin privileges required for this action.")
+
+    # 2. File Type Validation
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV file.")
+    
+    try:
+        # 3. Read file content and pass to CRUD function
+        csv_file_content = await file.read()
+        result = crud.create_founders_from_csv(db, csv_file_content)
+        return result
+    except Exception as e:
+        # 4. Handle unexpected errors
+        raise HTTPException(
+            status_code=500,
+            detail=f"An unexpected error occurred while processing the file: {str(e)}"
+        )
+
 @app.post("/auth/check-profile")
 def check_user_profile(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     """
@@ -317,7 +348,6 @@ def update_founder(founder_id: int, founder: schemas.FounderCreate, db: Session 
 
 @app.delete("/founders/{founder_id}")
 def delete_founder(founder_id: int, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    from auth import is_admin_user, ADMIN_EMAILS
     import logging
     
     logger = logging.getLogger(__name__)
@@ -572,4 +602,3 @@ def claim_profile(founder_id: int, current_user: dict = Depends(get_current_user
     # Claim the profile
     claimed_founder = crud.claim_founder_profile(db, founder_id, user_id)
     return {"founder": claimed_founder, "message": "Profile claimed successfully"}
-
