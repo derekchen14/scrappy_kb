@@ -199,22 +199,21 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
             # Normalize row keys/values (handle None)
             row = { (k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items() }
 
-            # --- Required Startup name ---
+            # --- Optional Startup name ---
+            startup_id = None
             startup_name = row.get(COL_STARTUP_NAME, "")
-            if not startup_name:
-                errors.append(f"Row {rownum}: '{COL_STARTUP_NAME}' is required.")
-                continue
-
-            startup_data = {
-                "name": startup_name,
-                "description": row.get(COL_STARTUP_DESC, ""),
-                "stage": row.get(COL_STARTUP_STAGE, ""),
-                "industry": row.get(COL_STARTUP_INDUSTRY, ""),
-                "target_market": row.get(COL_STARTUP_MARKET, ""),
-                "revenue_arr": row.get(COL_STARTUP_REVENUE, ""),
-                "website_url": row.get(COL_STARTUP_WEBSITE, ""),   # matches schemas.StartupBase
-            }
-            startup = get_or_create_startup(db, startup_name, startup_data)
+            if startup_name:
+                startup_data = {
+                    "name": startup_name,
+                    "description": row.get(COL_STARTUP_DESC, ""),
+                    "stage": row.get(COL_STARTUP_STAGE, ""),
+                    "industry": row.get(COL_STARTUP_INDUSTRY, ""),
+                    "target_market": row.get(COL_STARTUP_MARKET, ""),
+                    "revenue_arr": row.get(COL_STARTUP_REVENUE, ""),
+                    "website_url": row.get(COL_STARTUP_WEBSITE, ""),
+                }
+                startup = get_or_create_startup(db, startup_name, startup_data)
+                startup_id = startup.id
 
             # --- Required Founder email ---
             founder_email = row.get(COL_EMAIL, "")
@@ -262,7 +261,7 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
                 location=row.get(COL_LOCATION, ""),
                 linkedin_url=linkedin_url,
                 twitter_url=row.get(COL_TWITTER, ""),
-                startup_id=startup.id,
+                startup_id=startup_id,
                 skill_ids=skill_ids,
                 hobby_ids=hobby_ids,
                 profile_visible=True,
