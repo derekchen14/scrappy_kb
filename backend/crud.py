@@ -126,6 +126,31 @@ def decode_csv_bytes(csv_bytes: bytes) -> str:
     except UnicodeDecodeError:
         return csv_bytes.decode("latin-1", errors="replace")
 
+def normalize_url(u: str) -> str:
+    u = (u or "").strip()
+    if not u:
+        return ""
+    if not u.startswith(("http://", "https://")):
+        u = "https://" + u
+    return u
+
+def extract_linkedin_url(row: Dict[str, str]) -> str:
+    """
+    1) ищем в колонках, где ключ содержит 'linkedin'
+    2) если не нашли — ищем по всем значениям подстроку 'linkedin.com'
+    """
+    # 1) по ключам
+    for k, v in row.items():
+        if "linkedin" in (k or "") and v:
+            vv = v.strip()
+            if vv:
+                return normalize_url(vv)
+    # 2) по значениям
+    for v in row.values():
+        if isinstance(v, str) and "linkedin.com" in v.lower():
+            return normalize_url(v)
+    return ""
+
 def get_or_create_skill(db: Session, skill_name: str) -> models.Skill:
     """Helper function to get a skill by name or create it if it doesn't exist."""
     skill = db.query(models.Skill).filter(models.Skill.name.ilike(skill_name.strip())).first()
@@ -152,7 +177,10 @@ def get_or_create_startup(db: Session, startup_name: str, startup_details: Dict)
 
 def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
     """
-    Parses a CSV (bytes or decoded text) and creates founders, startups, skills, and hobbies.
+    Parses a CSV (bytes or decoded text) and creates founders, startups (optional), skills, and hobbies.
+    - Startup is OPTIONAL
+    - LinkedIn берётся из любой колонки с "linkedin" в названии или из любого значения, где встречается "linkedin.com"
+    - На ошибке строки делаем db.rollback(), чтобы следующие строки продолжали создаваться
     Returns a dict compatible with schemas.FounderUploadResponse.
     """
     created_founders = []
@@ -176,17 +204,16 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
     except Exception as e:
         return {"message": "Failed to read CSV", "created_count": 0, "errors": [f"Reader error: {e}"]}
 
-    # Expected columns (lowercase) — extra columns are ignored
+    # Колонки (нижний регистр) — лишние игнорируем
     COL_NAME = "name"
     COL_EMAIL = "email"
-    COL_LINKEDIN = "linkedin url"
     COL_TWITTER = "twitter url"
     COL_LOCATION = "location"
     COL_HOBBY = "one thing you love doing outside your startup?"
     COL_HELP_OFFERED = "one thing you can help with (your specialization/passion)"
     COL_HELP_WANTED = "something you want other founders to help you with? (customer acquisition, gtm, fundraising, engineering, product, etc.)"
 
-    COL_STARTUP_NAME = "startup name"
+    COL_STARTUP_NAME = "startup name"          # OPTIONAL
     COL_STARTUP_DESC = "describe what your startup does (in 1 sentence)"
     COL_STARTUP_STAGE = "where are you now (stage)?"
     COL_STARTUP_INDUSTRY = "what is your startup industry?"
@@ -194,12 +221,27 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
     COL_STARTUP_REVENUE = "current revenue (arr $)"
     COL_STARTUP_WEBSITE = "startup website"
 
-    for rownum, raw_row in enumerate(reader, 2):  # 2 = header+1
+    for rownum, raw_row in enumerate(reader, 2):
         try:
-            # Normalize row keys/values (handle None)
-            row = { (k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items() }
+            # нормализуем ключи/значения
+            row = {(k or "").strip().lower(): (v or "").strip() for k, v in raw_row.items()}
 
-            # --- Optional Startup name ---
+            # --- email обязателен и должен быть уникален ---
+            founder_email = row.get(COL_EMAIL, "")
+            if not founder_email:
+                errors.append(f"Row {rownum}: '{COL_EMAIL}' is required.")
+                continue
+            if db.query(models.Founder).filter(models.Founder.email.ilike(founder_email)).first():
+                errors.append(f"Row {rownum}: Founder with email '{founder_email}' already exists.")
+                continue
+
+            # --- LinkedIn: гибкая выемка + нормализация ---
+            linkedin_url = extract_linkedin_url(row)
+            if not linkedin_url:
+                errors.append(f"Row {rownum}: 'linkedin url' is required (provide any field containing linkedin.com).")
+                continue
+
+            # --- Startup: опционально ---
             startup_id = None
             startup_name = row.get(COL_STARTUP_NAME, "")
             if startup_name:
@@ -215,24 +257,7 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
                 startup = get_or_create_startup(db, startup_name, startup_data)
                 startup_id = startup.id
 
-            # --- Required Founder email ---
-            founder_email = row.get(COL_EMAIL, "")
-            if not founder_email:
-                errors.append(f"Row {rownum}: '{COL_EMAIL}' is required.")
-                continue
-
-            existing = db.query(models.Founder).filter(models.Founder.email.ilike(founder_email)).first()
-            if existing:
-                errors.append(f"Row {rownum}: Founder with email '{founder_email}' already exists.")
-                continue
-
-            # --- Required LinkedIn URL (per schema validator) ---
-            linkedin_url = row.get(COL_LINKEDIN, "")
-            if not linkedin_url:
-                errors.append(f"Row {rownum}: '{COL_LINKEDIN}' is required.")
-                continue
-
-            # Skills (merge offered + wanted, comma-separated)
+            # --- Skills ---
             skill_ids: List[int] = []
             help_offered = row.get(COL_HELP_OFFERED, "")
             help_wanted = row.get(COL_HELP_WANTED, "")
@@ -246,7 +271,7 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
                 skill = get_or_create_skill(db, sname)
                 skill_ids.append(skill.id)
 
-            # Hobbies (comma-separated)
+            # --- Hobbies ---
             hobby_ids: List[int] = []
             hobbies_str = row.get(COL_HOBBY, "")
             for hname in [h.strip() for h in hobbies_str.split(",") if h.strip()]:
@@ -254,14 +279,14 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
                 if hobby.id not in hobby_ids:
                     hobby_ids.append(hobby.id)
 
-            # Create Founder (schema enforces linkedin_url non-empty)
+            # --- Create founder ---
             founder_data = schemas.FounderCreate(
                 name=row.get(COL_NAME, ""),
                 email=founder_email,
                 location=row.get(COL_LOCATION, ""),
-                linkedin_url=linkedin_url,
+                linkedin_url=linkedin_url,                # уже нормализован
                 twitter_url=row.get(COL_TWITTER, ""),
-                startup_id=startup_id,
+                startup_id=startup_id,                     # может быть None
                 skill_ids=skill_ids,
                 hobby_ids=hobby_ids,
                 profile_visible=True,
@@ -271,6 +296,7 @@ def create_founders_from_csv(db: Session, csv_input: Union[bytes, str]):
             created_founders.append(created)
 
         except Exception as e:
+            db.rollback()  # критично: не блокируем следующие строки
             errors.append(f"Row {rownum}: Unexpected error - {e}")
 
     return {
