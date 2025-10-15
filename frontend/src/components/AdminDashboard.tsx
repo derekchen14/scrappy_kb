@@ -1,29 +1,47 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Paper,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Alert,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  IconButton,
+  Grid,
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  CloudUpload as CloudUploadIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import { Founder, Startup, HelpRequest } from '../types';
-import CustomSelect from './CustomSelect';
 
-/* =========================
-   FileUploader (Admin only) - UPDATED
-   Handles detailed API response for CSV uploads
-   ========================= */
 interface FileUploaderProps {
   onUploaded?: () => void;
   disabled?: boolean;
 }
 
-// Restrict to CSV MIME types
-const ACCEPTED_MIME = [
-  'text/csv',
-  'application/csv',
-  'text/plain', // Often used for CSV
-];
-
-// Update accept attribute for file input
+const ACCEPTED_MIME = ['text/csv', 'application/csv', 'text/plain'];
 const ACCEPT_ATTR = '.csv,text/csv';
 
-// Define a type for the upload result state
 interface UploadResult {
   created_count: number;
   errors: string[];
@@ -33,7 +51,6 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
   const { authenticatedAPI } = useAuthenticatedAPI();
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
-  // State to hold structured upload results
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -41,38 +58,30 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
     if (!files || files.length === 0) return;
     const file = files[0];
 
-    // Updated validation for CSV files only
     const isAccepted = ACCEPTED_MIME.includes(file.type) || /\.csv$/i.test(file.name);
 
     if (!isAccepted) {
-        setUploadResult({ created_count: 0, errors: ['Unsupported file type. Please upload a CSV file.'] });
-        return;
+      setUploadResult({ created_count: 0, errors: ['Unsupported file type. Please upload a CSV file.'] });
+      return;
     }
 
     setBusy(true);
-    setUploadResult(null); // Clear previous results
+    setUploadResult(null);
     try {
       const form = new FormData();
       form.append('file', file);
 
-      // 1. --- API ENDPOINT UPDATED ---
-      // Use the new endpoint for CSV uploads
       const response = await authenticatedAPI.post<UploadResult>('/founders/upload-csv', form, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // 2. --- DETAILED RESPONSE HANDLING ---
-      // Set the structured result from the API
       setUploadResult(response.data);
-      
-      // Refresh parent data if at least one founder was created
+
       if (response.data.created_count > 0) {
         onUploaded?.();
       }
-
     } catch (e: any) {
       console.error('Upload failed', e);
-      // Handle network or server errors
       const errorMsg = e.response?.data?.detail || 'Upload failed. Please check the file format and try again.';
       setUploadResult({ created_count: 0, errors: [errorMsg] });
     } finally {
@@ -81,9 +90,12 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
   };
 
   return (
-    <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-900">Bulk import (CSV only)</label>
-      <div
+    <Box>
+      <Typography variant="subtitle2" fontWeight={600} mb={2}>
+        Bulk import (CSV only)
+      </Typography>
+      <Paper
+        variant="outlined"
         onDragOver={(e) => {
           e.preventDefault();
           setDragOver(true);
@@ -94,68 +106,79 @@ function FileUploader({ onUploaded, disabled }: FileUploaderProps) {
           setDragOver(false);
           handleFiles(e.dataTransfer.files);
         }}
-        className={`flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 text-center transition
-          ${dragOver ? 'border-blue-400 bg-blue-50' : 'border-gray-300 bg-white'} 
-          ${busy || disabled ? 'opacity-60' : 'hover:bg-gray-50'}`}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 2,
+          p: 4,
+          borderStyle: 'dashed',
+          borderWidth: 2,
+          borderColor: dragOver ? 'primary.main' : 'divider',
+          bgcolor: dragOver ? 'action.hover' : 'background.paper',
+          opacity: busy || disabled ? 0.6 : 1,
+          transition: 'all 0.2s',
+          cursor: 'pointer',
+          '&:hover': {
+            bgcolor: 'action.hover',
+          },
+        }}
       >
-        <svg className="h-10 w-10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v4h16v-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-        <div className="text-sm text-gray-700">
-          Drag & drop your CSV file here, or{' '}
-          <button
-            type="button"
-            className="font-medium text-blue-600 hover:underline focus:outline-none"
-            onClick={() => inputRef.current?.click()}
-            disabled={busy || disabled}
-          >
-            browse
-          </button>
-        </div>
-        {/* 3. --- UI TEXT UPDATED --- */}
-        <div className="text-xs text-gray-500">Max 25MB • CSV only</div>
+        <CloudUploadIcon sx={{ fontSize: 48, color: 'action.active' }} />
+        <Box textAlign="center">
+          <Typography variant="body2" color="text.secondary">
+            Drag & drop your CSV file here, or{' '}
+            <Button
+              component="span"
+              size="small"
+              onClick={() => inputRef.current?.click()}
+              disabled={busy || disabled}
+              sx={{ textTransform: 'none', p: 0, minWidth: 0 }}
+            >
+              browse
+            </Button>
+          </Typography>
+          <Typography variant="caption" color="text.disabled">
+            Max 25MB • CSV only
+          </Typography>
+        </Box>
         <input
           ref={inputRef}
           type="file"
           accept={ACCEPT_ATTR}
-          className="hidden"
+          style={{ display: 'none' }}
           onChange={(e) => handleFiles(e.target.files)}
           disabled={busy || disabled}
         />
-      </div>
+      </Paper>
 
-      {/* 4. --- DETAILED RESULT DISPLAY --- */}
       {uploadResult && (
-        <div className="text-sm space-y-3">
+        <Box mt={2}>
           {uploadResult.created_count > 0 && (
-            <div className="rounded-md bg-green-50 p-3">
-              <p className="font-medium text-green-800">
-                Successfully created {uploadResult.created_count} new founder(s).
-              </p>
-            </div>
+            <Alert severity="success" sx={{ mb: 1 }}>
+              Successfully created {uploadResult.created_count} new founder(s).
+            </Alert>
           )}
           {uploadResult.errors.length > 0 && (
-            <div className="rounded-md bg-red-50 p-3">
-              <p className="font-medium text-red-800 mb-2">
+            <Alert severity="error">
+              <Typography variant="subtitle2" fontWeight={600} mb={1}>
                 Encountered {uploadResult.errors.length} error(s):
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-red-700 max-h-48 overflow-y-auto">
+              </Typography>
+              <Box component="ul" sx={{ pl: 2, m: 0, maxHeight: 200, overflowY: 'auto' }}>
                 {uploadResult.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
+                  <li key={index}>
+                    <Typography variant="caption">{error}</Typography>
+                  </li>
                 ))}
-              </ul>
-            </div>
+              </Box>
+            </Alert>
           )}
-        </div>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 }
-
-
-/* =========================
-   Admin Dashboard (No changes needed below this line)
-   ========================= */
 
 interface AdminStats {
   totalUsers: number;
@@ -187,14 +210,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // UI helpers
   const [query, setQuery] = useState('');
   const [visibilityFilter, setVisibilityFilter] = useState<'all' | 'visible' | 'hidden' | 'no-auth0'>('all');
 
-  // Row-level mutation flags
   const [mutating, setMutating] = useState<Record<number, boolean>>({});
 
-  // Abort in-flight fetch
   const fetchAbort = useRef<AbortController | null>(null);
 
   const nf = useMemo(() => new Intl.NumberFormat(), []);
@@ -255,7 +275,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
     };
   }, [isAdmin, fetchAdminData]);
 
-  // Derived filtered founders
   const filteredFounders = useMemo(() => {
     const q = query.trim().toLowerCase();
     return founders.filter((f) => {
@@ -272,7 +291,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
     });
   }, [founders, query, visibilityFilter]);
 
-  // Recompute live visibility
   const liveVisibility = useMemo(() => {
     let vis = 0;
     let hid = 0;
@@ -347,156 +365,204 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
 
   if (!isAdmin) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-        <p className="text-gray-600">You don&apos;t have admin privileges.</p>
-      </div>
+      <Box textAlign="center" py={8}>
+        <Typography variant="h4" fontWeight={700} gutterBottom>
+          Access Denied
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          You don't have admin privileges.
+        </Typography>
+      </Box>
     );
   }
 
   if (loading) {
     return (
-      <div className="text-center py-12" aria-busy="true" aria-live="polite">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="text-gray-600 mt-4">Loading admin dashboard…</p>
-      </div>
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+        <CircularProgress size={48} />
+        <Typography variant="body2" color="text.secondary" mt={2}>
+          Loading admin dashboard…
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <Box>
       {/* Header */}
-      <div className="flex items-end justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome, {userEmail}</p>
+      <Box display="flex" justifyContent="space-between" alignItems="end" mb={4} flexWrap="wrap" gap={2}>
+        <Box>
+          <Typography variant="h3" fontWeight={700}>
+            Admin Dashboard
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            Welcome, {userEmail}
+          </Typography>
           {lastUpdated && (
-            <p className="text-xs text-gray-500 mt-1">
+            <Typography variant="caption" color="text.disabled">
               Last updated: {new Date(lastUpdated).toLocaleString()}
-            </p>
+            </Typography>
           )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={fetchAdminData}
-            className="inline-flex items-center px-3 py-2 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            title="Refresh data"
-          >
-            Refresh
-          </button>
-        </div>
-      </div>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<RefreshIcon />}
+          onClick={fetchAdminData}
+        >
+          Refresh
+        </Button>
+      </Box>
 
       {errorMsg && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMsg(null)}>
           {errorMsg}
-        </div>
+        </Alert>
       )}
 
-      {/* Admin-only bulk import */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h2 className="text-xl font-semibold text-gray-900">Bulk import founders</h2>
-        <p className="text-gray-600 mb-4">
+      {/* Bulk Import */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" fontWeight={600} gutterBottom>
+          Bulk import founders
+        </Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
           Upload a CSV table to parse and create new founder records. The process will skip any founders whose email already exists.
-        </p>
+        </Typography>
         <FileUploader onUploaded={fetchAdminData} />
-      </div>
+      </Paper>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="text-3xl font-bold text-blue-600">{nf.format(stats.totalUsers)}</div>
-          <div className="text-sm font-medium text-gray-700">Total Users</div>
-        </div>
+      <Grid container spacing={3} mb={4}>
+        <Grid sx={{ width: { xs: '100%', sm: '50%', md: '20%' }, p: 1.5 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" color="primary.main" fontWeight={700}>
+                {nf.format(stats.totalUsers)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Total Users
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="text-3xl font-bold text-green-600">{nf.format(stats.totalStartups)}</div>
-          <div className="text-sm font-medium text-gray-700">Total Startups</div>
-        </div>
+        <Grid sx={{ width: { xs: '100%', sm: '50%', md: '20%' }, p: 1.5 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" color="success.main" fontWeight={700}>
+                {nf.format(stats.totalStartups)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Total Startups
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <button
-          type="button"
-          className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center hover:shadow-md transition-shadow"
-          onClick={() => onNavigateToTab?.('help-requests')}
-        >
-          <div className="text-3xl font-bold text-purple-600">{nf.format(stats.totalHelpRequests)}</div>
-          <div className="text-sm font-medium text-gray-700">Total Help Requests</div>
-        </button>
+        <Grid sx={{ width: { xs: '100%', sm: '50%', md: '20%' }, p: 1.5 }}>
+          <Card
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: 4 } }}
+            onClick={() => onNavigateToTab?.('help-requests')}
+          >
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" color="secondary.main" fontWeight={700}>
+                {nf.format(stats.totalHelpRequests)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Total Help Requests
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="text-3xl font-bold text-emerald-600">{nf.format(liveVisibility.vis)}</div>
-          <div className="text-sm font-medium text-gray-700">Visible Profiles</div>
-        </div>
+        <Grid sx={{ width: { xs: '100%', sm: '50%', md: '20%' }, p: 1.5 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" sx={{ color: 'success.main' }} fontWeight={700}>
+                {nf.format(liveVisibility.vis)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Visible Profiles
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-          <div className="text-3xl font-bold text-orange-600">{nf.format(liveVisibility.hid)}</div>
-          <div className="text-sm font-medium text-gray-700">Hidden Profiles</div>
-        </div>
-      </div>
+        <Grid sx={{ width: { xs: '100%', sm: '50%', md: '20%' }, p: 1.5 }}>
+          <Card>
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h3" sx={{ color: 'warning.main' }} fontWeight={700}>
+                {nf.format(liveVisibility.hid)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                Hidden Profiles
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 flex-wrap">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            type="search"
-            placeholder="Search by name or email"
-            className="w-full sm:w-72 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <CustomSelect
-            label="Visibility"
-            value={visibilityFilter}
-            onChange={setVisibilityFilter}
-            options={[
-              { label: 'All', value: 'all' },
-              { label: 'Visible only', value: 'visible' },
-              { label: 'Hidden only', value: 'hidden' },
-              { label: 'No Auth0 linked', value: 'no-auth0' },
-            ]}
-          />
-        </div>
-        <div className="text-xs text-gray-500">
-          Showing {nf.format(filteredFounders.length)} of {nf.format(founders.length)}
-        </div>
-      </div>
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center" justifyContent="space-between">
+          <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+            <TextField
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or email"
+              size="small"
+              sx={{ minWidth: 250 }}
+            />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>Visibility</InputLabel>
+              <Select
+                value={visibilityFilter}
+                onChange={(e) => setVisibilityFilter(e.target.value as any)}
+                label="Visibility"
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="visible">Visible only</MenuItem>
+                <MenuItem value="hidden">Hidden only</MenuItem>
+                <MenuItem value="no-auth0">No Auth0 linked</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+          <Typography variant="caption" color="text.secondary">
+            Showing {nf.format(filteredFounders.length)} of {nf.format(founders.length)}
+          </Typography>
+        </Box>
+      </Paper>
 
-      {/* User Management */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">User Management</h2>
-          <p className="text-gray-600">Manage user profiles and visibility</p>
-        </div>
+      {/* User Management Table */}
+      <Paper>
+        <Box px={3} py={2} borderBottom={1} borderColor="divider">
+          <Typography variant="h6" fontWeight={600}>
+            User Management
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage user profiles and visibility
+          </Typography>
+        </Box>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  User
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Profile Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Auth0 Linked
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>User</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Profile Status</TableCell>
+                <TableCell>Auth0 Linked</TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
               {filteredFounders.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500 text-sm">
-                    No users match your filters.
-                  </td>
-                </tr>
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No users match your filters.
+                    </Typography>
+                  </TableCell>
+                </TableRow>
               ) : (
                 filteredFounders.map((founder) => {
                   const isVisible = founder.profile_visible !== false;
@@ -504,64 +570,60 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onNavigateToTab }) => {
                   const rowBusy = mutating[founder.id];
 
                   return (
-                    <tr key={founder.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{founder.name}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="truncate max-w-[18rem] inline-block align-middle">
+                    <TableRow key={founder.id} hover>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {founder.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
                           {founder.email}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            isVisible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}
-                          title={isVisible ? 'Profile is visible' : 'Profile is hidden'}
-                        >
-                          {isVisible ? 'Visible' : 'Hidden'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            hasAuth0 ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                          }`}
-                          title={hasAuth0 ? 'Linked to Auth0' : 'No Auth0 user id'}
-                        >
-                          {hasAuth0 ? 'Yes' : 'No'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => toggleProfileVisibility(founder.id, isVisible)}
-                          disabled={rowBusy}
-                          className={`px-3 py-1 rounded text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                            isVisible
-                              ? 'bg-orange-100 text-orange-800 hover:bg-orange-200'
-                              : 'bg-green-100 text-green-800 hover:bg-green-200'
-                          }`}
-                        >
-                          {isVisible ? 'Hide' : 'Show'}
-                        </button>
-                        <button
-                          onClick={() => deleteUser(founder.id)}
-                          disabled={rowBusy}
-                          className="px-3 py-1 bg-red-100 text-red-800 hover:bg-red-200 rounded text-xs font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={isVisible ? 'Visible' : 'Hidden'}
+                          size="small"
+                          color={isVisible ? 'success' : 'error'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={hasAuth0 ? 'Yes' : 'No'}
+                          size="small"
+                          color={hasAuth0 ? 'info' : 'default'}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" gap={0.5}>
+                          <IconButton
+                            size="small"
+                            color={isVisible ? 'warning' : 'success'}
+                            onClick={() => toggleProfileVisibility(founder.id, isVisible)}
+                            disabled={rowBusy}
+                          >
+                            {isVisible ? <VisibilityOffIcon fontSize="small" /> : <VisibilityIcon fontSize="small" />}
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => deleteUser(founder.id)}
+                            disabled={rowBusy}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   );
                 })
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
+    </Box>
   );
 };
 

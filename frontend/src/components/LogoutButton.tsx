@@ -1,5 +1,7 @@
 import React from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Button } from '@mui/material';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const LogoutButton: React.FC = () => {
   const { logout, isAuthenticated } = useAuth0();
@@ -9,12 +11,23 @@ const LogoutButton: React.FC = () => {
   }
 
   return (
-    <button
+    <Button
+      variant="outlined"
+      color="inherit"
+      size="small"
+      startIcon={<LogoutIcon />}
       onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}
-      className="bg-indigo-500 hover:bg-indigo-600 text-white text-sm mt-2 py-1 px-2 rounded-md transition-colors"
+      sx={{
+        color: 'white',
+        borderColor: 'rgba(255, 255, 255, 0.5)',
+        '&:hover': {
+          borderColor: 'white',
+          bgcolor: 'rgba(255, 255, 255, 0.1)',
+        },
+      }}
     >
       Log Out
-    </button>
+    </Button>
   );
 };
 

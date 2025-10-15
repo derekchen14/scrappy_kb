@@ -40,7 +40,8 @@ class Auth0Config:
     ADMIN_EMAILS = [
         'admin@scrappyfounders.com',
         'derekchen14@gmail.com', 
-        'denis.beliauski@gmail.com'
+        'denis.beliauski@gmail.com',
+        'gleb.sviripa@gmail.com',
     ]
 
 

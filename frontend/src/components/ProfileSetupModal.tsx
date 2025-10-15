@@ -1,8 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  FormControlLabel,
+  Checkbox,
+  Typography,
+  Box,
+  Alert,
+  Avatar,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  CircularProgress,
+  FormGroup,
+} from '@mui/material';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
-import CustomSelect from './CustomSelect';
 
 interface ProfileSetupModalProps {
   isOpen: boolean;
@@ -178,72 +198,61 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onComplet
     }));
   };
 
-  if (!isOpen) return null;
-
   const disabledAction = submitting || uploadingImage;
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-6" aria-busy={disabledAction}>
-          <div className="text-center mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">
-              {existingData ? 'Complete Your Profile' : 'Set Up Your Profile'}
-            </h3>
-            <p className="text-gray-600 mt-2">Please fill in your information to get started</p>
-          </div>
+    <Dialog open={isOpen} maxWidth="md" fullWidth>
+      <form onSubmit={handleSubmit}>
+        <DialogTitle>
+          <Typography variant="h5" fontWeight={600} align="center">
+            {existingData ? 'Complete Your Profile' : 'Set Up Your Profile'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" align="center" mt={1}>
+            Please fill in your information to get started
+          </Typography>
+        </DialogTitle>
 
-          {errorText && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {errorText}
-            </div>
-          )}
+        <DialogContent dividers>
+          <Box display="flex" flexDirection="column" gap={3}>
+            {errorText && (
+              <Alert severity="error">{errorText}</Alert>
+            )}
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Name *</label>
-            <input
-              type="text"
+            <TextField
+              label="Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Email *</label>
-            <input
+            <TextField
+              label="Email"
               type="email"
               value={formData.email}
               disabled
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+              fullWidth
+              helperText="Email cannot be changed"
             />
-            <p className="text-xs text-gray-500">Email cannot be changed</p>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Bio</label>
-            <textarea
+            <TextField
+              label="Bio"
               value={formData.bio}
               onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              multiline
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Location</label>
-            <input
-              type="text"
+            <TextField
+              label="Location"
               value={formData.location}
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">LinkedIn URL *</label>
-            <input
+            <TextField
+              label="LinkedIn URL"
               type="url"
               value={formData.linkedin_url}
               onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
@@ -253,14 +262,11 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onComplet
                 }
               }}
               required
-              inputMode="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Twitter URL</label>
-            <input
+            <TextField
+              label="Twitter URL"
               type="url"
               value={formData.twitter_url}
               onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
@@ -269,14 +275,11 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onComplet
                   setFormData((prev) => ({ ...prev, twitter_url: 'https://www.twitter.com/' }));
                 }
               }}
-              inputMode="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">GitHub URL</label>
-            <input
+            <TextField
+              label="GitHub URL"
               type="url"
               value={formData.github_url}
               onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
@@ -285,94 +288,126 @@ const ProfileSetupModal: React.FC<ProfileSetupModalProps> = ({ isOpen, onComplet
                   setFormData((prev) => ({ ...prev, github_url: 'https://www.github.com/' }));
                 }
               }}
-              inputMode="url"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              fullWidth
             />
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Profile Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            <Box>
+              <Typography variant="body2" fontWeight={500} mb={1}>
+                Profile Image
+              </Typography>
+              <Button variant="outlined" component="label" fullWidth>
+                Upload Image
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageSelect}
+                />
+              </Button>
+              {imagePreview && (
+                <Box display="flex" justifyContent="center" mt={2}>
+                  <Avatar src={imagePreview} sx={{ width: 80, height: 80 }} />
+                </Box>
+              )}
+            </Box>
+
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.profile_visible}
+                  onChange={(e) => setFormData({ ...formData, profile_visible: e.target.checked })}
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>Profile Visible</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    When unchecked, only name and bio will be visible to others
+                  </Typography>
+                </Box>
+              }
             />
-            {imagePreview && (
-              <div className="mt-2">
-                <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-full border-2 border-gray-300" />
-              </div>
-            )}
-          </div>
 
-          <div className="space-y-2">
-            <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={formData.profile_visible}
-                onChange={(e) => setFormData({ ...formData, profile_visible: e.target.checked })}
-                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-              />
-              <span className="text-sm font-medium text-gray-700">Profile Visible</span>
-            </label>
-            <p className="text-xs text-gray-500">When unchecked, only name and bio will be visible to others</p>
-          </div>
+            <Box>
+              <Typography variant="body2" fontWeight={500} mb={1}>
+                Skills
+              </Typography>
+              <FormGroup>
+                <Grid container spacing={1}>
+                  {skills.map((skill) => (
+                    <Grid key={skill.id} sx={{ width: { xs: '100%', sm: '50%' }, p: 0.5 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.skill_ids?.includes(skill.id) || false}
+                            onChange={() => handleSkillToggle(skill.id)}
+                          />
+                        }
+                        label={<Typography variant="body2">{skill.name}</Typography>}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+              </FormGroup>
+            </Box>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Skills</label>
-            <div className="grid grid-cols-2 gap-2">
-              {skills.map((skill) => (
-                <label key={skill.id} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.skill_ids?.includes(skill.id) || false}
-                    onChange={() => handleSkillToggle(skill.id)}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">{skill.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+            <FormControl fullWidth>
+              <InputLabel>Startup</InputLabel>
+              <Select
+                value={formData.startup_id ? String(formData.startup_id) : ''}
+                onChange={(e) => handleStartupChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                label="Startup"
+              >
+                <MenuItem value="">No startup</MenuItem>
+                {startups.map((s) => (
+                  <MenuItem key={s.id} value={String(s.id)}>
+                    {s.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          <div className="space-y-2">
-            <CustomSelect
-              label="Startup"
-              value={formData.startup_id ? String(formData.startup_id) : ''}
-              onChange={(v) => handleStartupChange(v ? parseInt(v, 10) : undefined)}
-              options={[{ label: 'No startup', value: '' }, ...startups.map((s) => ({ label: s.name, value: String(s.id) }))]}
-            />
-          </div>
+            <Box>
+              <Typography variant="body2" fontWeight={500} mb={1}>
+                Hobbies
+              </Typography>
+              <Box sx={{ maxHeight: 300, overflow: 'auto' }}>
+                <FormGroup>
+                  <Grid container spacing={1}>
+                    {hobbies.map((hobby) => (
+                      <Grid key={hobby.id} sx={{ width: { xs: '100%', sm: '50%' }, p: 0.5 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.hobby_ids?.includes(hobby.id) || false}
+                              onChange={() => handleHobbyToggle(hobby.id)}
+                            />
+                          }
+                          label={<Typography variant="body2">{hobby.name}</Typography>}
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                </FormGroup>
+              </Box>
+            </Box>
+          </Box>
+        </DialogContent>
 
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Hobbies</label>
-            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-              {hobbies.map((hobby) => (
-                <label key={hobby.id} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.hobby_ids?.includes(hobby.id) || false}
-                    onChange={() => handleHobbyToggle(hobby.id)}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                  />
-                  <span className="text-sm text-gray-700">{hobby.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4 pt-4">
-            <button
-              type="submit"
-              disabled={disabledAction}
-              className="px-6 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
-            >
-              {submitting ? 'Saving…' : uploadingImage ? 'Uploading…' : 'Complete Profile'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <DialogActions sx={{ p: 2 }}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={disabledAction}
+            startIcon={disabledAction ? <CircularProgress size={20} /> : null}
+            fullWidth
+            size="large"
+          >
+            {submitting ? 'Saving…' : uploadingImage ? 'Uploading…' : 'Complete Profile'}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 };
 

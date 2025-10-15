@@ -2,7 +2,8 @@
 const ADMIN_EMAILS = [
   'admin@scrappyfounders.com',
   'derekchen14@gmail.com', 
-  'denis.beliauski@gmail.com'
+  'denis.beliauski@gmail.com',
+  'gleb.sviripa@gmail.com',
 ];
 
 export const isAdminUser = (userEmail?: string): boolean => {

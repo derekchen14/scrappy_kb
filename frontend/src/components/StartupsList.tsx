@@ -1,10 +1,42 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Card,
+  CardContent,
+  IconButton,
+  Chip,
+  Alert,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Link,
+  Divider,
+  Grid,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Language as LanguageIcon,
+  Business as BusinessIcon,
+  TrendingUp as TrendingUpIcon,
+  AttachMoney as AttachMoneyIcon,
+  People as PeopleIcon,
+} from '@mui/icons-material';
 import { Startup, StartupCreate, Founder } from '../types';
 import Modal from './Modal';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import { startupAPI } from '../api';
-import CustomSelect from './CustomSelect';
 
 interface StartupsListProps {
   searchQuery?: string;
@@ -254,337 +286,381 @@ const StartupsList: React.FC<StartupsListProps> = ({
 
   if (loading) {
     return (
-      <div className="text-center py-12" aria-busy="true">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-        <p className="text-gray-600 mt-4">Loading startups…</p>
-      </div>
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+        <CircularProgress size={48} />
+        <Typography variant="body2" color="text.secondary" mt={2}>
+          Loading startups…
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Startups</h2>
-        <button
+    <Box>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h3" fontWeight={700}>
+          Startups
+        </Typography>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<AddIcon />}
           onClick={() => setShowForm(true)}
           disabled={!isAdmin}
-          title={!isAdmin ? 'Only admins can add startups' : undefined}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
         >
           Add Startup
-        </button>
-      </div>
+        </Button>
+      </Box>
 
       {err && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErr(null)}>
           {err}
-        </div>
+        </Alert>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {editingStartup ? 'Edit Startup' : 'Add New Startup'}
-              </h3>
+      {/* Form Dialog */}
+      <Dialog open={showForm} onClose={resetForm} maxWidth="md" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingStartup ? 'Edit Startup' : 'Add New Startup'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                multiline
+                rows={3}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Industry"
+              <FormControl fullWidth>
+                <InputLabel>Industry</InputLabel>
+                <Select
                   value={formData.industry || ''}
-                  onChange={(v) => setFormData({ ...formData, industry: v || '' })}
-                  options={[{ label: 'Select an industry', value: '' }, ...industries.map((i) => ({ label: i, value: i }))]}
-                />
-              </div>
+                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  label="Industry"
+                >
+                  <MenuItem value="">Select an industry</MenuItem>
+                  {industries.map((i) => (
+                    <MenuItem key={i} value={i}>
+                      {i}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Stage"
+              <FormControl fullWidth>
+                <InputLabel>Stage</InputLabel>
+                <Select
                   value={formData.stage || ''}
-                  onChange={(v) => setFormData({ ...formData, stage: v || '' })}
-                  options={[{ label: 'Select a stage', value: '' }, ...startupStages.map((s) => ({ label: s, value: s }))]}
-                />
-              </div>
+                  onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                  label="Stage"
+                >
+                  <MenuItem value="">Select a stage</MenuItem>
+                  {startupStages.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      {s}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Website URL</label>
-                <input
-                  type="url"
-                  value={formData.website_url}
-                  onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
-                  onFocus={(e) => {
-                    if (!e.target.value) {
-                      setFormData((prev) => ({ ...prev, website_url: 'https://www.' }));
-                    }
-                  }}
-                  inputMode="url"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="Website URL"
+                type="url"
+                value={formData.website_url}
+                onChange={(e) => setFormData({ ...formData, website_url: e.target.value })}
+                onFocus={(e) => {
+                  if (!e.target.value) {
+                    setFormData((prev) => ({ ...prev, website_url: 'https://www.' }));
+                  }
+                }}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Target Market"
+              <FormControl fullWidth>
+                <InputLabel>Target Market</InputLabel>
+                <Select
                   value={formData.target_market || ''}
-                  onChange={(v) => setFormData({ ...formData, target_market: v || '' })}
-                  options={[{ label: 'Select a target market', value: '' }, ...targetMarkets.map((m) => ({ label: m, value: m }))]}
-                />
-              </div>
+                  onChange={(e) => setFormData({ ...formData, target_market: e.target.value })}
+                  label="Target Market"
+                >
+                  <MenuItem value="">Select a target market</MenuItem>
+                  {targetMarkets.map((m) => (
+                    <MenuItem key={m} value={m}>
+                      {m}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Revenue ARR"
+              <FormControl fullWidth>
+                <InputLabel>Revenue ARR</InputLabel>
+                <Select
                   value={formData.revenue_arr || ''}
-                  onChange={(v) => setFormData({ ...formData, revenue_arr: v || '' })}
-                  options={[{ label: 'Select revenue range', value: '' }, ...revenueOptions.map((r) => ({ label: r, value: r }))]}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  onChange={(e) => setFormData({ ...formData, revenue_arr: e.target.value })}
+                  label="Revenue ARR"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!isAdmin}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
-                >
-                  {editingStartup ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <MenuItem value="">Select revenue range</MenuItem>
+                  {revenueOptions.map((r) => (
+                    <MenuItem key={r} value={r}>
+                      {r}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>Cancel</Button>
+            <Button type="submit" variant="contained" color="success" disabled={!isAdmin}>
+              {editingStartup ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Startups Grid */}
+      <Grid container spacing={3}>
         {filteredStartups.map((startup) => (
-          <div key={startup.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <button onClick={() => setSelectedStartup(startup)} className="text-left">
-                <h3 className="text-xl font-semibold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
-                  {startup.name}
-                </h3>
-              </button>
-              {isAdmin && (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(startup)}
-                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+          <Grid key={startup.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                  <Typography
+                    variant="h6"
+                    fontWeight={600}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': { color: 'primary.main' },
+                      transition: 'color 0.2s',
+                    }}
+                    onClick={() => setSelectedStartup(startup)}
                   >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(startup.id)}
-                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
+                    {startup.name}
+                  </Typography>
+                  {isAdmin && (
+                    <Box>
+                      <IconButton size="small" color="primary" onClick={() => handleEdit(startup)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(startup.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
 
-            {startup.description && <p className="text-gray-700 mb-4">{startup.description}</p>}
+                {startup.description && (
+                  <Typography variant="body2" color="text.secondary" mb={2}>
+                    {startup.description}
+                  </Typography>
+                )}
 
-            <div className="space-y-3">
-              {startup.industry && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Industry:</span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                    {startup.industry}
-                  </span>
-                </div>
-              )}
+                <Box display="flex" flexDirection="column" gap={1.5}>
+                  {startup.industry && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <BusinessIcon fontSize="small" color="action" />
+                      <Chip label={startup.industry} size="small" color="secondary" variant="outlined" />
+                    </Box>
+                  )}
 
-              {startup.stage && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Stage:</span>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    {startup.stage}
-                  </span>
-                </div>
-              )}
+                  {startup.stage && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <TrendingUpIcon fontSize="small" color="action" />
+                      <Chip label={startup.stage} size="small" color="success" variant="outlined" />
+                    </Box>
+                  )}
 
-              {startup.target_market && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Target Market:</span>
-                  <span className="text-sm text-gray-600">🎯 {startup.target_market}</span>
-                </div>
-              )}
+                  {startup.target_market && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <PeopleIcon fontSize="small" color="action" />
+                      <Typography variant="caption" color="text.secondary">
+                        {startup.target_market}
+                      </Typography>
+                    </Box>
+                  )}
 
-              {startup.revenue_arr && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Revenue ARR:</span>
-                  <span className="text-sm text-gray-600">💰 {startup.revenue_arr}</span>
-                </div>
-              )}
+                  {startup.revenue_arr && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <AttachMoneyIcon fontSize="small" color="action" />
+                      <Typography variant="caption" color="text.secondary">
+                        {startup.revenue_arr}
+                      </Typography>
+                    </Box>
+                  )}
 
-              {startup.website_url && (
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-medium text-gray-700">Website:</span>
-                  <a
-                    href={startup.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 underline"
-                  >
-                    {startup.website_url}
-                  </a>
-                </div>
-              )}
-            </div>
-          </div>
+                  {startup.website_url && (
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <LanguageIcon fontSize="small" color="action" />
+                      <Link
+                        href={startup.website_url}
+                        target="_blank"
+                        rel="noopener"
+                        variant="caption"
+                        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      >
+                        {startup.website_url}
+                      </Link>
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
+      </Grid>
 
+      {/* Startup Details Modal */}
       <Modal
         isOpen={selectedStartup !== null}
         onClose={() => setSelectedStartup(null)}
         title={selectedStartup?.name || ''}
+        maxWidth="md"
       >
         {selectedStartup && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedStartup.name}</h3>
-
-              {selectedStartup.description && (
-                <p className="text-gray-700 mb-4">{selectedStartup.description}</p>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedStartup.industry && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Industry:</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                      {selectedStartup.industry}
-                    </span>
-                  </div>
-                )}
-
-                {selectedStartup.stage && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Stage:</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      {selectedStartup.stage}
-                    </span>
-                  </div>
-                )}
-
-                {selectedStartup.target_market && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Target Market:</span>
-                    <span className="text-sm text-gray-600 flex items-center">🎯 {selectedStartup.target_market}</span>
-                  </div>
-                )}
-
-                {selectedStartup.revenue_arr && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Revenue ARR:</span>
-                    <span className="text-sm text-gray-600 flex items-center">💰 {selectedStartup.revenue_arr}</span>
-                  </div>
-                )}
-              </div>
-
-              {selectedStartup.website_url && (
-                <div className="mt-4">
-                  <span className="text-sm font-medium text-gray-700 block mb-1">Website:</span>
-                  <a
-                    href={selectedStartup.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
-                  >
-                    {selectedStartup.website_url}
-                  </a>
-                </div>
-              )}
-
-              <div className="mt-6">
-                <h4 className="text-sm font-medium text-gray-700 mb-3">
-                  Founders
-                  {loadingFounders ? '' : startupFounders.length ? ` (${startupFounders.length})` : ' (0)'}
-                </h4>
-                {loadingFounders ? (
-                  <p className="text-sm text-gray-500">Loading founders…</p>
-                ) : startupFounders.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {startupFounders.map((founder) => (
-                      <span
-                        key={founder.id}
-                        onClick={() => handleFounderPillClick(founder)}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer transition-colors"
-                      >
-                        {founder.name}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-500">No founders listed for this startup.</p>
-                )}
-              </div>
-            </div>
-
-            {isAdmin ? (
-              <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => {
-                    setSelectedStartup(null);
-                    handleEdit(selectedStartup);
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedStartup(null);
-                    handleDelete(selectedStartup.id);
-                  }}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            ) : (
-              <div className="flex justify-end pt-4 border-t border-gray-200">
-                <button
-                  onClick={() => setSelectedStartup(null)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+          <Box>
+            {selectedStartup.description && (
+              <Typography variant="body1" mb={3}>
+                {selectedStartup.description}
+              </Typography>
             )}
-          </div>
+
+            <Grid container spacing={2} mb={3}>
+              {selectedStartup.industry && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Industry
+                  </Typography>
+                  <Box mt={0.5}>
+                    <Chip label={selectedStartup.industry} color="secondary" />
+                  </Box>
+                </Grid>
+              )}
+              {selectedStartup.stage && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Stage
+                  </Typography>
+                  <Box mt={0.5}>
+                    <Chip label={selectedStartup.stage} color="success" />
+                  </Box>
+                </Grid>
+              )}
+              {selectedStartup.target_market && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Target Market
+                  </Typography>
+                  <Typography variant="body2" mt={0.5}>
+                    🎯 {selectedStartup.target_market}
+                  </Typography>
+                </Grid>
+              )}
+              {selectedStartup.revenue_arr && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Revenue ARR
+                  </Typography>
+                  <Typography variant="body2" mt={0.5}>
+                    💰 {selectedStartup.revenue_arr}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
+
+            {selectedStartup.website_url && (
+              <Box mb={3}>
+                <Typography variant="caption" color="text.secondary">
+                  Website
+                </Typography>
+                <Box mt={0.5}>
+                  <Link href={selectedStartup.website_url} target="_blank" rel="noopener">
+                    {selectedStartup.website_url}
+                  </Link>
+                </Box>
+              </Box>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+
+            <Box>
+              <Typography variant="subtitle2" mb={2}>
+                Founders
+                {!loadingFounders && ` (${startupFounders.length})`}
+              </Typography>
+              {loadingFounders ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    Loading founders…
+                  </Typography>
+                </Box>
+              ) : startupFounders.length > 0 ? (
+                <Box display="flex" flexWrap="wrap" gap={1}>
+                  {startupFounders.map((founder) => (
+                    <Chip
+                      key={founder.id}
+                      label={founder.name}
+                      onClick={() => handleFounderPillClick(founder)}
+                      color="primary"
+                      sx={{ cursor: 'pointer' }}
+                    />
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary">
+                  No founders listed for this startup.
+                </Typography>
+              )}
+            </Box>
+
+            <Box display="flex" justifyContent="flex-end" gap={2} pt={3} mt={3} borderTop={1} borderColor="divider">
+              {isAdmin ? (
+                <>
+                  <Button
+                    variant="contained"
+                    startIcon={<EditIcon />}
+                    onClick={() => {
+                      setSelectedStartup(null);
+                      handleEdit(selectedStartup);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => {
+                      setSelectedStartup(null);
+                      handleDelete(selectedStartup.id);
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outlined" onClick={() => setSelectedStartup(null)}>
+                  Close
+                </Button>
+              )}
+            </Box>
+          </Box>
         )}
       </Modal>
-    </div>
+    </Box>
   );
 };
 

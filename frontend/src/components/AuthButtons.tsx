@@ -1,5 +1,8 @@
 import React, { memo, useCallback, useState } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Button, Alert, Box, CircularProgress } from '@mui/material';
+import LoginIcon from '@mui/icons-material/Login';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import type { RedirectLoginOptions } from '@auth0/auth0-spa-js';
 
 // Gate: only uses the Auth0 hook and returns early safely
@@ -36,8 +39,6 @@ const AuthButtonsInner = memo(function AuthButtonsInner({
     try {
       await loginWithRedirect({
         appState: { returnTo },
-        // Use this if you want to force re-auth each time:
-        // authorizationParams: { prompt: 'login' },
       });
     } catch {
       setUiError('Could not start login. Please try again.');
@@ -51,7 +52,7 @@ const AuthButtonsInner = memo(function AuthButtonsInner({
     try {
       await loginWithRedirect({
         appState: { returnTo },
-        authorizationParams: { screen_hint: 'signup' }, // correct usage
+        authorizationParams: { screen_hint: 'signup' },
       });
     } catch {
       setUiError('Could not start sign up. Please try again.');
@@ -60,48 +61,48 @@ const AuthButtonsInner = memo(function AuthButtonsInner({
   }, [loginWithRedirect, returnTo]);
 
   return (
-    <div className="space-y-4">
+    <Box>
       {uiError && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <Alert severity="error" sx={{ mb: 3 }}>
           {uiError}
-        </div>
+        </Alert>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          type="button"
+      <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} justifyContent="center">
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
           onClick={handleLogin}
           disabled={disabled}
-          aria-busy={redirecting === 'login'}
-          className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          startIcon={redirecting === 'login' ? <CircularProgress size={20} color="inherit" /> : <LoginIcon />}
+          sx={{
+            py: 1.5,
+            px: 4,
+            fontSize: '1rem',
+            fontWeight: 600,
+          }}
         >
-          {redirecting === 'login' ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          ) : (
-            <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M3 10a7 7 0 1114 0 7 7 0 01-14 0zm8-3a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" />
-            </svg>
-          )}
-          <span>Log In</span>
-        </button>
+          Log In
+        </Button>
 
-        <button
-          type="button"
+        <Button
+          variant="contained"
+          color="success"
+          size="large"
           onClick={handleSignUp}
           disabled={disabled}
-          aria-busy={redirecting === 'signup'}
-          className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          startIcon={redirecting === 'signup' ? <CircularProgress size={20} color="inherit" /> : <PersonAddIcon />}
+          sx={{
+            py: 1.5,
+            px: 4,
+            fontSize: '1rem',
+            fontWeight: 600,
+          }}
         >
-          {redirecting === 'signup' ? (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-          ) : (
-            <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M10 2a4 4 0 014 4v1h1a3 3 0 013 3v3a3 3 0 01-3 3h-1v1a4 4 0 11-8 0v-1H6a3 3 0 01-3-3V10a3 3 0 013-3h1V6a4 4 0 014-4z" />
-            </svg>
-          )}
-          <span>Sign Up</span>
-        </button>
-      </div>
-    </div>
+          Sign Up
+        </Button>
+      </Box>
+    </Box>
   );
 });

@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth0 } from '@auth0/auth0-react';
+import {
+  Box,
+  Avatar,
+  Typography,
+  Menu,
+  MenuItem,
+  Divider,
+  CircularProgress,
+} from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import PersonIcon from '@mui/icons-material/Person';
+import EditIcon from '@mui/icons-material/Edit';
+import BusinessIcon from '@mui/icons-material/Business';
 import { Founder, Startup } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 
@@ -12,8 +25,9 @@ interface ProfileProps {
 const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStartupClick }) => {
   const { user, isAuthenticated, isLoading } = useAuth0();
   const { authenticatedAPI } = useAuthenticatedAPI();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [myProfile, setMyProfile] = useState<Founder | null>(null);
+  const open = Boolean(anchorEl);
 
   const fetchMyProfile = useCallback(async () => {
     try {
@@ -30,9 +44,16 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
     }
   }, [isAuthenticated, fetchMyProfile]);
 
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   const handleViewProfile = () => {
     if (myProfile && onViewProfile) {
-      // Ensure arrays are initialized to prevent undefined errors
       const profileWithDefaults = {
         ...myProfile,
         skills: myProfile.skills || [],
@@ -40,13 +61,12 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
         startup: myProfile.startup || undefined
       };
       onViewProfile(profileWithDefaults);
-      setShowDropdown(false);
     }
+    handleClose();
   };
 
   const handleEditProfile = () => {
     if (myProfile && onEditProfile) {
-      // Ensure arrays are initialized to prevent undefined errors
       const profileWithDefaults = {
         ...myProfile,
         skills: myProfile.skills || [],
@@ -54,27 +74,25 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
         startup: myProfile.startup || undefined
       };
       onEditProfile(profileWithDefaults);
-      setShowDropdown(false);
     }
+    handleClose();
   };
 
   const handleStartupClick = async () => {
-    // Type assertion to access startup_id that exists in API response but not in TypeScript interface
     const profileWithStartupId = myProfile as any;
     if (profileWithStartupId?.startup_id && onStartupClick) {
       try {
-        // Fetch the startup data using the startup_id
         const response = await authenticatedAPI.get(`/startups/${profileWithStartupId.startup_id}`);
         onStartupClick(response.data);
-        setShowDropdown(false);
       } catch (error) {
         console.error('Error fetching startup:', error);
       }
     }
+    handleClose();
   };
 
   if (isLoading) {
-    return <div className="text-white">Loading...</div>;
+    return <CircularProgress size={24} sx={{ color: 'white' }} />;
   }
 
   if (!isAuthenticated || !user) {
@@ -82,70 +100,83 @@ const Profile: React.FC<ProfileProps> = ({ onViewProfile, onEditProfile, onStart
   }
 
   return (
-    <div className="relative">
-      <div 
-        className="flex items-center mt-2 space-x-3 text-white cursor-pointer hover:bg-blue-800 rounded-md px-2 py-1 transition-colors"
-        onClick={() => setShowDropdown(!showDropdown)}
+    <Box>
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={1}
+        onClick={handleClick}
+        sx={{
+          cursor: 'pointer',
+          px: 1.5,
+          py: 0.75,
+          borderRadius: 1,
+          transition: 'background-color 0.2s',
+          '&:hover': {
+            bgcolor: 'rgba(255, 255, 255, 0.1)',
+          },
+        }}
       >
-        {user.picture && (
-          <img
-            src={user.picture}
-            alt={user.name}
-            className="w-8 h-8 rounded-full border-2 border-blue-300"
-          />
-        )}
-        <span className="text-sm font-medium">{myProfile?.name || user.name || user.email}</span>
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
-
-      {showDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50">
-          <div className="py-1">
-            <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-100">
-              <div className="font-medium">{myProfile?.name || user.name || 'No name'}</div>
-              <div className="text-gray-500">{user.email}</div>
-            </div>
-            {myProfile && (
-              <>
-                <button
-                  onClick={handleViewProfile}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-cyan-100 hover:font-bold
-                   hover:text-cyan-900 transition-all"
-                >
-                  View Profile
-                </button>
-                <button
-                  onClick={handleEditProfile}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-cyan-100 hover:font-bold
-                   hover:text-cyan-900 transition-all"
-                >
-                  Edit Profile
-                </button>
-                {(myProfile as any)?.startup_id && (
-                  <button
-                    onClick={handleStartupClick}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-cyan-100 hover:font-bold
-                      hover:text-cyan-900 transition-all"
-                  >
-                    View Startup
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Close dropdown when clicking outside */}
-      {showDropdown && (
-        <div 
-          className="fixed inset-0 z-40" 
-          onClick={() => setShowDropdown(false)}
+        <Avatar
+          src={user.picture}
+          alt={user.name}
+          sx={{
+            width: 32,
+            height: 32,
+            border: '2px solid',
+            borderColor: 'primary.light',
+          }}
         />
-      )}
-    </div>
+        <Typography variant="body2" sx={{ color: 'white', fontWeight: 500 }}>
+          {myProfile?.name || user.name || user.email}
+        </Typography>
+        <KeyboardArrowDownIcon sx={{ color: 'white', fontSize: 20 }} />
+      </Box>
+
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            minWidth: 200,
+            borderRadius: 2,
+          },
+        }}
+      >
+        <Box px={2} py={1.5}>
+          <Typography variant="subtitle2" fontWeight={600}>
+            {myProfile?.name || user.name || 'No name'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {user.email}
+          </Typography>
+        </Box>
+        
+        {myProfile && (
+          <>
+            <Divider />
+            <MenuItem onClick={handleViewProfile}>
+              <PersonIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+              View Profile
+            </MenuItem>
+            <MenuItem onClick={handleEditProfile}>
+              <EditIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+              Edit Profile
+            </MenuItem>
+            {(myProfile as any)?.startup_id && (
+              <MenuItem onClick={handleStartupClick}>
+                <BusinessIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                View Startup
+              </MenuItem>
+            )}
+          </>
+        )}
+      </Menu>
+    </Box>
   );
 };
 

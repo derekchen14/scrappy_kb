@@ -1,9 +1,45 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Card,
+  CardContent,
+  IconButton,
+  Chip,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  ToggleButtonGroup,
+  ToggleButton,
+  Paper,
+  Link,
+  Grid,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  CalendarMonth as CalendarIcon,
+  ViewModule as ViewModuleIcon,
+  ViewList as ViewListIcon,
+  ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
+  Event as EventIcon,
+  LocationOn as LocationOnIcon,
+  People as PeopleIcon,
+  Link as LinkIcon,
+} from '@mui/icons-material';
 import { Event, EventCreate } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
-import Modal from './Modal';
-import CustomSelect from './CustomSelect';
 
 type ViewType = 'card' | 'compact' | 'calendar';
 
@@ -12,8 +48,8 @@ const THEMES = ['hiking', 'poker', 'basketball', 'pickleball', 'roundtable', 'gr
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const toDateKey = (d: Date) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 
-const MIN_MONTH = new Date(2025, 0, 1);  // Jan 2025
-const MAX_MONTH = new Date(2025, 11, 1); // Dec 2025
+const MIN_MONTH = new Date(2025, 0, 1);
+const MAX_MONTH = new Date(2025, 11, 1);
 
 const EventsList: React.FC = () => {
   const { authenticatedAPI, publicAPI } = useAuthenticatedAPI();
@@ -136,44 +172,38 @@ const EventsList: React.FC = () => {
     []
   );
 
-  const getThemeColor = useCallback((theme: string) => {
-    const colors: Record<string, string> = {
-      hiking: 'bg-green-100 text-green-800',
-      poker: 'bg-red-100 text-red-800',
-      basketball: 'bg-orange-100 text-orange-800',
-      pickleball: 'bg-yellow-100 text-yellow-800',
-      roundtable: 'bg-blue-100 text-blue-800',
-      'group dinner': 'bg-purple-100 text-purple-800',
+  const getThemeColor = useCallback((theme: string): 'success' | 'error' | 'warning' | 'info' | 'secondary' | 'default' => {
+    const colors: Record<string, any> = {
+      hiking: 'success',
+      poker: 'error',
+      basketball: 'warning',
+      pickleball: 'warning',
+      roundtable: 'info',
+      'group dinner': 'secondary',
     };
-    return colors[theme] || 'bg-gray-100 text-gray-800';
+    return colors[theme] || 'default';
   }, []);
 
-  // Group events by date for calendar grid view
   const eventsByDate = useMemo(() => {
     const grouped: Record<string, Event[]> = {};
     for (const ev of events) {
       const dateKey = toDateKey(new Date(ev.date_time));
       (grouped[dateKey] ||= []).push(ev);
     }
-    // Sort events within each date by time
     for (const dateKey of Object.keys(grouped)) {
       grouped[dateKey].sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime());
     }
     return grouped;
   }, [events]);
 
-  // Generate calendar grid for current month
   const generateCalendarGrid = useMemo(() => {
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
 
-    // First of month
     const firstDay = new Date(year, month, 1);
-    // Sunday before the first day
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
-    // 6 weeks view (42 days)
     const days: Array<{
       date: Date;
       dateKey: string;
@@ -202,7 +232,6 @@ const EventsList: React.FC = () => {
       cursor.setDate(cursor.getDate() + 1);
     }
 
-    // Group into weeks
     const weeks: typeof days[] = [];
     for (let i = 0; i < 42; i += 7) {
       weeks.push(days.slice(i, i + 7));
@@ -213,7 +242,7 @@ const EventsList: React.FC = () => {
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
     setCurrentMonth((prev) => {
       const next = new Date(prev);
-      next.setDate(1); // prevent month rollover edge cases
+      next.setDate(1);
       next.setMonth(next.getMonth() + (direction === 'prev' ? -1 : 1));
       if (next < MIN_MONTH) return new Date(MIN_MONTH);
       if (next > MAX_MONTH) return new Date(MAX_MONTH);
@@ -227,457 +256,394 @@ const EventsList: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-6">
-          <h2 className="text-3xl font-bold text-gray-900">Events</h2>
+    <Box>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
+        <Box display="flex" alignItems="center" gap={3}>
+          <Typography variant="h3" fontWeight={700}>
+            Events
+          </Typography>
 
           {/* View Switcher */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewType('calendar')}
-              aria-pressed={viewType === 'calendar'}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'calendar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => setViewType('card')}
-              aria-pressed={viewType === 'card'}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'card' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Card
-            </button>
-            <button
-              onClick={() => setViewType('compact')}
-              aria-pressed={viewType === 'compact'}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'compact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              Compact
-            </button>
-          </div>
-        </div>
+          <ToggleButtonGroup
+            value={viewType}
+            exclusive
+            onChange={(_, newView) => newView && setViewType(newView)}
+            size="small"
+          >
+            <ToggleButton value="calendar">
+              <CalendarIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="card">
+              <ViewModuleIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="compact">
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
         {isAdmin && (
-          <button
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<AddIcon />}
             onClick={() => setShowForm(true)}
-            className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
           >
             Add Event
-          </button>
+          </Button>
         )}
-      </div>
+      </Box>
 
       {errorMsg && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{errorMsg}</div>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMsg(null)}>
+          {errorMsg}
+        </Alert>
       )}
 
-      {/* Event Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">{editingEvent ? 'Edit Event' : 'Add New Event'}</h3>
+      {/* Event Form Dialog */}
+      <Dialog open={showForm} onClose={resetForm} maxWidth="md" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingEvent ? 'Edit Event' : 'Add New Event'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Date *</label>
-                  <input
-                    type="date"
-                    value={formData.date_time ? formData.date_time.split('T')[0] : ''}
-                    onChange={(e) => {
-                      const timeValue = formData.date_time ? formData.date_time.split('T')[1] || '12:00' : '12:00';
-                      setFormData({ ...formData, date_time: `${e.target.value}T${timeValue}` });
-                    }}
+              <Grid container spacing={2}>
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <TextField
+                    label="Date & Time"
+                    type="datetime-local"
+                    value={formData.date_time}
+                    onChange={(e) => setFormData({ ...formData, date_time: e.target.value })}
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    fullWidth
+                    InputLabelProps={{ shrink: true }}
                   />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">Time *</label>
-                  <input
-                    type="time"
-                    value={formData.date_time ? formData.date_time.split('T')[1] || '' : ''}
-                    onChange={(e) => {
-                      const dateValue = formData.date_time
-                        ? formData.date_time.split('T')[0]
-                        : new Date().toISOString().split('T')[0];
-                      setFormData({ ...formData, date_time: `${dateValue}T${e.target.value}` });
-                    }}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                </Grid>
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <TextField
+                    label="Location"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    fullWidth
                   />
-                </div>
-              </div>
+                </Grid>
+              </Grid>
 
-              {/* Theme — replaced native select with CustomSelect */}
-              <div className="space-y-2">
-                <CustomSelect
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                multiline
+                rows={3}
+                fullWidth
+              />
+
+              <TextField
+                label="Attendees"
+                value={formData.attendees}
+                onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
+                fullWidth
+                placeholder="Comma-separated names or 'All'"
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Theme</InputLabel>
+                <Select
+                  value={formData.theme || ''}
+                  onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
                   label="Theme"
-                  value={formData.theme || 'roundtable'}
-                  onChange={(v) => setFormData({ ...formData, theme: v })}
-                  options={[
-                    { label: 'Select a theme', value: '' },
-                    ...THEMES.map(t => ({ label: t, value: t })),
-                  ]}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Event Link</label>
-                <input
-                  type="url"
-                  value={formData.link}
-                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  placeholder="https://lu.ma/event or https://partiful.com/event"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Attendees</label>
-                <textarea
-                  value={formData.attendees}
-                  onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-                  rows={2}
-                  placeholder="List attendees (comma-separated or line-separated)"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
-                  {editingEvent ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <MenuItem value="">None</MenuItem>
+                  {THEMES.map((t) => (
+                    <MenuItem key={t} value={t}>
+                      {t}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <TextField
+                label="Link"
+                type="url"
+                value={formData.link}
+                onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                fullWidth
+                placeholder="Meeting link or event URL"
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>Cancel</Button>
+            <Button type="submit" variant="contained" color="success">
+              {editingEvent ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Calendar View */}
       {viewType === 'calendar' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          {/* Calendar Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <button
-              onClick={() => navigateMonth('prev')}
-              disabled={currentMonth <= MIN_MONTH}
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Previous month"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-            <h2 className="text-xl font-semibold text-gray-900">
+        <Box>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <IconButton onClick={() => navigateMonth('prev')} disabled={currentMonth <= MIN_MONTH}>
+              <ChevronLeftIcon />
+            </IconButton>
+            <Typography variant="h5" fontWeight={600}>
               {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </h2>
+            </Typography>
+            <IconButton onClick={() => navigateMonth('next')} disabled={currentMonth >= MAX_MONTH}>
+              <ChevronRightIcon />
+            </IconButton>
+          </Box>
 
-            <button
-              onClick={() => navigateMonth('next')}
-              disabled={currentMonth >= MAX_MONTH}
-              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              aria-label="Next month"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-
-          {/* Calendar Grid */}
-          <div className="p-6">
-            {/* Day Headers */}
-            <div className="grid grid-cols-7 gap-px mb-2">
+          <Paper sx={{ p: 2 }}>
+            <Grid container spacing={1}>
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
-                  {day}
-                </div>
+                <Grid key={day} sx={{ width: '14.28%', textAlign: 'center', p: 0.5 }}>
+                  <Typography variant="subtitle2" fontWeight={600} color="text.secondary">
+                    {day}
+                  </Typography>
+                </Grid>
               ))}
-            </div>
+            </Grid>
 
-            {/* Calendar Days */}
-            <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-lg overflow-hidden">
-              {generateCalendarGrid.map((week, weekIndex) =>
-                week.map((day, dayIndex) => (
-                  <div
-                    key={`${weekIndex}-${dayIndex}`}
-                    className={`min-h[120px] min-h-[120px] bg-white p-2 ${
-                      !day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''
-                    } ${day.isToday ? 'ring-1 ring-blue-300' : ''}`}
-                  >
-                    {/* Date Number */}
-                    <div className="text-sm font-medium mb-1">{day.date.getDate()}</div>
-
-                    {/* Events for this day */}
-                    <div className="space-y-1">
-                      {day.events.slice(0, 3).map((event) => (
-                        <div
-                          key={event.id}
-                          onClick={() => setSelectedEvent(event)}
-                          className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${getThemeColor(
-                            event.theme || ''
-                          )}`}
-                          title={`${event.title} - ${formatTime(event.date_time)}`}
-                        >
-                          <div className="font-medium truncate">
-                            {formatTime(event.date_time)} {event.title}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Show "+X more" if there are more events */}
-                      {day.events.length > 3 && (
-                        <div className="text-xs text-gray-500 p-1">+{day.events.length - 3} more</div>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {events.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No events scheduled yet.</p>
-            </div>
-          )}
-        </div>
+            {generateCalendarGrid.map((week, weekIdx) => (
+              <Grid container spacing={1} key={weekIdx} sx={{ mt: 0.5 }}>
+                {week.map((day) => (
+                  <Grid key={day.dateKey} sx={{ width: '14.28%', p: 0.5 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        minHeight: 100,
+                        p: 1,
+                        bgcolor: day.isToday ? 'primary.50' : day.isCurrentMonth ? 'background.paper' : 'action.hover',
+                        borderColor: day.isToday ? 'primary.main' : 'divider',
+                        borderWidth: day.isToday ? 2 : 1,
+                      }}
+                    >
+                      <Typography
+                        variant="caption"
+                        fontWeight={day.isToday ? 700 : 500}
+                        color={day.isCurrentMonth ? 'text.primary' : 'text.disabled'}
+                      >
+                        {day.date.getDate()}
+                      </Typography>
+                      <Box mt={0.5} display="flex" flexDirection="column" gap={0.5}>
+                        {day.events.map((ev) => (
+                          <Chip
+                            key={ev.id}
+                            label={ev.title}
+                            size="small"
+                            color={ev.theme ? getThemeColor(ev.theme) : 'default'}
+                            onClick={() => setSelectedEvent(ev)}
+                            sx={{
+                              cursor: 'pointer',
+                              height: 'auto',
+                              '& .MuiChip-label': {
+                                whiteSpace: 'normal',
+                                fontSize: '0.65rem',
+                                py: 0.25,
+                              },
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            ))}
+          </Paper>
+        </Box>
       )}
 
       {/* Card View */}
       {viewType === 'card' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Grid container spacing={3}>
           {sortedEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{event.title}</h3>
-                  <p className="text-gray-600 mb-2 flex items-center">📅 {formatDateTime(event.date_time)}</p>
-                  {event.location && <p className="text-gray-500 mb-2 flex items-center">📍 {event.location}</p>}
-                  {event.link && (
-                    <p className="mb-2 flex items-center">
-                      🔗{' '}
-                      <a
-                        href={event.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:text-blue-800 underline ml-1"
-                      >
-                        View Event →
-                      </a>
-                    </p>
+            <Grid key={event.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
+              <Card>
+                <CardContent>
+                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                    <Typography variant="h6" fontWeight={600}>
+                      {event.title}
+                    </Typography>
+                    {isAdmin && (
+                      <Box>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    )}
+                  </Box>
+
+                  <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+                    <EventIcon fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      {formatDateTime(event.date_time)}
+                    </Typography>
+                  </Box>
+
+                  {event.location && (
+                    <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+                      <LocationOnIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {event.location}
+                      </Typography>
+                    </Box>
                   )}
-                </div>
-                {isAdmin && (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => handleEdit(event)}
-                      className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(event.id)}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                )}
-              </div>
 
-              {event.theme && (
-                <div className="mb-3">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getThemeColor(event.theme)}`}>
-                    {event.theme}
-                  </span>
-                </div>
-              )}
+                  {event.description && (
+                    <Typography variant="body2" mb={2}>
+                      {event.description}
+                    </Typography>
+                  )}
 
-              {event.description && (
-                <p className="text-gray-700 mb-3 flex items-start">
-                  📝 <span className="ml-1">{event.description}</span>
-                </p>
-              )}
+                  {event.attendees && (
+                    <Box display="flex" alignItems="center" gap={0.5} mb={1}>
+                      <PeopleIcon fontSize="small" color="action" />
+                      <Typography variant="caption" color="text.secondary">
+                        {event.attendees}
+                      </Typography>
+                    </Box>
+                  )}
 
-              {event.attendees && (
-                <div className="mb-3">
-                  <h4 className="text-sm font-medium text-gray-700 mb-1 flex items-center">👥 Attendees:</h4>
-                  <p className="text-sm text-gray-600 ml-5">{event.attendees}</p>
-                </div>
-              )}
-            </div>
+                  {event.theme && (
+                    <Box mt={1}>
+                      <Chip label={event.theme} size="small" color={getThemeColor(event.theme)} />
+                    </Box>
+                  )}
+
+                  {event.link && (
+                    <Box mt={1}>
+                      <Link href={event.link} target="_blank" rel="noopener" variant="caption">
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <LinkIcon fontSize="small" />
+                          Event Link
+                        </Box>
+                      </Link>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
 
       {/* Compact View */}
       {viewType === 'compact' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+        <Box>
           {sortedEvents.map((event) => (
-            <div key={event.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
-              <div className="space-y-2">
-                <button onClick={() => setSelectedEvent(event)} className="text-left w-full">
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">{event.title}</h3>
-                    {event.theme && (
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getThemeColor(event.theme)}`}>
-                        {event.theme}
-                      </span>
-                    )}
-                  </div>
-                </button>
-
-                <p className="text-xs text-gray-600">
-                  {formatDate(event.date_time)} at {formatTime(event.date_time)}
-                </p>
-
-                {event.location && <p className="text-xs text-gray-500">📍 {event.location}</p>}
-
-                {event.link && (
-                  <a
-                    href={event.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-800 underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    View Event
-                  </a>
+            <Paper key={event.id} sx={{ p: 2, mb: 2 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box flexGrow={1}>
+                  <Typography variant="subtitle1" fontWeight={600}>
+                    {event.title}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatDate(event.date_time)} at {formatTime(event.date_time)}
+                    {event.location && ` • ${event.location}`}
+                  </Typography>
+                </Box>
+                {event.theme && (
+                  <Chip label={event.theme} size="small" color={getThemeColor(event.theme)} sx={{ mx: 2 }} />
                 )}
-              </div>
-            </div>
+                {isAdmin && (
+                  <Box>
+                    <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
           ))}
-        </div>
+        </Box>
       )}
 
-      {/* Event Details Modal */}
-      <Modal isOpen={!!selectedEvent} onClose={() => setSelectedEvent(null)} title={selectedEvent?.title || ''}>
+      {/* Event Details Dialog */}
+      <Dialog open={selectedEvent !== null} onClose={() => setSelectedEvent(null)} maxWidth="sm" fullWidth>
         {selectedEvent && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedEvent.title}</h3>
-              <p className="text-gray-600 mb-4">{formatDateTime(selectedEvent.date_time)}</p>
+          <>
+            <DialogTitle>{selectedEvent.title}</DialogTitle>
+            <DialogContent>
+              <Box display="flex" flexDirection="column" gap={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <EventIcon color="action" />
+                  <Typography variant="body2">{formatDateTime(selectedEvent.date_time)}</Typography>
+                </Box>
 
-              {selectedEvent.location && <p className="text-gray-500 mb-4">📍 {selectedEvent.location}</p>}
+                {selectedEvent.location && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <LocationOnIcon color="action" />
+                    <Typography variant="body2">{selectedEvent.location}</Typography>
+                  </Box>
+                )}
 
-              {selectedEvent.link && (
-                <p className="mb-4">
-                  <a
-                    href={selectedEvent.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline font-medium"
-                  >
-                    View Event →
-                  </a>
-                </p>
-              )}
+                {selectedEvent.description && (
+                  <Typography variant="body2">{selectedEvent.description}</Typography>
+                )}
 
-              {selectedEvent.theme && (
-                <div className="mb-4">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${getThemeColor(selectedEvent.theme)}`}
-                  >
-                    {selectedEvent.theme}
-                  </span>
-                </div>
-              )}
+                {selectedEvent.attendees && (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <PeopleIcon color="action" />
+                    <Typography variant="body2">{selectedEvent.attendees}</Typography>
+                  </Box>
+                )}
 
-              {selectedEvent.description && <p className="text-gray-700 mb-4">{selectedEvent.description}</p>}
+                {selectedEvent.theme && (
+                  <Box>
+                    <Chip label={selectedEvent.theme} color={getThemeColor(selectedEvent.theme)} />
+                  </Box>
+                )}
 
-              {selectedEvent.attendees && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Attendees:</h4>
-                  <p className="text-gray-600">{selectedEvent.attendees}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-4 pt-4 border-top border-gray-200">
-              {isAdmin ? (
+                {selectedEvent.link && (
+                  <Link href={selectedEvent.link} target="_blank" rel="noopener">
+                    Event Link
+                  </Link>
+                )}
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              {isAdmin && (
                 <>
-                  <button
-                    onClick={() => {
-                      const ev = selectedEvent;
-                      setSelectedEvent(null);
-                      if (ev) handleEdit(ev);
-                    }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
-                  >
+                  <Button startIcon={<EditIcon />} onClick={() => {
+                    setSelectedEvent(null);
+                    handleEdit(selectedEvent);
+                  }}>
                     Edit
-                  </button>
-                  <button
-                    onClick={() => {
-                      const id = selectedEvent.id;
-                      setSelectedEvent(null);
-                      handleDelete(id);
-                    }}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
-                  >
+                  </Button>
+                  <Button color="error" startIcon={<DeleteIcon />} onClick={() => {
+                    setSelectedEvent(null);
+                    handleDelete(selectedEvent.id);
+                  }}>
                     Delete
-                  </button>
+                  </Button>
                 </>
-              ) : (
-                <button
-                  onClick={() => setSelectedEvent(null)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-                >
-                  Close
-                </button>
               )}
-            </div>
-          </div>
+              <Button onClick={() => setSelectedEvent(null)}>Close</Button>
+            </DialogActions>
+          </>
         )}
-      </Modal>
-    </div>
+      </Dialog>
+    </Box>
   );
 };
 

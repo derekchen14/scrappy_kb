@@ -1,9 +1,36 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Card,
+  CardContent,
+  IconButton,
+  Chip,
+  Alert,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Link,
+  Grid,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Person as PersonIcon,
+} from '@mui/icons-material';
 import { HelpRequest, HelpRequestCreate, Founder } from '../types';
 import { useAuth0 } from '@auth0/auth0-react';
 import { useAdmin } from '../hooks/useAdmin';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
-import CustomSelect from './CustomSelect';
 
 interface HelpRequestsListProps {
   searchQuery?: string;
@@ -193,29 +220,29 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
     [authenticatedAPI, editingRequest, formData, refreshRequests, resetForm]
   );
 
-  const getUrgencyClass = (urgency?: string) => {
+  const getUrgencyColor = (urgency?: string): 'error' | 'warning' | 'success' | 'default' => {
     switch (urgency) {
       case 'High':
-        return 'bg-red-100 text-red-800';
+        return 'error';
       case 'Medium':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'warning';
       case 'Low':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'default';
     }
   };
 
-  const getStatusClass = (status?: string) => {
+  const getStatusColor = (status?: string): 'info' | 'warning' | 'success' | 'default' => {
     switch (status) {
       case 'Open':
-        return 'bg-blue-100 text-blue-800';
+        return 'info';
       case 'In Progress':
-        return 'bg-orange-100 text-orange-800';
+        return 'warning';
       case 'Resolved':
-        return 'bg-green-100 text-green-800';
+        return 'success';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'default';
     }
   };
 
@@ -237,175 +264,209 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
   if (loading) {
     return (
-      <div className="text-center py-12" aria-busy="true">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-        <p className="text-gray-600 mt-4">Loading help requests…</p>
-      </div>
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+        <CircularProgress size={48} />
+        <Typography variant="body2" color="text.secondary" mt={2}>
+          Loading help requests…
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Help Requests</h2>
-        <button
+    <Box>
+      {/* Header */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h3" fontWeight={700}>
+          Help Requests
+        </Typography>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<AddIcon />}
           onClick={startCreate}
-          className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors disabled:opacity-50"
           disabled={!isAdmin && !currentFounder}
-          title={!isAdmin && !currentFounder ? 'Create requires a linked founder profile' : undefined}
         >
           Add Help Request
-        </button>
-      </div>
+        </Button>
+      </Box>
 
-      {err && <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{err}</div>}
-
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {editingRequest ? 'Edit Help Request' : 'Add New Help Request'}
-              </h3>
-
-              <div className="space-y-2">
-                {editingRequest || isAdmin ? (
-                  <CustomSelect
-                    label="Founder *"
-                    value={String(formData.founder_id || 0)}
-                    onChange={(v) => setFormData({ ...formData, founder_id: parseInt(v || '0', 10) || 0 })}
-                    options={[
-                      { label: 'Select a founder', value: '0' },
-                      ...founders.map((f) => ({ label: f.name, value: String(f.id) })),
-                    ]}
-                  />
-                ) : (
-                  <div className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700">
-                    {currentFounder?.name || 'Current User'}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Title *</label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Description *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={4}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Category"
-                  value={formData.category || ''}
-                  onChange={(v) => setFormData({ ...formData, category: v || '' })}
-                  options={[{ label: 'Select a category', value: '' }, ...categories.map((c) => ({ label: c, value: c }))]}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Urgency"
-                  value={formData.urgency || 'Medium'}
-                  onChange={(v) => setFormData({ ...formData, urgency: v as (typeof urgencyLevels)[number] })}
-                  options={urgencyLevels.map((u) => ({ label: u, value: u }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Status"
-                  value={formData.status || 'Open'}
-                  onChange={(v) => setFormData({ ...formData, status: v as (typeof statusOptions)[number] })}
-                  options={statusOptions.map((s) => ({ label: s, value: s }))}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors">
-                  {editingRequest ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {err && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErr(null)}>
+          {err}
+        </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Form Dialog */}
+      <Dialog open={showForm} onClose={resetForm} maxWidth="md" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingRequest ? 'Edit Help Request' : 'Add New Help Request'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {editingRequest || isAdmin ? (
+                <FormControl fullWidth required>
+                  <InputLabel>Founder</InputLabel>
+                  <Select
+                    value={String(formData.founder_id || 0)}
+                    onChange={(e) => setFormData({ ...formData, founder_id: parseInt(e.target.value, 10) || 0 })}
+                    label="Founder"
+                  >
+                    <MenuItem value="0">Select a founder</MenuItem>
+                    {founders.map((f) => (
+                      <MenuItem key={f.id} value={String(f.id)}>
+                        {f.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField
+                  label="Founder"
+                  value={currentFounder?.name || 'Current User'}
+                  disabled
+                  fullWidth
+                />
+              )}
+
+              <TextField
+                label="Title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                required
+                fullWidth
+              />
+
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                multiline
+                rows={4}
+                required
+                fullWidth
+              />
+
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
+                  value={formData.category || ''}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  label="Category"
+                >
+                  <MenuItem value="">Select a category</MenuItem>
+                  {categories.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Urgency</InputLabel>
+                <Select
+                  value={formData.urgency || 'Medium'}
+                  onChange={(e) => setFormData({ ...formData, urgency: e.target.value as typeof urgencyLevels[number] })}
+                  label="Urgency"
+                >
+                  {urgencyLevels.map((u) => (
+                    <MenuItem key={u} value={u}>
+                      {u}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={formData.status || 'Open'}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value as typeof statusOptions[number] })}
+                  label="Status"
+                >
+                  {statusOptions.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      {s}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>Cancel</Button>
+            <Button type="submit" variant="contained" color="success">
+              {editingRequest ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Help Requests Grid */}
+      <Grid container spacing={3}>
         {filteredHelpRequests.map((request) => (
-          <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-semibold text-gray-900">{request.title}</h3>
-              {canEditRequest(request) && (
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => handleEdit(request)}
-                    className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+          <Grid key={request.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                  <Typography variant="h6" fontWeight={600}>
+                    {request.title}
+                  </Typography>
+                  {canEditRequest(request) && (
+                    <Box>
+                      <IconButton size="small" color="primary" onClick={() => handleEdit(request)}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(request.id)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+
+                <Box display="flex" alignItems="center" gap={0.5} mb={2}>
+                  <PersonIcon fontSize="small" color="action" />
+                  <Typography variant="caption" color="text.secondary">
+                    Requested by:
+                  </Typography>
+                  <Link
+                    component="button"
+                    type="button"
+                    variant="caption"
+                    onClick={() => handleFounderClick(request.founder_id)}
+                    sx={{ cursor: 'pointer' }}
                   >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(request.id)}
-                    className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
+                    {getFounderName(request.founder_id)}
+                  </Link>
+                </Box>
 
-            <p className="text-sm text-gray-600 mb-3">
-              <span className="font-medium">Requested by:</span>
-              <span
-                onClick={() => handleFounderClick(request.founder_id)}
-                className="text-blue-600 hover:text-blue-800 cursor-pointer hover:underline transition-colors ml-1"
-              >
-                {getFounderName(request.founder_id)}
-              </span>
-            </p>
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  {request.description}
+                </Typography>
 
-            <p className="text-gray-700 mb-4">{request.description}</p>
-
-            <div className="flex flex-wrap gap-2 mb-2">
-              {request.category && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                  {request.category}
-                </span>
-              )}
-
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUrgencyClass(request.urgency)}`}>
-                {request.urgency || 'Medium'}
-              </span>
-
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusClass(request.status)}`}>
-                {request.status || 'Open'}
-              </span>
-            </div>
-          </div>
+                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                  {request.category && (
+                    <Chip label={request.category} size="small" color="secondary" variant="outlined" />
+                  )}
+                  <Chip
+                    label={request.urgency || 'Medium'}
+                    size="small"
+                    color={getUrgencyColor(request.urgency)}
+                  />
+                  <Chip
+                    label={request.status || 'Open'}
+                    size="small"
+                    color={getStatusColor(request.status)}
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
-    </div>
+      </Grid>
+    </Box>
   );
 };
 

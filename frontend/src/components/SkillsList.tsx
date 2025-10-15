@@ -1,9 +1,33 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Card,
+  CardContent,
+  Chip,
+  Alert,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Grid,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 import { Skill, SkillCreate } from '../types';
 import Modal from './Modal';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
-import CustomSelect from './CustomSelect';
 
 interface SkillsListProps {
   searchQuery?: string;
@@ -114,183 +138,178 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
 
   if (loading) {
     return (
-      <div className="text-center py-12" aria-busy="true">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-        <p className="text-gray-600 mt-4">Loading skills…</p>
-      </div>
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+        <CircularProgress size={48} />
+        <Typography variant="body2" color="text.secondary" mt={2}>
+          Loading skills…
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Box>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-bold text-gray-900">Skills</h2>
-        <button
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h3" fontWeight={700}>
+          Skills
+        </Typography>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<AddIcon />}
           onClick={() => setShowForm(true)}
           disabled={!isAdmin}
-          title={!isAdmin ? 'Only admins can add skills' : undefined}
-          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
         >
           Add Skill
-        </button>
-      </div>
+        </Button>
+      </Box>
 
       {err && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <Alert severity="error" sx={{ mb: 3}} onClose={() => setErr(null)}>
           {err}
-        </div>
+        </Alert>
       )}
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                {editingSkill ? 'Edit Skill' : 'Add New Skill'}
-              </h3>
+      {/* Form Dialog */}
+      <Dialog open={showForm} onClose={resetForm} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingSkill ? 'Edit Skill' : 'Add New Skill'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Category"
+              <FormControl fullWidth>
+                <InputLabel>Category</InputLabel>
+                <Select
                   value={formData.category || ''}
-                  onChange={(v) => setFormData({ ...formData, category: v || '' })}
-                  options={[{ label: 'Select a category', value: '' }, ...skillCategories.map((c) => ({ label: c, value: c }))]}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Description</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  label="Category"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!isAdmin}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
-                >
-                  {editingSkill ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+                  <MenuItem value="">Select a category</MenuItem>
+                  {skillCategories.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
 
-      {/* Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+              <TextField
+                label="Description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                multiline
+                rows={3}
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>Cancel</Button>
+            <Button type="submit" variant="contained" color="success" disabled={!isAdmin}>
+              {editingSkill ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Skills Grid */}
+      <Grid container spacing={2}>
         {filteredSkills.map((skill) => (
-          <div
-            key={skill.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="space-y-2">
-              <button onClick={() => setSelectedSkill(skill)} className="text-left w-full">
-                <div className="flex items-center space-x-2 flex-wrap">
-                  <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+          <Grid key={skill.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%', xl: '16.67%' }, p: 1 }}>
+            <Card
+              sx={{
+                cursor: 'pointer',
+                '&:hover': { boxShadow: 4 },
+                transition: 'box-shadow 0.3s',
+              }}
+              onClick={() => setSelectedSkill(skill)}
+            >
+              <CardContent>
+                <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={1}>
+                  <Typography variant="subtitle2" fontWeight={600}>
                     {skill.name}
-                  </h3>
+                  </Typography>
                   {skill.category && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800">
-                      {skill.category}
-                    </span>
+                    <Chip label={skill.category} size="small" color="info" variant="outlined" />
                   )}
-                </div>
-              </button>
-
-              {skill.description && (
-                <p className="text-xs text-gray-600">{truncateDescription(skill.description, 80)}</p>
-              )}
-            </div>
-          </div>
+                </Box>
+                {skill.description && (
+                  <Typography variant="caption" color="text.secondary">
+                    {truncateDescription(skill.description, 80)}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
         ))}
-      </div>
+      </Grid>
 
       {/* Skill Details Modal */}
       <Modal
         isOpen={selectedSkill !== null}
         onClose={() => setSelectedSkill(null)}
         title={selectedSkill?.name || ''}
+        maxWidth="sm"
       >
         {selectedSkill && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedSkill.name}</h3>
+          <Box>
+            {selectedSkill.category && (
+              <Box mb={2}>
+                <Chip label={selectedSkill.category} color="info" />
+              </Box>
+            )}
 
-              {selectedSkill.category && (
-                <div className="mb-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-100 text-teal-800">
-                    {selectedSkill.category}
-                  </span>
-                </div>
-              )}
+            {selectedSkill.description && (
+              <Typography variant="body1" mb={3}>
+                {selectedSkill.description}
+              </Typography>
+            )}
 
-              {selectedSkill.description && (
-                <p className="text-gray-700 mb-4">{selectedSkill.description}</p>
-              )}
-            </div>
-
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-              {isAdmin && (
+            <Box display="flex" justifyContent="flex-end" gap={2} pt={2} borderTop={1} borderColor="divider">
+              {isAdmin ? (
                 <>
-                  <button
+                  <Button
+                    variant="contained"
+                    startIcon={<EditIcon />}
                     onClick={() => {
                       setSelectedSkill(null);
                       handleEdit(selectedSkill);
                     }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                   >
                     Edit
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteIcon />}
                     onClick={() => {
                       setSelectedSkill(null);
                       handleDelete(selectedSkill.id);
                     }}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </>
-              )}
-              {!isAdmin && (
-                <button
-                  onClick={() => setSelectedSkill(null)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-                >
+              ) : (
+                <Button variant="outlined" onClick={() => setSelectedSkill(null)}>
                   Close
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
       </Modal>
-    </div>
+    </Box>
   );
 };
 

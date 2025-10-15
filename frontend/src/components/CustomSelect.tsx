@@ -1,4 +1,11 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useMemo } from 'react';
+import {
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
+} from '@mui/material';
 
 type Option<T extends string> = { label: string; value: T };
 
@@ -9,7 +16,9 @@ interface CustomSelectProps<T extends string> {
   placeholder?: string;
   className?: string;
   label?: string;
-  maxHeight?: number; // New prop for max height
+  maxHeight?: number;
+  fullWidth?: boolean;
+  size?: 'small' | 'medium';
 }
 
 function CustomSelect<T extends string>({
@@ -19,101 +28,46 @@ function CustomSelect<T extends string>({
   placeholder = 'Select…',
   className = '',
   label,
-  maxHeight = 200, // Default max height
+  maxHeight = 200,
+  fullWidth = false,
+  size = 'small',
 }: CustomSelectProps<T>) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const listRef = useRef<HTMLDivElement | null>(null);
   const idBase = useMemo(() => Math.random().toString(36).slice(2), []);
 
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (!open) return;
-      if (
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node) &&
-        listRef.current &&
-        !listRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
-
-  const selected = options.find(o => o.value === value);
+  const handleChange = (event: SelectChangeEvent<T>) => {
+    onChange(event.target.value as T);
+  };
 
   return (
-    <div className={`relative ${className}`}>
-      {label && (
-        <label htmlFor={`custom-${idBase}`} className="mb-1 block text-xs font-medium text-gray-700">
-          {label}
-        </label>
-      )}
-      <button
-        id={`custom-${idBase}`}
-        ref={buttonRef}
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={`listbox-${idBase}`}
-        onClick={() => setOpen(o => !o)}
-        className="w-full inline-flex items-center justify-between gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    <FormControl fullWidth={fullWidth} size={size} className={className}>
+      {label && <InputLabel id={`select-label-${idBase}`}>{label}</InputLabel>}
+      <Select
+        labelId={label ? `select-label-${idBase}` : undefined}
+        id={`select-${idBase}`}
+        value={value}
+        label={label}
+        onChange={handleChange}
+        MenuProps={{
+          PaperProps: {
+            style: {
+              maxHeight: maxHeight,
+            },
+          },
+        }}
+        displayEmpty={!label}
       >
-        <span className={selected ? '' : 'text-gray-400'}>
-          {selected ? selected.label : placeholder}
-        </span>
-        <svg
-          className={`h-4 w-4 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`}
-          viewBox="0 0 20 20"
-          fill="currentColor"
-        >
-          <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 011.08 1.04l-4.25 4.25a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" />
-        </svg>
-      </button>
-
-      {open && (
-        <div
-          ref={listRef}
-          id={`listbox-${idBase}`}
-          role="listbox"
-          className="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
-          style={{ maxHeight: `${maxHeight}px` }}
-        >
-          <div className="overflow-y-auto" style={{ maxHeight: `${maxHeight}px` }}>
-            {options.map(opt => {
-              const selected = value === opt.value;
-              return (
-                <div
-                  key={opt.value}
-                  role="option"
-                  aria-selected={selected}
-                  tabIndex={0}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                    buttonRef.current?.focus();
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onChange(opt.value);
-                      setOpen(false);
-                      buttonRef.current?.focus();
-                    }
-                  }}
-                  className={`cursor-pointer px-3 py-2 text-sm hover:bg-blue-50 focus:bg-blue-50 focus:outline-none transition-colors
-                    ${selected ? 'bg-blue-50 font-medium text-blue-900' : 'text-gray-900'}`}
-                >
-                  {opt.label}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+        {!label && (
+          <MenuItem value="" disabled>
+            {placeholder}
+          </MenuItem>
+        )}
+        {options.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
   );
 }
 

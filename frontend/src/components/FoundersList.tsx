@@ -1,9 +1,60 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Chip,
+  IconButton,
+  Alert,
+  CircularProgress,
+  ToggleButtonGroup,
+  ToggleButton,
+  Pagination,
+  Card,
+  CardContent,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+  InputAdornment,
+  Link,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormGroup,
+  Grid,
+} from '@mui/material';
+import {
+  Search as SearchIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
+  ViewComfy as ViewComfyIcon,
+  ArrowUpward as ArrowUpwardIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  LinkedIn as LinkedInIcon,
+  Twitter as TwitterIcon,
+  GitHub as GitHubIcon,
+  LocationOn as LocationOnIcon,
+  Business as BusinessIcon,
+} from '@mui/icons-material';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
-import CustomSelect from './CustomSelect';
 
 type ViewType = 'table' | 'card' | 'compact';
 type SortType = 'none' | 'asc' | 'desc';
@@ -61,7 +112,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     hobby_ids: [],
   });
 
-  // Abort controllers for fetches
   const abortRef = useRef<AbortController | null>(null);
 
   const fetchAll = useCallback(async () => {
@@ -109,7 +159,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     return () => abortRef.current?.abort();
   }, [fetchAll]);
 
-  // External trigger to show a founder's details
   useEffect(() => {
     if (founderToShow) {
       setSelectedFounder(founderToShow);
@@ -117,7 +166,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     }
   }, [founderToShow, onFounderShown]);
 
-  // Handle edit founder from external trigger (e.g., Profile dropdown)
   const isProfileVisible = useCallback((f: Founder): boolean => f.profile_visible ?? true, []);
 
   const handleEdit = useCallback(
@@ -161,7 +209,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     }
   }, [editFounderToShow, onEditFounderShown, handleEdit]);
 
-  // Image selection
   const handleImageSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -171,7 +218,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     reader.readAsDataURL(file);
   }, []);
 
-  // Upload image (avoid shadowing state `formData`)
   const uploadImage = useCallback(async (): Promise<string | null> => {
     if (!selectedImage) return null;
     setUploadingImage(true);
@@ -232,7 +278,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
     setImagePreview(null);
   }, []);
 
-    const handleSubmit = useCallback(
+  const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       try {
@@ -299,8 +345,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     setSortType((prev) => (prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none'));
   }, []);
 
-  const getSortIcon = useCallback(() => (sortType === 'asc' ? '▲' : sortType === 'desc' ? '▼' : ''), [sortType]);
-
   const handleStartupChipClick = useCallback(
     (startup: Startup) => {
       if (onStartupClick) {
@@ -364,7 +408,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
   const totalPages = Math.ceil(filteredFounders.length / itemsPerPage) || 1;
 
-  // Reset / clamp page when search or sort changes
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, sortType]);
@@ -375,859 +418,782 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
   if (loading) {
     return (
-      <div className="text-center py-12" aria-busy="true" aria-live="polite">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto" />
-        <p className="text-gray-600 mt-4">Loading founders…</p>
-      </div>
+      <Box display="flex" flexDirection="column" alignItems="center" py={8}>
+        <CircularProgress size={48} />
+        <Typography variant="body2" color="text.secondary" mt={2}>
+          Loading founders…
+        </Typography>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <Box>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-6">
-          <h2 className="text-3xl font-bold text-gray-900">Founders</h2>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
+        <Box display="flex" alignItems="center" gap={3}>
+          <Typography variant="h3" fontWeight={700}>
+            Founders
+          </Typography>
 
           {/* View Switcher */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewType('table')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'table' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-              aria-pressed={viewType === 'table'}
-            >
-              Table
-            </button>
-            <button
-              onClick={() => setViewType('card')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'card' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-              aria-pressed={viewType === 'card'}
-            >
-              Card
-            </button>
-            <button
-              onClick={() => setViewType('compact')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewType === 'compact' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'
-              }`}
-              aria-pressed={viewType === 'compact'}
-            >
-              Compact
-            </button>
-          </div>
-        </div>
+          <ToggleButtonGroup
+            value={viewType}
+            exclusive
+            onChange={(_, newView) => newView && setViewType(newView)}
+            size="small"
+          >
+            <ToggleButton value="table">
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="card">
+              <ViewModuleIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="compact">
+              <ViewComfyIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
-        <div className="flex items-center space-x-4">
+        <Box display="flex" alignItems="center" gap={2}>
           {/* Search Bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search founder profiles …"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 px-4 py-2 pl-10 pr-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
+          <TextField
+            placeholder="Search founders…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            size="small"
+            sx={{ minWidth: 250 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
 
           {isAdmin && (
-            <button
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<AddIcon />}
               onClick={() => setShowForm(true)}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
             >
               Add Founder
-            </button>
+            </Button>
           )}
-        </div>
-      </div>
+        </Box>
+      </Box>
 
       {errorMsg && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{errorMsg}</div>
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMsg(null)}>
+          {errorMsg}
+        </Alert>
       )}
 
-      {/* Form Modal */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <h3 className="text-xl font-semibold text-gray-900">{editingFounder ? 'Edit Founder' : 'Add New Founder'}</h3>
+      {/* Form Dialog */}
+      <Dialog open={showForm} onClose={resetForm} maxWidth="md" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editingFounder ? 'Edit Founder' : 'Add New Founder'}
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <TextField
+                label="Name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="Email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={!isAdmin}
+                required
+                fullWidth
+                helperText={!isAdmin ? 'Email cannot be changed' : ''}
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Email *</label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={!isAdmin}
-                  required
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                    !isAdmin ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
-                  }`}
-                />
-                {!isAdmin && <p className="text-xs text-gray-500">Email cannot be changed</p>}
-              </div>
+              <TextField
+                label="Bio"
+                value={formData.bio}
+                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                multiline
+                rows={3}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Bio</label>
-                <textarea
-                  value={formData.bio}
-                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="Location"
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="LinkedIn URL"
+                type="url"
+                value={formData.linkedin_url}
+                onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
+                onFocus={(e) => {
+                  if (!e.target.value) setFormData((p) => ({ ...p, linkedin_url: 'https://www.linkedin.com/in/' }));
+                }}
+                required
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">LinkedIn URL *</label>
-                <input
-                  type="url"
-                  value={formData.linkedin_url}
-                  onChange={(e) => setFormData({ ...formData, linkedin_url: e.target.value })}
-                  onFocus={(e) => {
-                    if (!e.target.value) setFormData((p) => ({ ...p, linkedin_url: 'https://www.linkedin.com/in/' }));
-                  }}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="Twitter URL"
+                type="url"
+                value={formData.twitter_url}
+                onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
+                onFocus={(e) => {
+                  if (!e.target.value) setFormData((p) => ({ ...p, twitter_url: 'https://www.twitter.com/' }));
+                }}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Twitter URL</label>
-                <input
-                  type="url"
-                  value={formData.twitter_url}
-                  onChange={(e) => setFormData({ ...formData, twitter_url: e.target.value })}
-                  onFocus={(e) => {
-                    if (!e.target.value) setFormData((p) => ({ ...p, twitter_url: 'https://www.twitter.com/' }));
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+              <TextField
+                label="GitHub URL"
+                type="url"
+                value={formData.github_url}
+                onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
+                onFocus={(e) => {
+                  if (!e.target.value) setFormData((p) => ({ ...p, github_url: 'https://www.github.com/' }));
+                }}
+                fullWidth
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">GitHub URL</label>
-                <input
-                  type="url"
-                  value={formData.github_url}
-                  onChange={(e) => setFormData({ ...formData, github_url: e.target.value })}
-                  onFocus={(e) => {
-                    if (!e.target.value) setFormData((p) => ({ ...p, github_url: 'https://www.github.com/' }));
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Profile Image</label>
+              <Box>
+                <Typography variant="body2" color="text.secondary" mb={1}>
+                  Profile Image
+                </Typography>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageSelect}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ display: 'block', marginBottom: '8px' }}
                 />
                 {imagePreview && (
-                  <div className="mt-2">
-                    <img src={imagePreview} alt="Preview" className="w-20 h-20 object-cover rounded-full border-2 border-gray-300" />
-                  </div>
+                  <Box
+                    component="img"
+                    src={imagePreview}
+                    alt="Preview"
+                    sx={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: 2, borderColor: 'divider' }}
+                  />
                 )}
-              </div>
+              </Box>
 
-              <div className="space-y-2">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
+              <FormControlLabel
+                control={
+                  <Checkbox
                     checked={formData.profile_visible}
                     onChange={(e) => setFormData({ ...formData, profile_visible: e.target.checked })}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-sm font-medium text-gray-700">Profile Visible</span>
-                </label>
-                <p className="text-xs text-gray-500">When unchecked, only name and bio will be visible to others</p>
-              </div>
+                }
+                label={
+                  <Box>
+                    <Typography variant="body2">Profile Visible</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      When unchecked, only name and bio will be visible to others
+                    </Typography>
+                  </Box>
+                }
+              />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Skills</label>
-                <div className="grid grid-cols-2 gap-2">
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  Skills
+                </Typography>
+                <FormGroup sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1 }}>
                   {skills.map((skill) => (
-                    <label key={skill.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.skill_ids?.includes(skill.id) || false}
-                        onChange={() => handleSkillToggle(skill.id)}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-gray-700">{skill.name}</span>
-                    </label>
+                    <FormControlLabel
+                      key={skill.id}
+                      control={
+                        <Checkbox
+                          checked={formData.skill_ids?.includes(skill.id) || false}
+                          onChange={() => handleSkillToggle(skill.id)}
+                          size="small"
+                        />
+                      }
+                      label={<Typography variant="body2">{skill.name}</Typography>}
+                    />
                   ))}
-                </div>
-              </div>
+                </FormGroup>
+              </Box>
 
-              {/* Startup — replaced native select with CustomSelect */}
-              <div className="space-y-2">
-                <CustomSelect
-                  label="Startup"
+              <FormControl fullWidth>
+                <InputLabel>Startup</InputLabel>
+                <Select
                   value={formData.startup_id != null ? String(formData.startup_id) : ''}
-                  onChange={(v) => handleStartupChange(v ? parseInt(v, 10) : undefined)}
-                  options={[
-                    { label: 'No startup', value: '' },
-                    ...startups.map((s) => ({ label: s.name, value: String(s.id) })),
-                  ]}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Hobbies</label>
-                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
-                  {hobbies.map((hobby) => (
-                    <label key={hobby.id} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={formData.hobby_ids?.includes(hobby.id) || false}
-                        onChange={() => handleHobbyToggle(hobby.id)}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-sm text-gray-700">{hobby.name}</span>
-                    </label>
+                  onChange={(e) => handleStartupChange(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                  label="Startup"
+                >
+                  <MenuItem value="">No startup</MenuItem>
+                  {startups.map((s) => (
+                    <MenuItem key={s.id} value={String(s.id)}>
+                      {s.name}
+                    </MenuItem>
                   ))}
-                </div>
-              </div>
+                </Select>
+              </FormControl>
 
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={uploadingImage}
-                  className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-md transition-colors"
-                >
-                  {uploadingImage ? 'Uploading…' : editingFounder ? 'Update' : 'Create'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              <Box>
+                <Typography variant="subtitle2" mb={1}>
+                  Hobbies
+                </Typography>
+                <FormGroup sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, maxHeight: 200, overflowY: 'auto' }}>
+                  {hobbies.map((hobby) => (
+                    <FormControlLabel
+                      key={hobby.id}
+                      control={
+                        <Checkbox
+                          checked={formData.hobby_ids?.includes(hobby.id) || false}
+                          onChange={() => handleHobbyToggle(hobby.id)}
+                          size="small"
+                        />
+                      }
+                      label={<Typography variant="body2">{hobby.name}</Typography>}
+                    />
+                  ))}
+                </FormGroup>
+              </Box>
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={resetForm}>Cancel</Button>
+            <Button type="submit" variant="contained" color="success" disabled={uploadingImage}>
+              {uploadingImage ? 'Uploading…' : editingFounder ? 'Update' : 'Create'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
 
       {/* Table View */}
       {viewType === 'table' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <button onClick={handleNameSort} className="flex items-center space-x-1 hover:text-gray-700 transition-colors">
-                      <span>NAME</span>
-                      <span className="text-xs">{getSortIcon()}</span>
-                    </button>
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  {/* Show Location for everyone to keep columns aligned */}
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Skills</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Startup</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hobbies</th>
-                  {isAdmin && (
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedFounders.map((founder) => (
-                  <tr key={founder.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <button
-                            onClick={() => {
-                              if (!isProfileVisible(founder)) {
-                                alert('This profile is marked as not visible and details cannot be viewed.');
-                                return;
-                              }
-                              setSelectedFounder(founder);
-                            }}
-                            className="text-left"
-                          >
-                            <div className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
-                              {founder.name}
-                            </div>
-                          </button>
-                          {isProfileVisible(founder) && founder.linkedin_url && (
-                            <div className="text-sm">
-                              <a
-                                href={founder.linkedin_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-500 hover:text-blue-600 hover:underline transition-colors"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {founder.linkedin_url}
-                              </a>
-                            </div>
-                          )}
-                          {!isProfileVisible(founder) && <div className="text-sm text-gray-400">(profile hidden)</div>}
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <Box display="flex" alignItems="center" sx={{ cursor: 'pointer' }} onClick={handleNameSort}>
+                    <Typography variant="subtitle2" fontWeight={600}>
+                      NAME
+                    </Typography>
+                    {sortType === 'asc' && <ArrowUpwardIcon fontSize="small" />}
+                    {sortType === 'desc' && <ArrowDownwardIcon fontSize="small" />}
+                  </Box>
+                </TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Location</TableCell>
+                <TableCell>Skills</TableCell>
+                <TableCell>Startup</TableCell>
+                <TableCell>Hobbies</TableCell>
+                {isAdmin && <TableCell>Actions</TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginatedFounders.map((founder) => (
+                <TableRow key={founder.id} hover>
+                  <TableCell>
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        fontWeight={500}
+                        sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                        onClick={() => {
+                          if (!isProfileVisible(founder)) {
+                            alert('This profile is marked as not visible and details cannot be viewed.');
+                            return;
+                          }
+                          setSelectedFounder(founder);
+                        }}
+                      >
+                        {founder.name}
+                      </Typography>
+                      {isProfileVisible(founder) && founder.linkedin_url && (
+                        <Link href={founder.linkedin_url} target="_blank" rel="noopener" variant="caption">
+                          LinkedIn
+                        </Link>
+                      )}
+                      {!isProfileVisible(founder) && (
+                        <Typography variant="caption" color="text.disabled">
+                          (profile hidden)
+                        </Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
                       {isProfileVisible(founder) ? founder.email : ''}
-                    </td>
-
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{founder.location || '-'}</td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {founder.skills.slice(0, 2).map((skill) => (
-                          <span
-                            key={skill.id}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
-                          >
-                            {skill.name}
-                          </span>
-                        ))}
-                        {founder.skills.length > 2 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            +{founder.skills.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {founder.startup ? (
-                          <button
-                            onClick={() => handleStartupChipClick(founder.startup!)}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
-                          >
-                            {founder.startup.name}
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-500">No startup</span>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {founder.hobbies.slice(0, 3).map((hobby) => (
-                          <span
-                            key={hobby.id}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800"
-                          >
-                            {hobby.name}
-                          </span>
-                        ))}
-                        {founder.hobbies.length > 3 && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
-                            +{founder.hobbies.length - 3}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-
-                    {isAdmin && (
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          {canEditProfile(founder.email) && (
-                            <button
-                              onClick={() => handleEdit(founder)}
-                              className="px-2 py-1 bg-sky-400 hover:bg-sky-700 text-white text-xs rounded transition-colors"
-                            >
-                              Edit
-                            </button>
-                          )}
-                          {canDeleteUser() && (
-                            <button
-                              onClick={() => handleDelete(founder.id)}
-                              className="px-2 py-1 bg-rose-400 hover:bg-rose-700 text-white text-xs rounded transition-colors"
-                            >
-                              Delete
-                            </button>
-                          )}
-                          {!canEditProfile(founder.email) && !canDeleteUser() && (
-                            <span className="text-xs text-gray-500">No actions available</span>
-                          )}
-                        </div>
-                      </td>
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {founder.location || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                      {founder.skills.slice(0, 2).map((skill) => (
+                        <Chip key={skill.id} label={skill.name} size="small" color="primary" variant="outlined" />
+                      ))}
+                      {founder.skills.length > 2 && (
+                        <Chip label={`+${founder.skills.length - 2}`} size="small" variant="outlined" />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    {founder.startup ? (
+                      <Chip
+                        label={founder.startup.name}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        onClick={() => handleStartupChipClick(founder.startup!)}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        No startup
+                      </Typography>
                     )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                      {founder.hobbies.slice(0, 3).map((hobby) => (
+                        <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" variant="outlined" />
+                      ))}
+                      {founder.hobbies.length > 3 && (
+                        <Chip label={`+${founder.hobbies.length - 3}`} size="small" variant="outlined" />
+                      )}
+                    </Box>
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Box display="flex" gap={1}>
+                        {canEditProfile(founder.email) && (
+                          <IconButton size="small" color="primary" onClick={() => handleEdit(founder)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {canDeleteUser() && (
+                          <IconButton size="small" color="error" onClick={() => handleDelete(founder.id)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {/* Card View */}
       {viewType === 'card' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Grid container spacing={3}>
           {paginatedFounders.map((founder) => (
-            <div key={founder.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center space-x-4">
-                  <h3 className="text-xl font-semibold text-gray-900">{founder.name}</h3>
-                </div>
-                <div className="flex space-x-2">
-                  {canEditProfile(founder.email) && (
-                    <button
-                      onClick={() => handleEdit(founder)}
-                      className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
-                    >
-                      Edit
-                    </button>
+            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
+              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flexGrow: 1 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                    <Typography variant="h6" fontWeight={600}>
+                      {founder.name}
+                    </Typography>
+                    {isAdmin && (
+                      <Box>
+                        {canEditProfile(founder.email) && (
+                          <IconButton size="small" color="primary" onClick={() => handleEdit(founder)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {canDeleteUser() && (
+                          <IconButton size="small" color="error" onClick={() => handleDelete(founder.id)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
+
+                  {isProfileVisible(founder) && (
+                    <Typography variant="body2" color="text.secondary" mb={1}>
+                      {founder.email}
+                    </Typography>
                   )}
-                  {canDeleteUser() && (
-                    <button
-                      onClick={() => handleDelete(founder.id)}
-                      className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
-                    >
-                      Delete
-                    </button>
+                  {founder.bio && (
+                    <Typography variant="body2" mb={2}>
+                      {founder.bio}
+                    </Typography>
                   )}
-                </div>
-              </div>
+                  {founder.location && (
+                    <Box display="flex" alignItems="center" gap={0.5} mb={2}>
+                      <LocationOnIcon fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {founder.location}
+                      </Typography>
+                    </Box>
+                  )}
 
-              {isProfileVisible(founder) && <p className="text-gray-600 mb-2">{founder.email}</p>}
-              {founder.bio && <p className="text-gray-700 mb-3">{founder.bio}</p>}
-              {founder.location && <p className="text-gray-500 mb-3 flex items-center">📍 {founder.location}</p>}
+                  {isProfileVisible(founder) && (
+                    <Box display="flex" gap={1} mb={2}>
+                      {founder.linkedin_url && (
+                        <IconButton size="small" href={founder.linkedin_url} target="_blank" rel="noopener">
+                          <LinkedInIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      {founder.twitter_url && (
+                        <IconButton size="small" href={founder.twitter_url} target="_blank" rel="noopener">
+                          <TwitterIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                      {founder.github_url && (
+                        <IconButton size="small" href={founder.github_url} target="_blank" rel="noopener">
+                          <GitHubIcon fontSize="small" />
+                        </IconButton>
+                      )}
+                    </Box>
+                  )}
 
-              <div className="flex space-x-4 mb-4">
-                {isProfileVisible(founder) && founder.linkedin_url && (
-                  <a
-                    href={founder.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    LinkedIn
-                  </a>
-                )}
-                {isProfileVisible(founder) && founder.twitter_url && (
-                  <a
-                    href={founder.twitter_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Twitter
-                  </a>
-                )}
-                {isProfileVisible(founder) && founder.github_url && (
-                  <a
-                    href={founder.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    GitHub
-                  </a>
-                )}
-              </div>
+                  {founder.skills.length > 0 && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                        Skills
+                      </Typography>
+                      <Box display="flex" flexWrap="wrap" gap={0.5}>
+                        {founder.skills.map((skill) => (
+                          <Chip key={skill.id} label={skill.name} size="small" color="primary" variant="outlined" />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
 
-              {founder.skills.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {founder.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {skill.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                  {founder.startup && (
+                    <Box mb={2}>
+                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                        Startup
+                      </Typography>
+                      <Chip
+                        label={founder.startup.name}
+                        size="small"
+                        color="success"
+                        variant="outlined"
+                        onClick={() => handleStartupChipClick(founder.startup!)}
+                        sx={{ cursor: 'pointer' }}
+                        icon={<BusinessIcon />}
+                      />
+                    </Box>
+                  )}
 
-              {founder.startup && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startup:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleStartupChipClick(founder.startup!)}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
-                    >
-                      {founder.startup.name}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {founder.hobbies.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Hobbies:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {founder.hobbies.map((hobby) => (
-                      <span
-                        key={hobby.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
-                      >
-                        {hobby.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+                  {founder.hobbies.length > 0 && (
+                    <Box>
+                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                        Hobbies
+                      </Typography>
+                      <Box display="flex" flexWrap="wrap" gap={0.5}>
+                        {founder.hobbies.map((hobby) => (
+                          <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" variant="outlined" />
+                        ))}
+                      </Box>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
 
       {/* Compact View */}
       {viewType === 'compact' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-4">
+        <Grid container spacing={2}>
           {paginatedFounders.map((founder) => (
-            <div
-              key={founder.id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    if (!isProfileVisible(founder)) {
-                      alert('This profile is marked as not visible and details cannot be viewed.');
-                      return;
-                    }
-                    setSelectedFounder(founder);
-                  }}
-                  className="text-left w-full"
-                >
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    <h3 className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%', xl: '16.67%' }, p: 1 }}>
+              <Card
+                sx={{
+                  cursor: 'pointer',
+                  '&:hover': { boxShadow: 4 },
+                  transition: 'box-shadow 0.3s',
+                }}
+                onClick={() => {
+                  if (!isProfileVisible(founder)) {
+                    alert('This profile is marked as not visible and details cannot be viewed.');
+                    return;
+                  }
+                  setSelectedFounder(founder);
+                }}
+              >
+                <CardContent>
+                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={1}>
+                    <Typography variant="subtitle2" fontWeight={600}>
                       {founder.name}
-                    </h3>
+                    </Typography>
                     {getFounderIndustry(founder) && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                        {getFounderIndustry(founder)}
-                      </span>
+                      <Chip
+                        label={getFounderIndustry(founder)}
+                        size="small"
+                        color="secondary"
+                        variant="outlined"
+                      />
                     )}
-                  </div>
-                </button>
-
-                {founder.bio && <p className="text-xs text-gray-600">{truncateDescription(founder.bio, 80)}</p>}
-              </div>
-            </div>
+                  </Box>
+                  {founder.bio && (
+                    <Typography variant="caption" color="text.secondary">
+                      {truncateDescription(founder.bio, 80)}
+                    </Typography>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
 
-      {/* Pagination Controls */}
+      {/* Pagination */}
       {filteredFounders.length > itemsPerPage && (
-        <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
-          <div className="flex flex-1 justify-between sm:hidden">
-            <button
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-          <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-gray-700">
-                Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
-                <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredFounders.length)}</span> of{' '}
-                <span className="font-medium">{filteredFounders.length}</span> results
-              </p>
-            </div>
-            <div>
-              <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="sr-only">Previous</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path
-                      fillRule="evenodd"
-                      d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setCurrentPage(n)}
-                    className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                      currentPage === n
-                        ? 'z-10 bg-blue-600 text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                        : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                    }`}
-                  >
-                    {n}
-                  </button>
-                ))}
-                <button
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <span className="sr-only">Next</span>
-                  <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                    <path
-                      fillRule="evenodd"
-                      d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
-              </nav>
-            </div>
-          </div>
-        </div>
+        <Box display="flex" justifyContent="center" mt={4}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
       )}
 
       {/* Founder Details Modal */}
-      <Modal isOpen={selectedFounder !== null} onClose={() => setSelectedFounder(null)} title={selectedFounder?.name || ''}>
+      <Modal
+        isOpen={selectedFounder !== null}
+        onClose={() => setSelectedFounder(null)}
+        title={selectedFounder?.name || ''}
+        maxWidth="md"
+      >
         {selectedFounder && (
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center space-x-4 mb-4">
-                <div>
-                  <h3 className="text-lg font-medium text-gray-900">{selectedFounder.name}</h3>
-                  {isProfileVisible(selectedFounder) && <p className="text-gray-600">{selectedFounder.email}</p>}
-                </div>
-              </div>
+          <Box>
+            <Box mb={3}>
+              {isProfileVisible(selectedFounder) && (
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  {selectedFounder.email}
+                </Typography>
+              )}
+              {selectedFounder.bio && (
+                <Typography variant="body1" mb={2}>
+                  {selectedFounder.bio}
+                </Typography>
+              )}
+              {selectedFounder.location && (
+                <Box display="flex" alignItems="center" gap={0.5} mb={2}>
+                  <LocationOnIcon fontSize="small" color="action" />
+                  <Typography variant="body2">{selectedFounder.location}</Typography>
+                </Box>
+              )}
 
-              {selectedFounder.bio && <p className="text-gray-700 mb-4">{selectedFounder.bio}</p>}
-
-              {selectedFounder.location && <p className="text-gray-500 mb-4">📍 {selectedFounder.location}</p>}
-
-              <div className="flex space-x-4 mb-4">
-                {isProfileVisible(selectedFounder) && selectedFounder.linkedin_url && (
-                  <a
-                    href={selectedFounder.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    LinkedIn
-                  </a>
-                )}
-                {isProfileVisible(selectedFounder) && selectedFounder.twitter_url && (
-                  <a
-                    href={selectedFounder.twitter_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Twitter
-                  </a>
-                )}
-                {isProfileVisible(selectedFounder) && selectedFounder.github_url && (
-                  <a
-                    href={selectedFounder.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    GitHub
-                  </a>
-                )}
-              </div>
+              {isProfileVisible(selectedFounder) && (
+                <Box display="flex" gap={2} mb={3}>
+                  {selectedFounder.linkedin_url && (
+                    <Button
+                      size="small"
+                      startIcon={<LinkedInIcon />}
+                      href={selectedFounder.linkedin_url}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      LinkedIn
+                    </Button>
+                  )}
+                  {selectedFounder.twitter_url && (
+                    <Button
+                      size="small"
+                      startIcon={<TwitterIcon />}
+                      href={selectedFounder.twitter_url}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      Twitter
+                    </Button>
+                  )}
+                  {selectedFounder.github_url && (
+                    <Button
+                      size="small"
+                      startIcon={<GitHubIcon />}
+                      href={selectedFounder.github_url}
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      GitHub
+                    </Button>
+                  )}
+                </Box>
+              )}
 
               {selectedFounder.skills && selectedFounder.skills.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Skills:</h4>
-                  <div className="flex flex-wrap gap-2">
+                <Box mb={2}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                    Skills
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
                     {selectedFounder.skills.map((skill) => (
-                      <span
-                        key={skill.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
-                      >
-                        {skill.name}
-                      </span>
+                      <Chip key={skill.id} label={skill.name} size="small" color="primary" />
                     ))}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               )}
 
               {selectedFounder.startup && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Startup:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => handleStartupChipClick(selectedFounder.startup!)}
-                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer"
-                    >
-                      {selectedFounder.startup.name}
-                    </button>
-                  </div>
-                </div>
+                <Box mb={2}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                    Startup
+                  </Typography>
+                  <Chip
+                    label={selectedFounder.startup.name}
+                    color="success"
+                    onClick={() => handleStartupChipClick(selectedFounder.startup!)}
+                    sx={{ cursor: 'pointer' }}
+                    icon={<BusinessIcon />}
+                  />
+                </Box>
               )}
 
               {selectedFounder.hobbies && selectedFounder.hobbies.length > 0 && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">Hobbies:</h4>
-                  <div className="flex flex-wrap gap-2">
+                <Box mb={2}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={1}>
+                    Hobbies
+                  </Typography>
+                  <Box display="flex" flexWrap="wrap" gap={1}>
                     {selectedFounder.hobbies.map((hobby) => (
-                      <span
-                        key={hobby.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
-                      >
-                        {hobby.name}
-                      </span>
+                      <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" />
                     ))}
-                  </div>
-                </div>
+                  </Box>
+                </Box>
               )}
-            </div>
+            </Box>
 
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
+            <Box display="flex" justifyContent="flex-end" gap={2} pt={2} borderTop={1} borderColor="divider">
               {canEditProfile(selectedFounder?.email) && (
-                <button
+                <Button
+                  variant="contained"
+                  startIcon={<EditIcon />}
                   onClick={() => {
                     const f = selectedFounder;
                     setSelectedFounder(null);
                     if (f) handleEdit(f);
                   }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
                 >
                   Edit
-                </button>
+                </Button>
               )}
               {canDeleteUser() && (
-                <button
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<DeleteIcon />}
                   onClick={() => {
                     const id = selectedFounder.id;
                     setSelectedFounder(null);
                     handleDelete(id);
                   }}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-colors"
                 >
                   Delete
-                </button>
+                </Button>
               )}
               {!canEditProfile(selectedFounder?.email) && !canDeleteUser() && (
-                <button
-                  onClick={() => setSelectedFounder(null)}
-                  className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-                >
+                <Button variant="outlined" onClick={() => setSelectedFounder(null)}>
                   Close
-                </button>
+                </Button>
               )}
-            </div>
-          </div>
+            </Box>
+          </Box>
         )}
       </Modal>
 
       {/* Startup Details Modal */}
-      <Modal isOpen={selectedStartup !== null} onClose={() => setSelectedStartup(null)} title={selectedStartup?.name || ''}>
+      <Modal
+        isOpen={selectedStartup !== null}
+        onClose={() => setSelectedStartup(null)}
+        title={selectedStartup?.name || ''}
+      >
         {selectedStartup && (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-4">{selectedStartup.name}</h3>
+          <Box>
+            {selectedStartup.description && (
+              <Typography variant="body1" mb={3}>
+                {selectedStartup.description}
+              </Typography>
+            )}
 
-              {selectedStartup.description && <p className="text-gray-700 mb-4">{selectedStartup.description}</p>}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {selectedStartup.industry && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Industry:</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                      {selectedStartup.industry}
-                    </span>
-                  </div>
-                )}
-
-                {selectedStartup.stage && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Stage:</span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                      {selectedStartup.stage}
-                    </span>
-                  </div>
-                )}
-
-                {selectedStartup.target_market && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Target Market:</span>
-                    <span className="text-sm text-gray-600 flex items-center">🎯 {selectedStartup.target_market}</span>
-                  </div>
-                )}
-
-                {selectedStartup.revenue_arr && (
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 block mb-1">Revenue ARR:</span>
-                    <span className="text-sm text-gray-600 flex items-center">💰 {selectedStartup.revenue_arr}</span>
-                  </div>
-                )}
-              </div>
-
-              {selectedStartup.website_url && (
-                <div className="mt-4">
-                  <span className="text-sm font-medium text-gray-700 block mb-1">Website:</span>
-                  <a
-                    href={selectedStartup.website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline"
-                  >
-                    {selectedStartup.website_url}
-                  </a>
-                </div>
+            <Grid container spacing={2} mb={3}>
+              {selectedStartup.industry && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Industry
+                  </Typography>
+                  <Box mt={0.5}>
+                    <Chip label={selectedStartup.industry} color="secondary" size="small" />
+                  </Box>
+                </Grid>
               )}
-            </div>
+              {selectedStartup.stage && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Stage
+                  </Typography>
+                  <Box mt={0.5}>
+                    <Chip label={selectedStartup.stage} color="success" size="small" />
+                  </Box>
+                </Grid>
+              )}
+              {selectedStartup.target_market && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Target Market
+                  </Typography>
+                  <Typography variant="body2" mt={0.5}>
+                    🎯 {selectedStartup.target_market}
+                  </Typography>
+                </Grid>
+              )}
+              {selectedStartup.revenue_arr && (
+                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Revenue ARR
+                  </Typography>
+                  <Typography variant="body2" mt={0.5}>
+                    💰 {selectedStartup.revenue_arr}
+                  </Typography>
+                </Grid>
+              )}
+            </Grid>
 
-            <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={() => setSelectedStartup(null)}
-                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition-colors"
-              >
+            {selectedStartup.website_url && (
+              <Box mb={3}>
+                <Typography variant="caption" color="text.secondary">
+                  Website
+                </Typography>
+                <Box mt={0.5}>
+                  <Link href={selectedStartup.website_url} target="_blank" rel="noopener">
+                    {selectedStartup.website_url}
+                  </Link>
+                </Box>
+              </Box>
+            )}
+
+            <Box display="flex" justifyContent="flex-end" pt={2} borderTop={1} borderColor="divider">
+              <Button variant="outlined" onClick={() => setSelectedStartup(null)}>
                 Close
-              </button>
-            </div>
-          </div>
+              </Button>
+            </Box>
+          </Box>
         )}
       </Modal>
-    </div>
+    </Box>
   );
 };
 
