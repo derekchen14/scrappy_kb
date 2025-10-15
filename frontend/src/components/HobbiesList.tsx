@@ -4,7 +4,6 @@ import {
   Button,
   TextField,
   Typography,
-  Chip,
   Alert,
   CircularProgress,
   Dialog,
@@ -15,6 +14,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Chip,
   IconButton,
 } from '@mui/material';
 import {
@@ -22,52 +22,52 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from '@mui/icons-material';
-import { Skill, SkillCreate } from '../types';
+import { Hobby, HobbyCreate } from '../types';
 import Modal from './Modal';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 
-interface SkillsListProps {
+interface HobbiesListProps {
   searchQuery?: string;
 }
 
-const skillCategories = ['Technical', 'Marketing', 'Business', 'Design', 'Sales', 'Product', 'Other'];
+const hobbyCategories = ['Sports', 'Arts', 'Music', 'Technology', 'Outdoor', 'Gaming', 'Reading', 'Other'];
 
-const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
+const HobbiesList: React.FC<HobbiesListProps> = ({ searchQuery = '' }) => {
   const { publicAPI, authenticatedAPI } = useAuthenticatedAPI();
   const { isAdmin } = useAdmin();
 
-  const [skills, setSkills] = useState<Skill[]>([]);
+  const [hobbies, setHobbies] = useState<Hobby[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
   const [showForm, setShowForm] = useState(false);
-  const [editingSkill, setEditingSkill] = useState<Skill | null>(null);
-  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+  const [editingHobby, setEditingHobby] = useState<Hobby | null>(null);
+  const [selectedHobby, setSelectedHobby] = useState<Hobby | null>(null);
 
-  const [formData, setFormData] = useState<SkillCreate>({
+  const [formData, setFormData] = useState<HobbyCreate>({
     name: '',
     category: '',
     description: '',
   });
 
-  const fetchSkills = useCallback(async () => {
+  const fetchHobbies = useCallback(async () => {
     try {
       setLoading(true);
       setErr(null);
-      const response = await publicAPI.get<Skill[]>('/skills/');
-      setSkills(response.data);
+      const response = await publicAPI.get<Hobby[]>('/hobbies/');
+      setHobbies(response.data);
     } catch (error) {
-      console.error('Error fetching skills:', error);
-      setErr('Failed to load skills. Please try again.');
+      console.error('Error fetching hobbies:', error);
+      setErr('Failed to load hobbies. Please try again.');
     } finally {
       setLoading(false);
     }
   }, [publicAPI]);
 
   useEffect(() => {
-    fetchSkills();
-  }, [fetchSkills]);
+    fetchHobbies();
+  }, [fetchHobbies]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,68 +78,68 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
     }
 
     try {
-      if (editingSkill) {
-        await authenticatedAPI.put(`/skills/${editingSkill.id}`, formData);
+      if (editingHobby) {
+        await authenticatedAPI.put(`/hobbies/${editingHobby.id}`, formData);
       } else {
-        await authenticatedAPI.post('/skills/', formData);
+        await authenticatedAPI.post('/hobbies/', formData);
       }
-      await fetchSkills();
+      await fetchHobbies();
       resetForm();
     } catch (error) {
-      console.error('Error saving skill:', error);
-      setErr('Failed to save skill. Please try again.');
+      console.error('Error saving hobby:', error);
+      setErr('Failed to save hobby. Please try again.');
     }
   };
 
-  const handleEdit = (skill: Skill) => {
-    setEditingSkill(skill);
+  const handleEdit = (hobby: Hobby) => {
+    setEditingHobby(hobby);
     setFormData({
-      name: skill.name,
-      category: skill.category || '',
-      description: skill.description || '',
+      name: hobby.name,
+      category: hobby.category || '',
+      description: hobby.description || '',
     });
     setShowForm(true);
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this skill?')) return;
+    if (!window.confirm('Are you sure you want to delete this hobby?')) return;
 
     try {
-      await authenticatedAPI.delete(`/skills/${id}`);
-      await fetchSkills();
+      await authenticatedAPI.delete(`/hobbies/${id}`);
+      await fetchHobbies();
     } catch (error) {
-      console.error('Error deleting skill:', error);
-      setErr('Failed to delete skill. Please try again.');
+      console.error('Error deleting hobby:', error);
+      setErr('Failed to delete hobby. Please try again.');
     }
   };
 
   const resetForm = () => {
     setFormData({ name: '', category: '', description: '' });
-    setEditingSkill(null);
+    setEditingHobby(null);
     setShowForm(false);
   };
 
   const truncateDescription = (text: string, maxLength: number = 100): string =>
     text.length <= maxLength ? text : `${text.substring(0, maxLength)}…`;
 
-  const filteredSkills = useMemo(() => {
+  const filteredHobbies = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return skills;
+    if (!q) return hobbies;
 
-    return skills.filter((skill) => {
-      const name = skill.name.toLowerCase();
-      const category = skill.category?.toLowerCase() || '';
-      const description = skill.description?.toLowerCase() || '';
+    return hobbies.filter((hobby) => {
+      const name = hobby.name.toLowerCase();
+      const category = hobby.category?.toLowerCase() || '';
+      const description = hobby.description?.toLowerCase() || '';
       return name.includes(q) || category.includes(q) || description.includes(q);
     });
-  }, [skills, searchQuery]);
+  }, [hobbies, searchQuery]);
 
   if (loading) {
     return (
       <Box display="flex" flexDirection="column" alignItems="center" py={8}>
         <CircularProgress size={48} />
         <Typography variant="body2" color="text.secondary" mt={2}>
-          Loading skills…
+          Loading hobbies…
         </Typography>
       </Box>
     );
@@ -150,7 +150,7 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
       {/* Header */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h3" fontWeight={700}>
-          Skills
+          Hobbies
         </Typography>
         <Button
           variant="contained"
@@ -159,7 +159,7 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
           onClick={() => setShowForm(true)}
           disabled={!isAdmin}
         >
-          Add Skill
+          Add Hobby
         </Button>
       </Box>
 
@@ -173,7 +173,7 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
       <Dialog open={showForm} onClose={resetForm} maxWidth="sm" fullWidth>
         <form onSubmit={handleSubmit}>
           <DialogTitle>
-            {editingSkill ? 'Edit Skill' : 'Add New Skill'}
+            {editingHobby ? 'Edit Hobby' : 'Add New Hobby'}
           </DialogTitle>
           <DialogContent>
             <Box sx={{ pt: 2, display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -193,7 +193,7 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
                   label="Category"
                 >
                   <MenuItem value="">Select a category</MenuItem>
-                  {skillCategories.map((c) => (
+                  {hobbyCategories.map((c) => (
                     <MenuItem key={c} value={c}>
                       {c}
                     </MenuItem>
@@ -214,21 +214,21 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
           <DialogActions>
             <Button onClick={resetForm}>Cancel</Button>
             <Button type="submit" variant="contained" color="success" disabled={!isAdmin}>
-              {editingSkill ? 'Update' : 'Create'}
+              {editingHobby ? 'Update' : 'Create'}
             </Button>
           </DialogActions>
         </form>
       </Dialog>
 
-      {/* Skills List */}
+      {/* Hobbies List */}
       <Box>
-        {filteredSkills.map((skill, index) => (
+        {filteredHobbies.map((hobby, index) => (
           <Box
-            key={skill.id}
+            key={hobby.id}
             sx={{
               py: 2,
               px: 3,
-              borderBottom: index < filteredSkills.length - 1 ? '1px solid' : 'none',
+              borderBottom: index < filteredHobbies.length - 1 ? '1px solid' : 'none',
               borderColor: 'divider',
               cursor: 'pointer',
               transition: 'background-color 0.2s',
@@ -236,55 +236,55 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
                 bgcolor: 'action.hover',
               },
             }}
-            onClick={() => setSelectedSkill(skill)}
+            onClick={() => setSelectedHobby(hobby)}
           >
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Box display="flex" alignItems="center" gap={2}>
                 <Typography variant="body1" fontWeight={600}>
-                  {skill.name}
+                  {hobby.name}
                 </Typography>
-                {skill.category && (
-                  <Chip label={skill.category} color="info" size="small" />
+                {hobby.category && (
+                  <Chip label={hobby.category} color="secondary" size="small" />
                 )}
               </Box>
               {isAdmin && (
                 <Box onClick={(e) => e.stopPropagation()}>
-                  <IconButton size="small" color="primary" onClick={() => handleEdit(skill)}>
+                  <IconButton size="small" color="primary" onClick={() => handleEdit(hobby)}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton size="small" color="error" onClick={() => handleDelete(skill.id)}>
+                  <IconButton size="small" color="error" onClick={() => handleDelete(hobby.id)}>
                     <DeleteIcon />
                   </IconButton>
                 </Box>
               )}
             </Box>
-            {skill.description && (
+            {hobby.description && (
               <Typography variant="body2" color="text.secondary" mt={1}>
-                {skill.description}
+                {hobby.description}
               </Typography>
             )}
           </Box>
         ))}
       </Box>
 
-      {/* Skill Details Modal */}
+      {/* Hobby Details Modal */}
       <Modal
-        isOpen={selectedSkill !== null}
-        onClose={() => setSelectedSkill(null)}
-        title={selectedSkill?.name || ''}
+        isOpen={selectedHobby !== null}
+        onClose={() => setSelectedHobby(null)}
+        title={selectedHobby?.name || ''}
         maxWidth="sm"
       >
-        {selectedSkill && (
+        {selectedHobby && (
           <Box>
-            {selectedSkill.category && (
+            {selectedHobby.category && (
               <Box mb={2}>
-                <Chip label={selectedSkill.category} color="info" />
+                <Chip label={selectedHobby.category} color="secondary" />
               </Box>
             )}
 
-            {selectedSkill.description && (
+            {selectedHobby.description && (
               <Typography variant="body1" mb={3}>
-                {selectedSkill.description}
+                {selectedHobby.description}
               </Typography>
             )}
 
@@ -295,8 +295,8 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
                     variant="contained"
                     startIcon={<EditIcon />}
                     onClick={() => {
-                      setSelectedSkill(null);
-                      handleEdit(selectedSkill);
+                      setSelectedHobby(null);
+                      handleEdit(selectedHobby);
                     }}
                   >
                     Edit
@@ -306,15 +306,15 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
                     color="error"
                     startIcon={<DeleteIcon />}
                     onClick={() => {
-                      setSelectedSkill(null);
-                      handleDelete(selectedSkill.id);
+                      setSelectedHobby(null);
+                      handleDelete(selectedHobby.id);
                     }}
                   >
                     Delete
                   </Button>
                 </>
               ) : (
-                <Button variant="outlined" onClick={() => setSelectedSkill(null)}>
+                <Button variant="outlined" onClick={() => setSelectedHobby(null)}>
                   Close
                 </Button>
               )}
@@ -326,4 +326,5 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
   );
 };
 
-export default SkillsList;
+export default HobbiesList;
+

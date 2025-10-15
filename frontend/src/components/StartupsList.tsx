@@ -21,6 +21,7 @@ import {
   Link,
   Divider,
   Grid,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -431,91 +432,124 @@ const StartupsList: React.FC<StartupsListProps> = ({
         </form>
       </Dialog>
 
-      {/* Startups Grid */}
+      {/* Startups List */}
       <Grid container spacing={3}>
         {filteredStartups.map((startup) => (
-          <Grid key={startup.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
+          <Grid key={startup.id} sx={{ width: { xs: '100%', sm: '50%', lg: '33.33%' }, p: 1.5 }}>
+            <Card
+              sx={{ 
+                height: '350px',
+                display: 'flex', 
+                flexDirection: 'column',
+                cursor: 'pointer',
+              }}
+              onClick={() => setSelectedStartup(startup)}
+            >
+              <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                  <Typography
-                    variant="h6"
-                    fontWeight={600}
-                    sx={{
-                      cursor: 'pointer',
-                      '&:hover': { color: 'primary.main' },
-                      transition: 'color 0.2s',
-                    }}
-                    onClick={() => setSelectedStartup(startup)}
-                  >
+                  <Typography variant="h5" fontWeight={700}>
                     {startup.name}
                   </Typography>
                   {isAdmin && (
-                    <Box>
+                    <Box onClick={(e) => e.stopPropagation()}>
                       <IconButton size="small" color="primary" onClick={() => handleEdit(startup)}>
-                        <EditIcon fontSize="small" />
+                        <EditIcon />
                       </IconButton>
                       <IconButton size="small" color="error" onClick={() => handleDelete(startup.id)}>
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon />
                       </IconButton>
                     </Box>
                   )}
                 </Box>
 
                 {startup.description && (
-                  <Typography variant="body2" color="text.secondary" mb={2}>
-                    {startup.description}
-                  </Typography>
+                  <Tooltip title={startup.description} arrow placement="top" enterDelay={500}>
+                    <Box>
+                      <Typography 
+                        variant="body2" 
+                        mb={2} 
+                        lineHeight={1.5}
+                        sx={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {startup.description}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
                 )}
 
-                <Box display="flex" flexDirection="column" gap={1.5}>
-                  {startup.industry && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <BusinessIcon fontSize="small" color="action" />
-                      <Chip label={startup.industry} size="small" color="secondary" variant="outlined" />
+                <Box flexGrow={1}>
+                  {(startup.industry || startup.stage) && (
+                    <Box mb={2}>
+                      <Box display="flex" gap={2}>
+                        {startup.industry && (
+                          <Box flex={1}>
+                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                              INDUSTRY
+                            </Typography>
+                            <Chip label={startup.industry} color="secondary" size="small" />
+                          </Box>
+                        )}
+                        {startup.stage && (
+                          <Box flex={1}>
+                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                              STAGE
+                            </Typography>
+                            <Chip label={startup.stage} color="success" size="small" />
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   )}
 
-                  {startup.stage && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <TrendingUpIcon fontSize="small" color="action" />
-                      <Chip label={startup.stage} size="small" color="success" variant="outlined" />
-                    </Box>
-                  )}
-
-                  {startup.target_market && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <PeopleIcon fontSize="small" color="action" />
-                      <Typography variant="caption" color="text.secondary">
-                        {startup.target_market}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {startup.revenue_arr && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <AttachMoneyIcon fontSize="small" color="action" />
-                      <Typography variant="caption" color="text.secondary">
-                        {startup.revenue_arr}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {startup.website_url && (
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <LanguageIcon fontSize="small" color="action" />
-                      <Link
-                        href={startup.website_url}
-                        target="_blank"
-                        rel="noopener"
-                        variant="caption"
-                        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                      >
-                        {startup.website_url}
-                      </Link>
+                  {(startup.target_market || startup.revenue_arr) && (
+                    <Box mb={2}>
+                      <Box display="flex" gap={2}>
+                        {startup.target_market && (
+                          <Box flex={1}>
+                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                              TARGET MARKET
+                            </Typography>
+                            <Typography variant="body2">
+                              🎯 {startup.target_market}
+                            </Typography>
+                          </Box>
+                        )}
+                        {startup.revenue_arr && (
+                          <Box flex={1}>
+                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                              REVENUE ARR
+                            </Typography>
+                            <Typography variant="body2">
+                              💰 {startup.revenue_arr}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
                     </Box>
                   )}
                 </Box>
+
+                {startup.website_url && (
+                  <Box mt={2} pt={2} borderTop={1} borderColor="divider">
+                    <Link
+                      href={startup.website_url}
+                      target="_blank"
+                      rel="noopener"
+                      variant="body2"
+                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      <LanguageIcon fontSize="small" />
+                      Website
+                    </Link>
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </Grid>

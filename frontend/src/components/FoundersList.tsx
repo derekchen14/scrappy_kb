@@ -34,6 +34,7 @@ import {
   DialogActions,
   FormGroup,
   Grid,
+  Tooltip,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -740,10 +741,10 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   <TableCell>
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {founder.skills.slice(0, 2).map((skill) => (
-                        <Chip key={skill.id} label={skill.name} size="small" color="primary" variant="outlined" />
+                        <Chip key={skill.id} label={skill.name} size="small" color="primary" />
                       ))}
                       {founder.skills.length > 2 && (
-                        <Chip label={`+${founder.skills.length - 2}`} size="small" variant="outlined" />
+                        <Chip label={`+${founder.skills.length - 2}`} size="small" />
                       )}
                     </Box>
                   </TableCell>
@@ -753,7 +754,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         label={founder.startup.name}
                         size="small"
                         color="success"
-                        variant="outlined"
                         onClick={() => handleStartupChipClick(founder.startup!)}
                         sx={{ cursor: 'pointer' }}
                       />
@@ -766,10 +766,10 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   <TableCell>
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {founder.hobbies.slice(0, 3).map((hobby) => (
-                        <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" variant="outlined" />
+                        <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" />
                       ))}
                       {founder.hobbies.length > 3 && (
-                        <Chip label={`+${founder.hobbies.length - 3}`} size="small" variant="outlined" />
+                        <Chip label={`+${founder.hobbies.length - 3}`} size="small" />
                       )}
                     </Box>
                   </TableCell>
@@ -800,41 +800,66 @@ const FoundersList: React.FC<FoundersListProps> = ({
       {viewType === 'card' && (
         <Grid container spacing={3}>
           {paginatedFounders.map((founder) => (
-            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
-              <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <CardContent sx={{ flexGrow: 1 }}>
+            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', lg: '33.33%' }, p: 1.5 }}>
+              <Card 
+                sx={{ 
+                  height: '350px',
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  if (!isProfileVisible(founder)) {
+                    alert('This profile is marked as not visible and details cannot be viewed.');
+                    return;
+                  }
+                  setSelectedFounder(founder);
+                }}
+              >
+                <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                    <Typography variant="h6" fontWeight={600}>
+                    <Typography variant="h5" fontWeight={700}>
                       {founder.name}
                     </Typography>
                     {isAdmin && (
-                      <Box>
+                      <Box onClick={(e) => e.stopPropagation()}>
                         {canEditProfile(founder.email) && (
                           <IconButton size="small" color="primary" onClick={() => handleEdit(founder)}>
-                            <EditIcon fontSize="small" />
+                            <EditIcon />
                           </IconButton>
                         )}
                         {canDeleteUser() && (
                           <IconButton size="small" color="error" onClick={() => handleDelete(founder.id)}>
-                            <DeleteIcon fontSize="small" />
+                            <DeleteIcon />
                           </IconButton>
                         )}
                       </Box>
                     )}
                   </Box>
 
+                  {founder.startup && (
+                    <Box mb={1}>
+                      <Chip
+                        label={founder.startup.name}
+                        color="success"
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartupChipClick(founder.startup!);
+                        }}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    </Box>
+                  )}
+
                   {isProfileVisible(founder) && (
-                    <Typography variant="body2" color="text.secondary" mb={1}>
+                    <Typography variant="body2" color="text.secondary" mb={1.5}>
                       {founder.email}
                     </Typography>
                   )}
-                  {founder.bio && (
-                    <Typography variant="body2" mb={2}>
-                      {founder.bio}
-                    </Typography>
-                  )}
+
                   {founder.location && (
-                    <Box display="flex" alignItems="center" gap={0.5} mb={2}>
+                    <Box display="flex" alignItems="center" gap={0.5} mb={1.5}>
                       <LocationOnIcon fontSize="small" color="action" />
                       <Typography variant="body2" color="text.secondary">
                         {founder.location}
@@ -842,66 +867,113 @@ const FoundersList: React.FC<FoundersListProps> = ({
                     </Box>
                   )}
 
-                  {isProfileVisible(founder) && (
-                    <Box display="flex" gap={1} mb={2}>
+                  {founder.bio && (
+                    <Tooltip title={founder.bio} arrow placement="top" enterDelay={500}>
+                      <Box mb={1.5}>
+                        <Typography 
+                          variant="body2" 
+                          lineHeight={1.5}
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {founder.bio}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  )}
+
+                  <Box flexGrow={1}>
+                    {founder.skills.length > 0 && (
+                      <Box mb={1}>
+                        <Typography variant="caption" fontWeight={600} mb={0.5} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                          SKILLS
+                        </Typography>
+                        <Box display="flex" flexWrap="wrap" gap={0.5}>
+                          {founder.skills.slice(0, 4).map((skill) => (
+                            <Chip 
+                              key={skill.id} 
+                              label={skill.name} 
+                              color="primary"
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                            />
+                          ))}
+                          {founder.skills.length > 4 && (
+                            <Chip 
+                              label={`+${founder.skills.length - 4}`}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {founder.hobbies.length > 0 && (
+                      <Box mb={1}>
+                        <Typography variant="caption" fontWeight={600} mb={0.5} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                          HOBBIES
+                        </Typography>
+                        <Box display="flex" flexWrap="wrap" gap={0.5}>
+                          {founder.hobbies.slice(0, 4).map((hobby) => (
+                            <Chip 
+                              key={hobby.id} 
+                              label={hobby.name} 
+                              color="secondary"
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                            />
+                          ))}
+                          {founder.hobbies.length > 4 && (
+                            <Chip 
+                              label={`+${founder.hobbies.length - 4}`}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              variant="outlined"
+                            />
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {isProfileVisible(founder) && (founder.linkedin_url || founder.twitter_url || founder.github_url) && (
+                    <Box display="flex" gap={0.5} mt={2} pt={2} borderTop={1} borderColor="divider">
                       {founder.linkedin_url && (
-                        <IconButton size="small" href={founder.linkedin_url} target="_blank" rel="noopener">
+                        <IconButton 
+                          size="small" 
+                          href={founder.linkedin_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <LinkedInIcon fontSize="small" />
                         </IconButton>
                       )}
                       {founder.twitter_url && (
-                        <IconButton size="small" href={founder.twitter_url} target="_blank" rel="noopener">
+                        <IconButton 
+                          size="small" 
+                          href={founder.twitter_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <TwitterIcon fontSize="small" />
                         </IconButton>
                       )}
                       {founder.github_url && (
-                        <IconButton size="small" href={founder.github_url} target="_blank" rel="noopener">
+                        <IconButton 
+                          size="small" 
+                          href={founder.github_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <GitHubIcon fontSize="small" />
                         </IconButton>
                       )}
-                    </Box>
-                  )}
-
-                  {founder.skills.length > 0 && (
-                    <Box mb={2}>
-                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                        Skills
-                      </Typography>
-                      <Box display="flex" flexWrap="wrap" gap={0.5}>
-                        {founder.skills.map((skill) => (
-                          <Chip key={skill.id} label={skill.name} size="small" color="primary" variant="outlined" />
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  {founder.startup && (
-                    <Box mb={2}>
-                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                        Startup
-                      </Typography>
-                      <Chip
-                        label={founder.startup.name}
-                        size="small"
-                        color="success"
-                        variant="outlined"
-                        onClick={() => handleStartupChipClick(founder.startup!)}
-                        sx={{ cursor: 'pointer' }}
-                        icon={<BusinessIcon />}
-                      />
-                    </Box>
-                  )}
-
-                  {founder.hobbies.length > 0 && (
-                    <Box>
-                      <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                        Hobbies
-                      </Typography>
-                      <Box display="flex" flexWrap="wrap" gap={0.5}>
-                        {founder.hobbies.map((hobby) => (
-                          <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" variant="outlined" />
-                        ))}
-                      </Box>
                     </Box>
                   )}
                 </CardContent>
@@ -919,8 +991,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
               <Card
                 sx={{
                   cursor: 'pointer',
-                  '&:hover': { boxShadow: 4 },
-                  transition: 'box-shadow 0.3s',
                 }}
                 onClick={() => {
                   if (!isProfileVisible(founder)) {
@@ -931,21 +1001,20 @@ const FoundersList: React.FC<FoundersListProps> = ({
                 }}
               >
                 <CardContent>
-                  <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={1}>
-                    <Typography variant="subtitle2" fontWeight={600}>
-                      {founder.name}
-                    </Typography>
-                    {getFounderIndustry(founder) && (
+                  <Typography variant="h6" fontWeight={700} mb={1.5}>
+                    {founder.name}
+                  </Typography>
+                  {getFounderIndustry(founder) && (
+                    <Box mb={1.5}>
                       <Chip
                         label={getFounderIndustry(founder)}
                         size="small"
                         color="secondary"
-                        variant="outlined"
                       />
-                    )}
-                  </Box>
+                    </Box>
+                  )}
                   {founder.bio && (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" lineHeight={1.5}>
                       {truncateDescription(founder.bio, 80)}
                     </Typography>
                   )}

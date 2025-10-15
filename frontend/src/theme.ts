@@ -60,23 +60,23 @@ const theme = createTheme({
       lineHeight: 1.3,
     },
     h3: {
-      fontWeight: 600,
+      fontWeight: 700,
+      fontSize: '2rem',
+      lineHeight: 1.3,
+    },
+    h4: {
+      fontWeight: 700,
       fontSize: '1.5rem',
       lineHeight: 1.4,
     },
-    h4: {
-      fontWeight: 600,
-      fontSize: '1.25rem',
+    h5: {
+      fontWeight: 700,
+      fontSize: '1.375rem',
       lineHeight: 1.4,
     },
-    h5: {
-      fontWeight: 600,
-      fontSize: '1.125rem',
-      lineHeight: 1.5,
-    },
     h6: {
-      fontWeight: 600,
-      fontSize: '1rem',
+      fontWeight: 700,
+      fontSize: '1.125rem',
       lineHeight: 1.5,
     },
     subtitle1: {
@@ -151,12 +151,23 @@ const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06)',
-          transition: 'all 0.2s ease-in-out',
+          borderRadius: 16,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.04)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          border: '1px solid rgba(0, 0, 0, 0.05)',
           '&:hover': {
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.08)',
-            transform: 'translateY(-2px)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08)',
+            transform: 'translateY(-4px)',
+          },
+        },
+      },
+    },
+    MuiCardContent: {
+      styleOverrides: {
+        root: {
+          padding: '28px',
+          '&:last-child': {
+            paddingBottom: '28px',
           },
         },
       },
@@ -189,9 +200,60 @@ const theme = createTheme({
     MuiChip: {
       styleOverrides: {
         root: {
-          borderRadius: 6,
-          fontWeight: 500,
-          height: 28,
+          borderRadius: 8,
+          fontWeight: 600,
+          height: 36,
+          fontSize: '0.9375rem',
+          '&.MuiChip-sizeMedium': {
+            height: 36,
+            fontSize: '0.9375rem',
+          },
+          '&.MuiChip-sizeSmall': {
+            height: 28,
+            fontSize: '0.875rem',
+          },
+        },
+        colorPrimary: {
+          backgroundColor: '#e3f2fd',
+          color: '#0d47a1',
+          '&:hover': {
+            backgroundColor: '#bbdefb',
+          },
+        },
+        colorSecondary: {
+          backgroundColor: '#f3e5f5',
+          color: '#6a1b9a',
+          '&:hover': {
+            backgroundColor: '#e1bee7',
+          },
+        },
+        colorSuccess: {
+          backgroundColor: '#e8f5e9',
+          color: '#2e7d32',
+          '&:hover': {
+            backgroundColor: '#c8e6c9',
+          },
+        },
+        colorError: {
+          backgroundColor: '#ffebee',
+          color: '#c62828',
+          '&:hover': {
+            backgroundColor: '#ffcdd2',
+          },
+        },
+        colorWarning: {
+          backgroundColor: '#fff3e0',
+          color: '#ef6c00',
+          '&:hover': {
+            backgroundColor: '#ffe0b2',
+          },
+        },
+        colorInfo: {
+          backgroundColor: '#e1f5fe',
+          color: '#01579b',
+          '&:hover': {
+            backgroundColor: '#b3e5fc',
+          },
         },
       },
     },

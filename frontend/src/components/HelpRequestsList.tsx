@@ -20,6 +20,7 @@ import {
   MenuItem,
   Link,
   Grid,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -407,20 +408,26 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
       {/* Help Requests Grid */}
       <Grid container spacing={3}>
         {filteredHelpRequests.map((request) => (
-          <Grid key={request.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-              <CardContent sx={{ flexGrow: 1 }}>
+          <Grid key={request.id} sx={{ width: { xs: '100%', sm: '50%', lg: '33.33%' }, p: 1.5 }}>
+            <Card 
+              sx={{ 
+                height: '350px', 
+                display: 'flex', 
+                flexDirection: 'column',
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                  <Typography variant="h6" fontWeight={600}>
+                  <Typography variant="h5" fontWeight={700}>
                     {request.title}
                   </Typography>
                   {canEditRequest(request) && (
                     <Box>
                       <IconButton size="small" color="primary" onClick={() => handleEdit(request)}>
-                        <EditIcon fontSize="small" />
+                        <EditIcon />
                       </IconButton>
                       <IconButton size="small" color="error" onClick={() => handleDelete(request.id)}>
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon />
                       </IconButton>
                     </Box>
                   )}
@@ -428,13 +435,14 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
 
                 <Box display="flex" alignItems="center" gap={0.5} mb={2}>
                   <PersonIcon fontSize="small" color="action" />
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary">
                     Requested by:
                   </Typography>
                   <Link
                     component="button"
                     type="button"
-                    variant="caption"
+                    variant="body2"
+                    fontWeight={500}
                     onClick={() => handleFounderClick(request.founder_id)}
                     sx={{ cursor: 'pointer' }}
                   >
@@ -442,23 +450,40 @@ const HelpRequestsList: React.FC<HelpRequestsListProps> = ({ searchQuery = '', o
                   </Link>
                 </Box>
 
-                <Typography variant="body2" color="text.secondary" mb={2}>
-                  {request.description}
-                </Typography>
+                <Tooltip title={request.description} arrow placement="top" enterDelay={500}>
+                  <Box>
+                    <Typography 
+                      variant="body2" 
+                      mb={2} 
+                      lineHeight={1.5}
+                      sx={{
+                        display: '-webkit-box',
+                        WebkitLineClamp: 4,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {request.description}
+                    </Typography>
+                  </Box>
+                </Tooltip>
 
-                <Box display="flex" flexWrap="wrap" gap={0.5}>
+                <Box flexGrow={1} />
+
+                <Box display="flex" flexWrap="wrap" gap={1}>
                   {request.category && (
-                    <Chip label={request.category} size="small" color="secondary" variant="outlined" />
+                    <Chip label={request.category} color="secondary" size="small" />
                   )}
                   <Chip
                     label={request.urgency || 'Medium'}
-                    size="small"
                     color={getUrgencyColor(request.urgency)}
+                    size="small"
                   />
                   <Chip
                     label={request.status || 'Open'}
-                    size="small"
                     color={getStatusColor(request.status)}
+                    size="small"
                   />
                 </Box>
               </CardContent>

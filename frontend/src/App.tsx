@@ -21,13 +21,14 @@ import { Startup, Founder } from './types';
 // Lazily load tab panes (code-splitting)
 const FoundersList = lazy(() => import(/* webpackChunkName: "tab-founders" */ './components/FoundersList'));
 const SkillsList = lazy(() => import(/* webpackChunkName: "tab-skills" */ './components/SkillsList'));
+const HobbiesList = lazy(() => import(/* webpackChunkName: "tab-hobbies" */ './components/HobbiesList'));
 const StartupsList = lazy(() => import(/* webpackChunkName: "tab-startups" */ './components/StartupsList'));
 const HelpRequestsList = lazy(() => import(/* webpackChunkName: "tab-requests" */ './components/HelpRequestsList'));
 const EventsList = lazy(() => import(/* webpackChunkName: "tab-events" */ './components/EventsList'));
 const AdminDashboard = lazy(() => import(/* webpackChunkName: "tab-admin" */ './components/AdminDashboard'));
 const ProfileSetupModal = lazy(() => import(/* webpackChunkName: "profile-setup" */ './components/ProfileSetupModal'));
 
-type TabType = 'founders' | 'skills' | 'startups' | 'help-requests' | 'events' | 'admin';
+type TabType = 'founders' | 'skills' | 'hobbies' | 'startups' | 'help-requests' | 'events' | 'admin';
 
 function App() {
   const { isLoading, error, isAuthenticated } = useAuth0();
@@ -62,7 +63,7 @@ function App() {
 
   // Redirect non-admin users away from admin-only tabs
   useEffect(() => {
-    if (!isAdmin && (activeTab === 'skills' || activeTab === 'admin')) {
+    if (!isAdmin && (activeTab === 'skills' || activeTab === 'hobbies' || activeTab === 'admin')) {
       setActiveTab('founders');
     }
   }, [isAdmin, activeTab]);
@@ -75,6 +76,9 @@ function App() {
         break;
       case 'skills':
         import(/* webpackPrefetch: true, webpackChunkName: "tab-skills" */ './components/SkillsList');
+        break;
+      case 'hobbies':
+        import(/* webpackPrefetch: true, webpackChunkName: "tab-hobbies" */ './components/HobbiesList');
         break;
       case 'startups':
         import(/* webpackPrefetch: true, webpackChunkName: "tab-startups" */ './components/StartupsList');
@@ -93,12 +97,12 @@ function App() {
 
   // Tab index mapping
   const getTabIndex = (tab: TabType): number => {
-    const tabs = ['founders', isAdmin ? 'skills' : null, 'startups', 'help-requests', 'events', isAdmin ? 'admin' : null].filter(Boolean);
+    const tabs = ['founders', isAdmin ? 'skills' : null, isAdmin ? 'hobbies' : null, 'startups', 'help-requests', 'events', isAdmin ? 'admin' : null].filter(Boolean);
     return tabs.indexOf(tab);
   };
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    const tabs: TabType[] = ['founders', ...(isAdmin ? ['skills' as TabType] : []), 'startups', 'help-requests', 'events', ...(isAdmin ? ['admin' as TabType] : [])];
+    const tabs: TabType[] = ['founders', ...(isAdmin ? ['skills' as TabType, 'hobbies' as TabType] : []), 'startups', 'help-requests', 'events', ...(isAdmin ? ['admin' as TabType] : [])];
     setActiveTab(tabs[newValue]);
   };
 
@@ -173,7 +177,12 @@ function App() {
   }
 
   return (
-    <Box minHeight="100vh" bgcolor="background.default">
+    <Box 
+      minHeight="100vh" 
+      sx={{
+        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%)',
+      }}
+    >
       {/* Profile Setup Modal (lazy) */}
       <Suspense fallback={null}>
         <ProfileSetupModal
@@ -239,6 +248,12 @@ function App() {
               onMouseEnter={() => preloadTab('skills')}
             />
           )}
+          {isAdmin && (
+            <Tab
+              label="Hobbies"
+              onMouseEnter={() => preloadTab('hobbies')}
+            />
+          )}
           <Tab
             label="Startups"
             onMouseEnter={() => preloadTab('startups')}
@@ -272,6 +287,7 @@ function App() {
             />
           )}
           {activeTab === 'skills' && isAdmin && <SkillsList />}
+          {activeTab === 'hobbies' && isAdmin && <HobbiesList />}
           {activeTab === 'startups' && (
             <StartupsList
               startupToShow={startupToShow}
