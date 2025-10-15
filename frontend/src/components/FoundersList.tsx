@@ -689,11 +689,11 @@ const FoundersList: React.FC<FoundersListProps> = ({
                     {sortType === 'desc' && <ArrowDownwardIcon fontSize="small" />}
                   </Box>
                 </TableCell>
-                <TableCell>Email</TableCell>
+                <TableCell>Startup</TableCell>
                 <TableCell>Location</TableCell>
                 <TableCell>Skills</TableCell>
-                <TableCell>Startup</TableCell>
                 <TableCell>Hobbies</TableCell>
+                <TableCell>Socials</TableCell>
                 {isAdmin && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
@@ -716,35 +716,15 @@ const FoundersList: React.FC<FoundersListProps> = ({
                       >
                         {founder.name}
                       </Typography>
-                      {isProfileVisible(founder) && founder.linkedin_url && (
-                        <Link href={founder.linkedin_url} target="_blank" rel="noopener" variant="caption">
-                          LinkedIn
-                        </Link>
+                      {isProfileVisible(founder) && (
+                        <Typography variant="caption" color="text.secondary">
+                          {founder.email}
+                        </Typography>
                       )}
                       {!isProfileVisible(founder) && (
                         <Typography variant="caption" color="text.disabled">
                           (profile hidden)
                         </Typography>
-                      )}
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {isProfileVisible(founder) ? founder.email : ''}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" color="text.secondary">
-                      {founder.location || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                      {founder.skills.slice(0, 2).map((skill) => (
-                        <Chip key={skill.id} label={skill.name} size="small" color="primary" />
-                      ))}
-                      {founder.skills.length > 2 && (
-                        <Chip label={`+${founder.skills.length - 2}`} size="small" />
                       )}
                     </Box>
                   </TableCell>
@@ -764,6 +744,21 @@ const FoundersList: React.FC<FoundersListProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {founder.location || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                      {founder.skills.slice(0, 2).map((skill) => (
+                        <Chip key={skill.id} label={skill.name} size="small" color="primary" />
+                      ))}
+                      {founder.skills.length > 2 && (
+                        <Chip label={`+${founder.skills.length - 2}`} size="small" />
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {founder.hobbies.slice(0, 3).map((hobby) => (
                         <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" />
@@ -772,6 +767,45 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         <Chip label={`+${founder.hobbies.length - 3}`} size="small" />
                       )}
                     </Box>
+                  </TableCell>
+                  <TableCell>
+                    {isProfileVisible(founder) && (
+                      <Box display="flex" gap={0.5}>
+                        {founder.linkedin_url && (
+                          <IconButton
+                            size="small"
+                            href={founder.linkedin_url}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{ p: 0.5 }}
+                          >
+                            <LinkedInIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {founder.twitter_url && (
+                          <IconButton
+                            size="small"
+                            href={founder.twitter_url}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{ p: 0.5 }}
+                          >
+                            <TwitterIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                        {founder.github_url && (
+                          <IconButton
+                            size="small"
+                            href={founder.github_url}
+                            target="_blank"
+                            rel="noopener"
+                            sx={{ p: 0.5 }}
+                          >
+                            <GitHubIcon fontSize="small" />
+                          </IconButton>
+                        )}
+                      </Box>
+                    )}
                   </TableCell>
                   {isAdmin && (
                     <TableCell>
