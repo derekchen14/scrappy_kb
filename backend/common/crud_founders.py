@@ -1,7 +1,7 @@
 """CRUD operations for Founders"""
 import csv
 import io
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from typing import List, Dict, Union
 
 from common import models
@@ -50,11 +50,22 @@ def create_founder(db: Session, founder: schemas.FounderCreate):
 
 
 def get_founder(db: Session, founder_id: int):
-    return db.query(models.Founder).filter(models.Founder.id == founder_id).first()
+    return db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .filter(models.Founder.id == founder_id)\
+        .first()
 
 
 def get_founders(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(models.Founder).offset(skip).limit(limit).all()
+    return db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .offset(skip)\
+        .limit(limit)\
+        .all()
 
 
 def update_founder(db: Session, founder_id: int, founder: schemas.FounderCreate):
@@ -103,20 +114,34 @@ def delete_founder(db: Session, founder_id: int):
 
 def get_founder_by_auth0_user_id(db: Session, auth0_user_id: str):
     """Get founder profile by Auth0 user ID (for claimed profiles)."""
-    return db.query(models.Founder).filter(models.Founder.auth0_user_id == auth0_user_id).first()
+    return db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .filter(models.Founder.auth0_user_id == auth0_user_id)\
+        .first()
 
 
 def get_unclaimed_founder_by_email(db: Session, email: str):
     """Get unclaimed founder profile by email."""
-    return db.query(models.Founder).filter(
-        models.Founder.email.ilike(email),
-        models.Founder.auth0_user_id.is_(None)
-    ).first()
+    return db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .filter(
+            models.Founder.email.ilike(email),
+            models.Founder.auth0_user_id.is_(None)
+        ).first()
 
 
 def claim_founder_profile(db: Session, founder_id: int, auth0_user_id: str):
     """Claim a founder profile by linking it to an Auth0 user."""
-    db_founder = db.query(models.Founder).filter(models.Founder.id == founder_id).first()
+    db_founder = db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .filter(models.Founder.id == founder_id)\
+        .first()
     if db_founder:
         db_founder.auth0_user_id = auth0_user_id
         db.commit()
@@ -126,7 +151,12 @@ def claim_founder_profile(db: Session, founder_id: int, auth0_user_id: str):
 
 def get_founders_by_startup_id(db: Session, startup_id: int):
     """Get all founders associated with a specific startup."""
-    return db.query(models.Founder).filter(models.Founder.startup_id == startup_id).all()
+    return db.query(models.Founder)\
+        .options(selectinload(models.Founder.skills))\
+        .options(selectinload(models.Founder.hobbies))\
+        .options(selectinload(models.Founder.startup))\
+        .filter(models.Founder.startup_id == startup_id)\
+        .all()
 
 
 # =========================
