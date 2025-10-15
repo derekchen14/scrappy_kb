@@ -20,9 +20,11 @@ services:
 
   app:
     build:
-      context: .
+      context: ..
       dockerfile: backend/Dockerfile
     container_name: scrappy_kb_app
+    env_file:
+      - .env
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       POSTGRES_HOST: postgres
@@ -30,19 +32,19 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scrappy_password}
       POSTGRES_DB: ${POSTGRES_DB:-scrappy_kb}
       POSTGRES_PORT: 5432
-      AUTH0_DOMAIN: ${AUTH0_DOMAIN:-dev-aj7n76ab551kb76m.us.auth0.com}
-      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE:-http://localhost:8080}
-      AUTH0_ALGORITHMS: ${AUTH0_ALGORITHMS:-RS256}
-      PORT: ${APP_PORT:-8080}
+      AUTH0_DOMAIN: ${AUTH0_DOMAIN}
+      AUTH0_AUDIENCE: ${AUTH0_AUDIENCE}
+      AUTH0_ALGORITHMS: ${AUTH0_ALGORITHMS}
+      PORT: ${PORT:-8080}
     ports:
-      - "${APP_PORT:-8080}:${APP_PORT:-8080}"
+      - "${PORT:-8080}:${PORT:-8080}"
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./backend:/app
+      - ./:/app
       - uploads_data:/app/uploads
-    command: sh -c "uvicorn main:app --host 0.0.0.0 --port ${APP_PORT:-8080} --reload"
+    command: sh -c "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080} --reload"
 
 volumes:
   postgres_data:

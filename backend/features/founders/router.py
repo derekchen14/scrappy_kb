@@ -6,11 +6,11 @@ import logging
 from common import models
 import schemas
 from common.crud_founders import (
-    create_founder,
+    create_founder as crud_create_founder,
     get_founder,
     get_founders,
-    update_founder,
-    delete_founder,
+    update_founder as crud_update_founder,
+    delete_founder as crud_delete_founder,
     create_founders_from_csv,
 )
 from common.auth import get_current_user, is_admin_user
@@ -32,7 +32,7 @@ def create_founder(founder: schemas.FounderCreate, db: Session = Depends(get_db)
         else:
             print(f"Not setting auth0_user_id (admin creating profile for someone else)")
         
-        return create_founder(db=db, founder=founder)
+        return crud_create_founder(db=db, founder=founder)
     except Exception as e:
         print(f"Error creating founder: {str(e)}")
         print(f"Error type: {type(e)}")
@@ -96,7 +96,7 @@ def read_founder(founder_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{founder_id}", response_model=schemas.Founder)
 def update_founder_endpoint(founder_id: int, founder: schemas.FounderCreate, db: Session = Depends(get_db)):
-    updated_founder = update_founder(db, founder_id=founder_id, founder=founder)
+    updated_founder = crud_update_founder(db, founder_id=founder_id, founder=founder)
     if updated_founder is None:
         raise HTTPException(status_code=404, detail="Founder not found")
     return updated_founder
@@ -125,7 +125,7 @@ def delete_founder_endpoint(founder_id: int, db: Session = Depends(get_db), curr
             db.delete(help_request)
         
         # Delete the founder (this will automatically handle the startup relationship and many-to-many relationships)
-        deleted_founder = delete_founder(db, founder_id=founder_id)
+        deleted_founder = crud_delete_founder(db, founder_id=founder_id)
         
         # Note: No need to explicitly commit here as crud.delete_founder already commits
         

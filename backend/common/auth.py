@@ -76,6 +76,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     Dependency to get the current authenticated user from JWT token
     """
     token = credentials.credentials
+    print(token)
     payload = auth0_bearer.verify_jwt(token)
     
     # If email is not in JWT payload, fetch it from userinfo endpoint
