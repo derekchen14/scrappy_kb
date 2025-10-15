@@ -68,6 +68,9 @@ const EventsList: React.FC = () => {
     theme: '',
     link: '',
   });
+  const [showLumaDialog, setShowLumaDialog] = useState(false);
+  const [lumaUrl, setLumaUrl] = useState('');
+  const [lumaLoading, setLumaLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fetchAbort = useRef<AbortController | null>(null);
 
@@ -163,6 +166,60 @@ const EventsList: React.FC = () => {
     setShowForm(false);
   }, []);
 
+  const formatForDateTimeLocal = useCallback((isoString: string) => {
+    try {
+      const d = new Date(isoString);
+      const pad = (n: number) => String(n).padStart(2, '0');
+      const yyyy = d.getFullYear();
+      const mm = pad(d.getMonth() + 1);
+      const dd = pad(d.getDate());
+      const hh = pad(d.getHours());
+      const min = pad(d.getMinutes());
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+    } catch (e) {
+      return '';
+    }
+  }, []);
+
+  const fetchLumaAndPrefill = useCallback(async (url: string) => {
+    setLumaLoading(true);
+    try {
+      const proxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+      const res = await fetch(proxy);
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+      const text = await res.text();
+
+      const jsonLdMatch = text.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+      if (!jsonLdMatch) throw new Error('No JSON-LD script tag found');
+
+      const jsonText = jsonLdMatch[1].trim();
+      const parsed = JSON.parse(jsonText);
+
+      const title = parsed.name || '';
+      const description = parsed.description || '';
+      const startDate = parsed.startDate || parsed.date || '';
+      const location = parsed.location?.address || parsed.location?.name || '';
+
+      setFormData({
+        title,
+        description,
+        date_time: startDate ? formatForDateTimeLocal(startDate) : '',
+        location,
+        attendees: '',
+        theme: '',
+        link: url,
+      });
+      setEditingEvent(null);
+      setShowLumaDialog(false);
+      setShowForm(true);
+    } catch (err: any) {
+      console.error('Luma fetch/parse error:', err);
+      setErrorMsg(err?.message || 'Failed to parse Luma link');
+    } finally {
+      setLumaLoading(false);
+    }
+  }, [formatForDateTimeLocal]);
+
   const formatDateTime = useCallback((dateTime: string) => new Date(dateTime).toLocaleString(), []);
   const formatDate = useCallback((dateTime: string) => new Date(dateTime).toLocaleDateString(), []);
   const formatTime = useCallback(
@@ -227,14 +284,24 @@ const EventsList: React.FC = () => {
         </Box>
 
         {isAdmin && (
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<AddIcon />}
-            onClick={() => setShowForm(true)}
-          >
-            Add Event
-          </Button>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<AddIcon />}
+              onClick={() => setShowForm(true)}
+            >
+              Add Event
+            </Button>
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<LinkIcon />}
+              onClick={() => setShowLumaDialog(true)}
+            >
+              Add by Luma link
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -332,6 +399,35 @@ const EventsList: React.FC = () => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Luma Link Dialog */}
+      <Dialog open={showLumaDialog} onClose={() => setShowLumaDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Event from Luma URL</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField
+              label="Luma URL"
+              type="url"
+              value={lumaUrl}
+              onChange={(e) => setLumaUrl(e.target.value)}
+              fullWidth
+              placeholder="https://luma.com/kl7casml"
+            />
+            {lumaLoading && <Typography>Fetching...</Typography>}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowLumaDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => fetchLumaAndPrefill(lumaUrl)}
+            disabled={!lumaUrl || lumaLoading}
+          >
+            Fetch & Prefill
+          </Button>
+        </DialogActions>
       </Dialog>
 
       {/* Calendar View */}

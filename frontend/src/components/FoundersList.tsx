@@ -937,7 +937,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           SKILLS
                         </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={0.5}>
+                        <Box display="flex" flexWrap="nowrap" gap={0.5} overflow="hidden">
                           {founder.skills.slice(0, 4).map((skill) => (
                             <Chip 
                               key={skill.id} 
@@ -1056,12 +1056,32 @@ const FoundersList: React.FC<FoundersListProps> = ({
       >
         {selectedFounder && (
           <Box>
+            {/* Top Section - Before Separator */}
             <Box mb={3}>
               {isProfileVisible(selectedFounder) && (
                 <Typography variant="body2" color="text.secondary" mb={2}>
                   {selectedFounder.email}
                 </Typography>
               )}
+
+              {selectedFounder.startup && (
+                <Box mb={2}>
+                  <Chip
+                    label={selectedFounder.startup.name}
+                    color="success"
+                    onClick={() => handleStartupChipClick(selectedFounder.startup!)}
+                    sx={{ cursor: 'pointer' }}
+                    icon={<BusinessIcon />}
+                  />
+                </Box>
+              )}
+            </Box>
+
+            {/* Separator */}
+            <Box borderTop={1} borderColor="divider" mb={3} />
+
+            {/* Main Content Section */}
+            <Box mb={3}>
               {selectedFounder.bio && (
                 <Typography variant="body1" mb={2}>
                   {selectedFounder.bio}
@@ -1122,21 +1142,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
                       <Chip key={skill.id} label={skill.name} size="small" color="primary" />
                     ))}
                   </Box>
-                </Box>
-              )}
-
-              {selectedFounder.startup && (
-                <Box mb={2}>
-                  <Typography variant="subtitle2" color="text.secondary" mb={1}>
-                    Startup
-                  </Typography>
-                  <Chip
-                    label={selectedFounder.startup.name}
-                    color="success"
-                    onClick={() => handleStartupChipClick(selectedFounder.startup!)}
-                    sx={{ cursor: 'pointer' }}
-                    icon={<BusinessIcon />}
-                  />
                 </Box>
               )}
 
