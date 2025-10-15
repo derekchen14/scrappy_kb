@@ -996,7 +996,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           HOBBIES
                         </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={0.5}>
+                        <Box display="flex" flexWrap="nowrap" gap={0.5} overflow="hidden">
                           {founder.hobbies.slice(0, 4).map((hobby) => (
                             <Chip 
                               key={hobby.id} 
