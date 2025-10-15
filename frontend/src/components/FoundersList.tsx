@@ -971,19 +971,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           SKILLS
                         </Typography>
-                        <Box display="flex" flexWrap="nowrap" gap={0.5} overflow="hidden">
-                          {founder.skills.slice(0, 4).map((skill) => (
+                        <Box display="flex" flexWrap="nowrap" gap={0.5} sx={{ overflow: 'hidden', alignItems: 'center' }}>
+                          {founder.skills.slice(0, 3).map((skill) => (
                             <Chip 
                               key={skill.id} 
                               label={skill.name} 
                               color="primary"
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
                             />
                           ))}
-                          {founder.skills.length > 4 && (
+                          {founder.skills.length > 3 && (
                             <Chip 
-                              label={`+${founder.skills.length - 4}`}
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              label={`+${founder.skills.length - 3}`}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
                               variant="outlined"
                             />
                           )}
@@ -996,19 +996,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                         <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           HOBBIES
                         </Typography>
-                        <Box display="flex" flexWrap="nowrap" gap={0.5} overflow="hidden">
-                          {founder.hobbies.slice(0, 4).map((hobby) => (
+                        <Box display="flex" flexWrap="nowrap" gap={0.5} sx={{ overflow: 'hidden', alignItems: 'center' }}>
+                          {founder.hobbies.slice(0, 3).map((hobby) => (
                             <Chip 
                               key={hobby.id} 
                               label={hobby.name} 
                               color="secondary"
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
                             />
                           ))}
-                          {founder.hobbies.length > 4 && (
+                          {founder.hobbies.length > 3 && (
                             <Chip 
-                              label={`+${founder.hobbies.length - 4}`}
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 } }}
+                              label={`+${founder.hobbies.length - 3}`}
+                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
                               variant="outlined"
                             />
                           )}
