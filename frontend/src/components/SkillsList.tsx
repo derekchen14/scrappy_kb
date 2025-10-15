@@ -119,9 +119,6 @@ const SkillsList: React.FC<SkillsListProps> = ({ searchQuery = '' }) => {
     setShowForm(false);
   };
 
-  const truncateDescription = (text: string, maxLength: number = 100): string =>
-    text.length <= maxLength ? text : `${text.substring(0, maxLength)}…`;
-
   const filteredSkills = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return skills;

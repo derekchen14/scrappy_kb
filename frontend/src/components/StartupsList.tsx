@@ -28,10 +28,6 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Language as LanguageIcon,
-  Business as BusinessIcon,
-  TrendingUp as TrendingUpIcon,
-  AttachMoney as AttachMoneyIcon,
-  People as PeopleIcon,
 } from '@mui/icons-material';
 import { Startup, StartupCreate, Founder } from '../types';
 import Modal from './Modal';
