@@ -798,9 +798,9 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
       {/* Card View */}
       {viewType === 'card' && (
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mx: -1 }}>
           {paginatedFounders.map((founder) => (
-            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', lg: '33.33%' }, p: 1.5 }}>
+            <Box key={founder.id} sx={{ flex: { xs: '1 1 100%', md: '0 0 calc(33.333% - 11px)' }, minWidth: 0, maxWidth: { xs: '100%', md: 'calc(33.333% - 11px)' } }}>
               <Card 
                 sx={{ 
                   height: '350px',
@@ -816,11 +816,53 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   setSelectedFounder(founder);
                 }}
               >
-                <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                    <Typography variant="h5" fontWeight={700}>
-                      {founder.name}
-                    </Typography>
+                <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', p: 2, '&:last-child': { pb: 2 } }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={1}>
+                    <Box>
+                      <Typography variant="h5" fontWeight={700} mb={0.25}>
+                        {founder.name}
+                      </Typography>
+                      {isProfileVisible(founder) && (founder.linkedin_url || founder.twitter_url || founder.github_url) && (
+                        <Box display="flex" gap={0.5}>
+                          {founder.linkedin_url && (
+                            <IconButton 
+                              size="small" 
+                              href={founder.linkedin_url} 
+                              target="_blank" 
+                              rel="noopener"
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0 }}
+                            >
+                              <LinkedInIcon sx={{ fontSize: '1.25rem' }} />
+                            </IconButton>
+                          )}
+                          {founder.twitter_url && (
+                            <IconButton 
+                              size="small" 
+                              href={founder.twitter_url} 
+                              target="_blank" 
+                              rel="noopener"
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0 }}
+                            >
+                              <TwitterIcon sx={{ fontSize: '1.25rem' }} />
+                            </IconButton>
+                          )}
+                          {founder.github_url && (
+                            <IconButton 
+                              size="small" 
+                              href={founder.github_url} 
+                              target="_blank" 
+                              rel="noopener"
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0 }}
+                            >
+                              <GitHubIcon sx={{ fontSize: '1.25rem' }} />
+                            </IconButton>
+                          )}
+                        </Box>
+                      )}
+                    </Box>
                     {isAdmin && (
                       <Box onClick={(e) => e.stopPropagation()}>
                         {canEditProfile(founder.email) && (
@@ -838,30 +880,31 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   </Box>
 
                   {founder.startup && (
-                    <Box mb={1}>
-                      <Chip
-                        label={founder.startup.name}
-                        color="success"
-                        size="small"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleStartupChipClick(founder.startup!);
-                        }}
-                        sx={{ cursor: 'pointer' }}
-                      />
-                    </Box>
+                    <Typography 
+                      variant="body2" 
+                      color="success.main" 
+                      mb={0.75}
+                      fontWeight={600}
+                      sx={{ cursor: 'pointer' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStartupChipClick(founder.startup!);
+                      }}
+                    >
+                      🚀 {founder.startup.name}
+                    </Typography>
                   )}
 
                   {isProfileVisible(founder) && (
-                    <Typography variant="body2" color="text.secondary" mb={1.5}>
+                    <Typography variant="body2" color="text.secondary" mb={0.75} sx={{ fontSize: '0.875rem' }}>
                       {founder.email}
                     </Typography>
                   )}
 
                   {founder.location && (
-                    <Box display="flex" alignItems="center" gap={0.5} mb={1.5}>
+                    <Box display="flex" alignItems="center" gap={0.5} mb={0.75}>
                       <LocationOnIcon fontSize="small" color="action" />
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                         {founder.location}
                       </Typography>
                     </Box>
@@ -869,16 +912,17 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
                   {founder.bio && (
                     <Tooltip title={founder.bio} arrow placement="top" enterDelay={500}>
-                      <Box mb={1.5}>
+                      <Box mb={0.75}>
                         <Typography 
                           variant="body2" 
-                          lineHeight={1.5}
+                          lineHeight={1.4}
                           sx={{
                             display: '-webkit-box',
                             WebkitLineClamp: 3,
                             WebkitBoxOrient: 'vertical',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
+                            fontSize: '0.875rem',
                           }}
                         >
                           {founder.bio}
@@ -887,10 +931,10 @@ const FoundersList: React.FC<FoundersListProps> = ({
                     </Tooltip>
                   )}
 
-                  <Box flexGrow={1}>
-                    {founder.skills.length > 0 && (
-                      <Box mb={1}>
-                        <Typography variant="caption" fontWeight={600} mb={0.5} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                  <Box>
+                    {founder.skills && founder.skills.length > 0 && (
+                      <Box mb={0.75}>
+                        <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           SKILLS
                         </Typography>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
@@ -913,9 +957,9 @@ const FoundersList: React.FC<FoundersListProps> = ({
                       </Box>
                     )}
 
-                    {founder.hobbies.length > 0 && (
-                      <Box mb={1}>
-                        <Typography variant="caption" fontWeight={600} mb={0.5} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                    {founder.hobbies && founder.hobbies.length > 0 && (
+                      <Box mb={0.5}>
+                        <Typography variant="caption" fontWeight={600} mb={0.25} display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
                           HOBBIES
                         </Typography>
                         <Box display="flex" flexWrap="wrap" gap={0.5}>
@@ -939,48 +983,12 @@ const FoundersList: React.FC<FoundersListProps> = ({
                     )}
                   </Box>
 
-                  {isProfileVisible(founder) && (founder.linkedin_url || founder.twitter_url || founder.github_url) && (
-                    <Box display="flex" gap={0.5} mt={2} pt={2} borderTop={1} borderColor="divider">
-                      {founder.linkedin_url && (
-                        <IconButton 
-                          size="small" 
-                          href={founder.linkedin_url} 
-                          target="_blank" 
-                          rel="noopener"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <LinkedInIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                      {founder.twitter_url && (
-                        <IconButton 
-                          size="small" 
-                          href={founder.twitter_url} 
-                          target="_blank" 
-                          rel="noopener"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <TwitterIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                      {founder.github_url && (
-                        <IconButton 
-                          size="small" 
-                          href={founder.github_url} 
-                          target="_blank" 
-                          rel="noopener"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <GitHubIcon fontSize="small" />
-                        </IconButton>
-                      )}
-                    </Box>
-                  )}
+                  <Box flexGrow={1} />
                 </CardContent>
               </Card>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       )}
 
       {/* Compact View */}

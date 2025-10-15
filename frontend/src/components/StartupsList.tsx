@@ -433,9 +433,9 @@ const StartupsList: React.FC<StartupsListProps> = ({
       </Dialog>
 
       {/* Startups List */}
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mx: -1 }}>
         {filteredStartups.map((startup) => (
-          <Grid key={startup.id} sx={{ width: { xs: '100%', sm: '50%', lg: '33.33%' }, p: 1.5 }}>
+          <Box key={startup.id} sx={{ flex: { xs: '1 1 100%', md: '0 0 calc(33.333% - 11px)' }, minWidth: 0, maxWidth: { xs: '100%', md: 'calc(33.333% - 11px)' } }}>
             <Card
               sx={{ 
                 height: '350px',
@@ -552,9 +552,9 @@ const StartupsList: React.FC<StartupsListProps> = ({
                 )}
               </CardContent>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Startup Details Modal */}
       <Modal
