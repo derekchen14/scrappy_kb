@@ -10,12 +10,37 @@ import {
   Tab,
   CircularProgress,
   Alert,
+  IconButton,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Avatar,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import {
+  Menu as MenuIcon,
+  People as PeopleIcon,
+  Construction as SkillsIcon,
+  SportsSoccer as HobbiesIcon,
+  Business as BusinessIcon,
+  Help as HelpIcon,
+  Event as EventIcon,
+  AdminPanelSettings as AdminIcon,
+  Person as PersonIcon,
+  Edit as EditIcon,
+  Logout as LogoutIcon,
+} from '@mui/icons-material';
 import AuthButtons from './components/AuthButtons';
 import LogoutButton from './components/LogoutButton';
 import Profile from './components/Profile';
 import { useAdmin } from './hooks/useAdmin';
 import { useProfileSetup } from './hooks/useProfileSetup';
+import { useAuthenticatedAPI } from './hooks/useAuthenticatedAPI';
 import { Startup, Founder } from './types';
 
 // Lazily load tab panes (code-splitting)
@@ -31,14 +56,19 @@ const ProfileSetupModal = lazy(() => import(/* webpackChunkName: "profile-setup"
 type TabType = 'founders' | 'skills' | 'hobbies' | 'startups' | 'help-requests' | 'events' | 'admin';
 
 function App() {
-  const { isLoading, error, isAuthenticated } = useAuth0();
+  const { isLoading, error, isAuthenticated, user, logout } = useAuth0();
   const { isAdmin } = useAdmin();
   const { needsProfileSetup, loading: profileLoading, completeProfileSetup } = useProfileSetup();
+  const { authenticatedAPI } = useAuthenticatedAPI();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [activeTab, setActiveTab] = useState<TabType>('founders');
   const [startupToShow, setStartupToShow] = useState<Startup | null>(null);
   const [founderToShow, setFounderToShow] = useState<Founder | null>(null);
   const [editFounderToShow, setEditFounderToShow] = useState<Founder | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [myProfile, setMyProfile] = useState<Founder | null>(null);
 
   // Stable callbacks (help memoized children & avoid re-renders)
   const navigateToStartup = useCallback((startup: Startup) => {
@@ -60,6 +90,36 @@ function App() {
     setActiveTab('founders');
     setEditFounderToShow(founder);
   }, []);
+
+  // Drawer handlers
+  const toggleDrawer = useCallback((open: boolean) => {
+    setDrawerOpen(open);
+  }, []);
+
+  const handleNavigation = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    setDrawerOpen(false);
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    logout({ logoutParams: { returnTo: window.location.origin } });
+    setDrawerOpen(false);
+  }, [logout]);
+
+  // Fetch my profile for drawer
+  useEffect(() => {
+    const fetchMyProfile = async () => {
+      if (isAuthenticated) {
+        try {
+          const response = await authenticatedAPI.get('/api/my-profile');
+          setMyProfile(response.data.founder);
+        } catch (error) {
+          console.error('Error fetching my profile:', error);
+        }
+      }
+    };
+    fetchMyProfile();
+  }, [isAuthenticated, authenticatedAPI]);
 
   // Redirect non-admin users away from admin-only tabs
   useEffect(() => {
@@ -193,6 +253,19 @@ function App() {
 
       <AppBar position="static" elevation={1}>
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
+          {/* Mobile: Burger Menu */}
+          {isMobile && (
+            <IconButton
+              edge="start"
+              color="inherit"
+              aria-label="menu"
+              onClick={() => toggleDrawer(true)}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
           <Typography
             variant="h6"
             component="h1"
@@ -200,82 +273,288 @@ function App() {
               flexGrow: 1,
               fontFamily: '"Merriweather", "Georgia", serif',
               fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              fontSize: { xs: '1rem', sm: '1.5rem' },
             }}
           >
-            Scrappy Founders Knowledge Base
+            {isMobile ? 'Scrappy Founders' : 'Scrappy Founders Knowledge Base'}
           </Typography>
 
-          {/* User Profile and Logout */}
-          <Box display="flex" alignItems="center" gap={2}>
-            <Profile
-              onViewProfile={handleViewProfile}
-              onEditProfile={handleEditProfile}
-              onStartupClick={navigateToStartup}
-            />
-            <LogoutButton />
-          </Box>
+          {/* Desktop: User Profile and Logout */}
+          {!isMobile && (
+            <Box display="flex" alignItems="center" gap={2}>
+              <Profile
+                onViewProfile={handleViewProfile}
+                onEditProfile={handleEditProfile}
+                onStartupClick={navigateToStartup}
+              />
+              <LogoutButton />
+            </Box>
+          )}
         </Toolbar>
 
-        <Tabs
-          value={getTabIndex(activeTab)}
-          onChange={handleTabChange}
-          textColor="inherit"
-          indicatorColor="secondary"
-          sx={{
-            bgcolor: 'primary.main',
-            borderTop: 1,
-            borderColor: 'primary.dark',
-            '& .MuiTab-root': {
-              color: 'rgba(255, 255, 255, 0.7)',
-              '&.Mui-selected': {
-                color: 'white',
+        {/* Desktop: Tabs Navigation */}
+        {!isMobile && (
+          <Tabs
+            value={getTabIndex(activeTab)}
+            onChange={handleTabChange}
+            textColor="inherit"
+            indicatorColor="secondary"
+            sx={{
+              bgcolor: 'primary.main',
+              borderTop: 1,
+              borderColor: 'primary.dark',
+              '& .MuiTab-root': {
+                color: 'rgba(255, 255, 255, 0.7)',
+                '&.Mui-selected': {
+                  color: 'white',
+                },
+                '&:hover': {
+                  color: 'white',
+                  bgcolor: 'rgba(255, 255, 255, 0.08)',
+                },
               },
-              '&:hover': {
-                color: 'white',
-                bgcolor: 'rgba(255, 255, 255, 0.08)',
-              },
-            },
-          }}
-        >
-          <Tab
-            label="Founders"
-            onMouseEnter={() => preloadTab('founders')}
-          />
-          {isAdmin && (
+            }}
+          >
             <Tab
-              label="Skills"
-              onMouseEnter={() => preloadTab('skills')}
+              label="Founders"
+              onMouseEnter={() => preloadTab('founders')}
             />
-          )}
-          {isAdmin && (
+            {isAdmin && (
+              <Tab
+                label="Skills"
+                onMouseEnter={() => preloadTab('skills')}
+              />
+            )}
+            {isAdmin && (
+              <Tab
+                label="Hobbies"
+                onMouseEnter={() => preloadTab('hobbies')}
+              />
+            )}
             <Tab
-              label="Hobbies"
-              onMouseEnter={() => preloadTab('hobbies')}
+              label="Startups"
+              onMouseEnter={() => preloadTab('startups')}
             />
-          )}
-          <Tab
-            label="Startups"
-            onMouseEnter={() => preloadTab('startups')}
-          />
-          <Tab
-            label="Requests"
-            onMouseEnter={() => preloadTab('help-requests')}
-          />
-          <Tab
-            label="Events"
-            onMouseEnter={() => preloadTab('events')}
-          />
-          {isAdmin && (
             <Tab
-              label="Admin"
-              onMouseEnter={() => preloadTab('admin')}
+              label="Requests"
+              onMouseEnter={() => preloadTab('help-requests')}
             />
-          )}
-        </Tabs>
+            <Tab
+              label="Events"
+              onMouseEnter={() => preloadTab('events')}
+            />
+            {isAdmin && (
+              <Tab
+                label="Admin"
+                onMouseEnter={() => preloadTab('admin')}
+              />
+            )}
+          </Tabs>
+        )}
       </AppBar>
 
-      <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Mobile: Drawer Navigation */}
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={() => toggleDrawer(false)}
+        PaperProps={{
+          sx: {
+            width: 280,
+            bgcolor: 'background.paper',
+          },
+        }}
+      >
+        <Box sx={{ width: 280 }} role="presentation">
+          {/* User Profile Section */}
+          <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+            <Box display="flex" alignItems="center" gap={2} mb={1}>
+              <Avatar
+                src={user?.picture}
+                alt={user?.name}
+                sx={{
+                  width: 48,
+                  height: 48,
+                  border: '2px solid',
+                  borderColor: 'primary.light',
+                }}
+              />
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {user?.name || 'User'}
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.9 }}>
+                  {user?.email}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+
+          <Divider />
+
+          {/* Profile Actions */}
+          {myProfile && (
+            <List>
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => {
+                  if (myProfile) {
+                    handleViewProfile(myProfile);
+                  }
+                }}>
+                  <ListItemIcon>
+                    <PersonIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="View Profile" />
+                </ListItemButton>
+              </ListItem>
+              <ListItem disablePadding>
+                <ListItemButton onClick={() => {
+                  if (myProfile) {
+                    handleEditProfile(myProfile);
+                  }
+                }}>
+                  <ListItemIcon>
+                    <EditIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Edit Profile" />
+                </ListItemButton>
+              </ListItem>
+              {(myProfile as any)?.startup_id && (
+                <ListItem disablePadding>
+                  <ListItemButton onClick={async () => {
+                    const profileWithStartupId = myProfile as any;
+                    if (profileWithStartupId?.startup_id) {
+                      try {
+                        const response = await authenticatedAPI.get(`/startups/${profileWithStartupId.startup_id}`);
+                        navigateToStartup(response.data);
+                      } catch (error) {
+                        console.error('Error fetching startup:', error);
+                      }
+                    }
+                    setDrawerOpen(false);
+                  }}>
+                    <ListItemIcon>
+                      <BusinessIcon />
+                    </ListItemIcon>
+                    <ListItemText primary="View Startup" />
+                  </ListItemButton>
+                </ListItem>
+              )}
+            </List>
+          )}
+
+          <Divider />
+
+          {/* Navigation Items */}
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton 
+                selected={activeTab === 'founders'}
+                onClick={() => handleNavigation('founders')}
+              >
+                <ListItemIcon>
+                  <PeopleIcon />
+                </ListItemIcon>
+                <ListItemText primary="Founders" />
+              </ListItemButton>
+            </ListItem>
+
+            {isAdmin && (
+              <ListItem disablePadding>
+                <ListItemButton 
+                  selected={activeTab === 'skills'}
+                  onClick={() => handleNavigation('skills')}
+                >
+                  <ListItemIcon>
+                    <SkillsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Skills" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            {isAdmin && (
+              <ListItem disablePadding>
+                <ListItemButton 
+                  selected={activeTab === 'hobbies'}
+                  onClick={() => handleNavigation('hobbies')}
+                >
+                  <ListItemIcon>
+                    <HobbiesIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Hobbies" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            <ListItem disablePadding>
+              <ListItemButton 
+                selected={activeTab === 'startups'}
+                onClick={() => handleNavigation('startups')}
+              >
+                <ListItemIcon>
+                  <BusinessIcon />
+                </ListItemIcon>
+                <ListItemText primary="Startups" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton 
+                selected={activeTab === 'help-requests'}
+                onClick={() => handleNavigation('help-requests')}
+              >
+                <ListItemIcon>
+                  <HelpIcon />
+                </ListItemIcon>
+                <ListItemText primary="Help Requests" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton 
+                selected={activeTab === 'events'}
+                onClick={() => handleNavigation('events')}
+              >
+                <ListItemIcon>
+                  <EventIcon />
+                </ListItemIcon>
+                <ListItemText primary="Events" />
+              </ListItemButton>
+            </ListItem>
+
+            {isAdmin && (
+              <ListItem disablePadding>
+                <ListItemButton 
+                  selected={activeTab === 'admin'}
+                  onClick={() => handleNavigation('admin')}
+                >
+                  <ListItemIcon>
+                    <AdminIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Admin" />
+                </ListItemButton>
+              </ListItem>
+            )}
+          </List>
+
+          <Divider />
+
+          {/* Logout */}
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon />
+                </ListItemIcon>
+                <ListItemText primary="Logout" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        </Box>
+      </Drawer>
+
+      <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3, md: 4 }, px: { xs: 1, sm: 2, md: 3 } }}>
         <Suspense fallback={MainFallback}>
           {activeTab === 'founders' && (
             <FoundersList
