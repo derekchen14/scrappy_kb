@@ -224,11 +224,6 @@ const EventsList: React.FC = () => {
   }, [formatForDateTimeLocal]);
 
   const formatDateTime = useCallback((dateTime: string) => new Date(dateTime).toLocaleString(), []);
-  const formatDate = useCallback((dateTime: string) => new Date(dateTime).toLocaleDateString(), []);
-  const formatTime = useCallback(
-    (dateTime: string) => new Date(dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    []
-  );
 
   const getThemeColor = useCallback((theme: string): 'success' | 'error' | 'warning' | 'info' | 'secondary' | 'default' => {
     const colors: Record<string, any> = {
