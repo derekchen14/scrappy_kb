@@ -33,7 +33,6 @@ import {
   DialogContent,
   DialogActions,
   FormGroup,
-  Grid,
   Tooltip,
 } from '@mui/material';
 import {
@@ -43,21 +42,22 @@ import {
   Delete as DeleteIcon,
   ViewList as ViewListIcon,
   ViewModule as ViewModuleIcon,
-  ViewComfy as ViewComfyIcon,
   ArrowUpward as ArrowUpwardIcon,
   ArrowDownward as ArrowDownwardIcon,
   LinkedIn as LinkedInIcon,
-  Twitter as TwitterIcon,
+  X as XIcon,
   GitHub as GitHubIcon,
   LocationOn as LocationOnIcon,
   Business as BusinessIcon,
+  Email as EmailIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { Founder, FounderCreate, Skill, Startup, Hobby } from '../types';
 import { useAuthenticatedAPI } from '../hooks/useAuthenticatedAPI';
 import { useAdmin } from '../hooks/useAdmin';
 import Modal from './Modal';
 
-type ViewType = 'table' | 'card' | 'compact';
+type ViewType = 'table' | 'card';
 type SortType = 'none' | 'asc' | 'desc';
 
 interface FoundersListProps {
@@ -96,6 +96,14 @@ const FoundersList: React.FC<FoundersListProps> = ({
   const [selectedStartup, setSelectedStartup] = useState<Startup | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  
+  // Filter states
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([]);
+  const [selectedHobbyIds, setSelectedHobbyIds] = useState<number[]>([]);
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
+  const [hobbySearchQuery, setHobbySearchQuery] = useState('');
+  const [showSkillDropdown, setShowSkillDropdown] = useState(false);
+  const [showHobbyDropdown, setShowHobbyDropdown] = useState(false);
 
   const [formData, setFormData] = useState<FounderCreate>({
     name: '',
@@ -335,12 +343,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
     }));
   }, []);
 
-  const truncateDescription = useCallback((text: string, maxLength = 100): string => {
-    if (!text) return '';
-    return text.length <= maxLength ? text : text.substring(0, maxLength) + '…';
-  }, []);
-
-  const getFounderIndustry = useCallback((founder: Founder): string | undefined => founder.startup?.industry, []);
 
   const handleNameSort = useCallback(() => {
     setSortType((prev) => (prev === 'none' ? 'asc' : prev === 'asc' ? 'desc' : 'none'));
@@ -360,10 +362,25 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
   const collator = useMemo(() => new Intl.Collator(undefined, { sensitivity: 'base' }), []);
 
+  // Filtered skills based on search query
+  const filteredSkills = useMemo(() => {
+    if (!skillSearchQuery.trim()) return skills.slice(0, 6);
+    const q = skillSearchQuery.toLowerCase();
+    return skills.filter((s) => s.name.toLowerCase().includes(q)).slice(0, 6);
+  }, [skills, skillSearchQuery]);
+
+  // Filtered hobbies based on search query
+  const filteredHobbies = useMemo(() => {
+    if (!hobbySearchQuery.trim()) return hobbies.slice(0, 6);
+    const q = hobbySearchQuery.toLowerCase();
+    return hobbies.filter((h) => h.name.toLowerCase().includes(q)).slice(0, 6);
+  }, [hobbies, hobbySearchQuery]);
+
   const filteredFounders = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     let result = founders;
 
+    // Apply text search filter
     if (q) {
       result = founders.filter((f) => {
         const matchesName = f.name.toLowerCase().includes(q);
@@ -393,6 +410,21 @@ const FoundersList: React.FC<FoundersListProps> = ({
       });
     }
 
+    // Apply skill filter
+    if (selectedSkillIds.length > 0) {
+      result = result.filter((f) =>
+        selectedSkillIds.every((skillId) => f.skills.some((s) => s.id === skillId))
+      );
+    }
+
+    // Apply hobby filter
+    if (selectedHobbyIds.length > 0) {
+      result = result.filter((f) =>
+        selectedHobbyIds.every((hobbyId) => f.hobbies.some((h) => h.id === hobbyId))
+      );
+    }
+
+    // Apply sorting
     if (sortType === 'asc') {
       result = [...result].sort((a, b) => collator.compare(a.name, b.name));
     } else if (sortType === 'desc') {
@@ -400,7 +432,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
     }
 
     return result;
-  }, [founders, searchQuery, sortType, collator]);
+  }, [founders, searchQuery, sortType, collator, selectedSkillIds, selectedHobbyIds]);
 
   const paginatedFounders = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -411,7 +443,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, sortType]);
+  }, [searchQuery, sortType, selectedSkillIds, selectedHobbyIds]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
@@ -450,29 +482,10 @@ const FoundersList: React.FC<FoundersListProps> = ({
             <ToggleButton value="card">
               <ViewModuleIcon fontSize="small" />
             </ToggleButton>
-            <ToggleButton value="compact">
-              <ViewComfyIcon fontSize="small" />
-            </ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
         <Box display="flex" alignItems="center" gap={2}>
-          {/* Search Bar */}
-          <TextField
-            placeholder="Search founders…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            size="small"
-            sx={{ minWidth: 250 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            }}
-          />
-
           {isAdmin && (
             <Button
               variant="contained"
@@ -485,6 +498,186 @@ const FoundersList: React.FC<FoundersListProps> = ({
           )}
         </Box>
       </Box>
+
+      {/* Filters Row */}
+      <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
+        {/* Search Bar */}
+        <TextField
+          placeholder="Search founders…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          sx={{ minWidth: 250 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* Skills Filter */}
+        <Box sx={{ position: 'relative', minWidth: 250 }}>
+          <TextField
+            placeholder="Filter by skills…"
+            value={skillSearchQuery}
+            onChange={(e) => setSkillSearchQuery(e.target.value)}
+            onFocus={() => setShowSkillDropdown(true)}
+            onBlur={() => setTimeout(() => setShowSkillDropdown(false), 200)}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {showSkillDropdown && filteredSkills.length > 0 && (
+            <Paper
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                mt: 0.5,
+                maxHeight: 200,
+                overflow: 'auto',
+                zIndex: 1000,
+              }}
+            >
+              {filteredSkills.map((skill) => (
+                <Box
+                  key={skill.id}
+                  sx={{
+                    p: 1,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  onClick={() => {
+                    if (!selectedSkillIds.includes(skill.id)) {
+                      setSelectedSkillIds([...selectedSkillIds, skill.id]);
+                    }
+                    setSkillSearchQuery('');
+                    setShowSkillDropdown(false);
+                  }}
+                >
+                  <Typography variant="body2">{skill.name}</Typography>
+                  {selectedSkillIds.includes(skill.id) && (
+                    <Chip label="Selected" size="small" color="primary" />
+                  )}
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </Box>
+
+        {/* Hobbies Filter */}
+        <Box sx={{ position: 'relative', minWidth: 250 }}>
+          <TextField
+            placeholder="Filter by hobbies…"
+            value={hobbySearchQuery}
+            onChange={(e) => setHobbySearchQuery(e.target.value)}
+            onFocus={() => setShowHobbyDropdown(true)}
+            onBlur={() => setTimeout(() => setShowHobbyDropdown(false), 200)}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {showHobbyDropdown && filteredHobbies.length > 0 && (
+            <Paper
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                mt: 0.5,
+                maxHeight: 200,
+                overflow: 'auto',
+                zIndex: 1000,
+              }}
+            >
+              {filteredHobbies.map((hobby) => (
+                <Box
+                  key={hobby.id}
+                  sx={{
+                    p: 1,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  onClick={() => {
+                    if (!selectedHobbyIds.includes(hobby.id)) {
+                      setSelectedHobbyIds([...selectedHobbyIds, hobby.id]);
+                    }
+                    setHobbySearchQuery('');
+                    setShowHobbyDropdown(false);
+                  }}
+                >
+                  <Typography variant="body2">{hobby.name}</Typography>
+                  {selectedHobbyIds.includes(hobby.id) && (
+                    <Chip label="Selected" size="small" color="secondary" />
+                  )}
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </Box>
+      </Box>
+
+      {/* Selected Filters Display */}
+      {(selectedSkillIds.length > 0 || selectedHobbyIds.length > 0) && (
+        <Box display="flex" flexWrap="wrap" gap={1} mb={3}>
+          {selectedSkillIds.map((skillId) => {
+            const skill = skills.find((s) => s.id === skillId);
+            return skill ? (
+              <Chip
+                key={skillId}
+                label={skill.name}
+                color="primary"
+                onDelete={() => setSelectedSkillIds(selectedSkillIds.filter((id) => id !== skillId))}
+                deleteIcon={<CloseIcon />}
+              />
+            ) : null;
+          })}
+          {selectedHobbyIds.map((hobbyId) => {
+            const hobby = hobbies.find((h) => h.id === hobbyId);
+            return hobby ? (
+              <Chip
+                key={hobbyId}
+                label={hobby.name}
+                color="secondary"
+                onDelete={() => setSelectedHobbyIds(selectedHobbyIds.filter((id) => id !== hobbyId))}
+                deleteIcon={<CloseIcon />}
+              />
+            ) : null;
+          })}
+          {(selectedSkillIds.length > 0 || selectedHobbyIds.length > 0) && (
+            <Button
+              size="small"
+              onClick={() => {
+                setSelectedSkillIds([]);
+                setSelectedHobbyIds([]);
+              }}
+            >
+              Clear All
+            </Button>
+          )}
+        </Box>
+      )}
 
       {errorMsg && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErrorMsg(null)}>
@@ -751,7 +944,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   <TableCell>
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {founder.skills.slice(0, 2).map((skill) => (
-                        <Chip key={skill.id} label={skill.name} size="small" color="primary" />
+                        <Chip
+                          key={skill.id}
+                          label={skill.name}
+                          size="small"
+                          color="primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!selectedSkillIds.includes(skill.id)) {
+                              setSelectedSkillIds([...selectedSkillIds, skill.id]);
+                            }
+                          }}
+                          sx={{ cursor: 'pointer' }}
+                        />
                       ))}
                       {founder.skills.length > 2 && (
                         <Chip label={`+${founder.skills.length - 2}`} size="small" />
@@ -761,7 +966,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   <TableCell>
                     <Box display="flex" flexWrap="wrap" gap={0.5}>
                       {founder.hobbies.slice(0, 3).map((hobby) => (
-                        <Chip key={hobby.id} label={hobby.name} size="small" color="secondary" />
+                        <Chip
+                          key={hobby.id}
+                          label={hobby.name}
+                          size="small"
+                          color="secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!selectedHobbyIds.includes(hobby.id)) {
+                              setSelectedHobbyIds([...selectedHobbyIds, hobby.id]);
+                            }
+                          }}
+                          sx={{ cursor: 'pointer' }}
+                        />
                       ))}
                       {founder.hobbies.length > 3 && (
                         <Chip label={`+${founder.hobbies.length - 3}`} size="small" />
@@ -777,9 +994,16 @@ const FoundersList: React.FC<FoundersListProps> = ({
                             href={founder.linkedin_url}
                             target="_blank"
                             rel="noopener"
-                            sx={{ p: 0.5 }}
+                            sx={{ 
+                              p: 0.5,
+                              '&:hover': {
+                                color: 'primary.main',
+                                transform: 'scale(1.1)',
+                                transition: 'all 0.2s ease-in-out'
+                              }
+                            }}
                           >
-                            <LinkedInIcon fontSize="small" />
+                            <LinkedInIcon sx={{ fontSize: '1.25rem' }} />
                           </IconButton>
                         )}
                         {founder.twitter_url && (
@@ -788,9 +1012,16 @@ const FoundersList: React.FC<FoundersListProps> = ({
                             href={founder.twitter_url}
                             target="_blank"
                             rel="noopener"
-                            sx={{ p: 0.5 }}
+                            sx={{ 
+                              p: 0.5,
+                              '&:hover': {
+                                color: 'primary.main',
+                                transform: 'scale(1.1)',
+                                transition: 'all 0.2s ease-in-out'
+                              }
+                            }}
                           >
-                            <TwitterIcon fontSize="small" />
+                            <XIcon sx={{ fontSize: '1.25rem' }} />
                           </IconButton>
                         )}
                         {founder.github_url && (
@@ -799,9 +1030,16 @@ const FoundersList: React.FC<FoundersListProps> = ({
                             href={founder.github_url}
                             target="_blank"
                             rel="noopener"
-                            sx={{ p: 0.5 }}
+                            sx={{ 
+                              p: 0.5,
+                              '&:hover': {
+                                color: 'primary.main',
+                                transform: 'scale(1.1)',
+                                transition: 'all 0.2s ease-in-out'
+                              }
+                            }}
                           >
-                            <GitHubIcon fontSize="small" />
+                            <GitHubIcon sx={{ fontSize: '1.25rem' }} />
                           </IconButton>
                         )}
                       </Box>
@@ -856,88 +1094,131 @@ const FoundersList: React.FC<FoundersListProps> = ({
                       <Typography variant="h5" fontWeight={700} mb={0.25}>
                         {founder.name}
                       </Typography>
-                      {isProfileVisible(founder) && (founder.linkedin_url || founder.twitter_url || founder.github_url) && (
-                        <Box display="flex" gap={0.5}>
-                          {founder.linkedin_url && (
-                            <IconButton 
-                              size="small" 
-                              href={founder.linkedin_url} 
-                              target="_blank" 
-                              rel="noopener"
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ p: 0 }}
-                            >
-                              <LinkedInIcon sx={{ fontSize: '1.25rem' }} />
-                            </IconButton>
-                          )}
-                          {founder.twitter_url && (
-                            <IconButton 
-                              size="small" 
-                              href={founder.twitter_url} 
-                              target="_blank" 
-                              rel="noopener"
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ p: 0 }}
-                            >
-                              <TwitterIcon sx={{ fontSize: '1.25rem' }} />
-                            </IconButton>
-                          )}
-                          {founder.github_url && (
-                            <IconButton 
-                              size="small" 
-                              href={founder.github_url} 
-                              target="_blank" 
-                              rel="noopener"
-                              onClick={(e) => e.stopPropagation()}
-                              sx={{ p: 0 }}
-                            >
-                              <GitHubIcon sx={{ fontSize: '1.25rem' }} />
-                            </IconButton>
-                          )}
-                        </Box>
+                    </Box>
+                    <Box display="flex" gap={0.5} onClick={(e) => e.stopPropagation()}>
+                      {isProfileVisible(founder) && founder.linkedin_url && (
+                        <IconButton 
+                          size="small" 
+                          href={founder.linkedin_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ 
+                            p: 0,
+                            '&:hover': {
+                              color: 'primary.main',
+                              transform: 'scale(1.15)',
+                              transition: 'all 0.2s ease-in-out'
+                            }
+                          }}
+                        >
+                          <LinkedInIcon sx={{ fontSize: '1.5rem' }} />
+                        </IconButton>
+                      )}
+                      {isProfileVisible(founder) && founder.twitter_url && (
+                        <IconButton 
+                          size="small" 
+                          href={founder.twitter_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ 
+                            p: 0,
+                            '&:hover': {
+                              color: 'primary.main',
+                              transform: 'scale(1.15)',
+                              transition: 'all 0.2s ease-in-out'
+                            }
+                          }}
+                        >
+                          <XIcon sx={{ fontSize: '1.5rem' }} />
+                        </IconButton>
+                      )}
+                      {isProfileVisible(founder) && founder.github_url && (
+                        <IconButton 
+                          size="small" 
+                          href={founder.github_url} 
+                          target="_blank" 
+                          rel="noopener"
+                          onClick={(e) => e.stopPropagation()}
+                          sx={{ 
+                            p: 0,
+                            '&:hover': {
+                              color: 'primary.main',
+                              transform: 'scale(1.15)',
+                              transition: 'all 0.2s ease-in-out'
+                            }
+                          }}
+                        >
+                          <GitHubIcon sx={{ fontSize: '1.5rem' }} />
+                        </IconButton>
+                      )}
+                      {isAdmin && canEditProfile(founder.email) && (
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(founder)}>
+                          <EditIcon />
+                        </IconButton>
+                      )}
+                      {isAdmin && canDeleteUser() && (
+                        <IconButton size="small" color="error" onClick={() => handleDelete(founder.id)}>
+                          <DeleteIcon />
+                        </IconButton>
                       )}
                     </Box>
-                    {isAdmin && (
-                      <Box onClick={(e) => e.stopPropagation()}>
-                        {canEditProfile(founder.email) && (
-                          <IconButton size="small" color="primary" onClick={() => handleEdit(founder)}>
-                            <EditIcon />
-                          </IconButton>
-                        )}
-                        {canDeleteUser() && (
-                          <IconButton size="small" color="error" onClick={() => handleDelete(founder.id)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        )}
-                      </Box>
-                    )}
                   </Box>
 
                   {founder.startup && (
-                    <Typography 
-                      variant="body2" 
-                      color="success.main" 
+                    <Box 
+                      display="flex" 
+                      alignItems="center" 
+                      gap={0.5} 
                       mb={0.75}
-                      fontWeight={600}
-                      sx={{ cursor: 'pointer' }}
+                      sx={{ 
+                        cursor: 'pointer',
+                        '&:hover .startup-icon': {
+                          color: 'primary.main',
+                        },
+                        '&:hover .startup-text': {
+                          color: 'primary.main',
+                        }
+                      }}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleStartupChipClick(founder.startup!);
                       }}
                     >
-                      🚀 {founder.startup.name}
-                    </Typography>
+                      <BusinessIcon 
+                        fontSize="small" 
+                        color="action" 
+                        className="startup-icon"
+                        sx={{ fontSize: '1.125rem', transition: 'color 0.2s ease-in-out' }} 
+                      />
+                      <Typography 
+                        variant="body2" 
+                        color="text.secondary" 
+                        fontWeight={600}
+                        className="startup-text"
+                        sx={{ 
+                          fontSize: '0.9375rem',
+                          transition: 'color 0.2s ease-in-out'
+                        }}
+                      >
+                        {founder.startup.name}
+                      </Typography>
+                    </Box>
                   )}
 
                   {isProfileVisible(founder) && (
-                    <Typography variant="body2" color="text.secondary" mb={0.75} sx={{ fontSize: '0.875rem' }}>
-                      {founder.email}
-                    </Typography>
+                    <Box display="flex" alignItems="center" gap={0.5} mb={0.75}>
+                      <EmailIcon fontSize="small" color="action" sx={{ fontSize: '1rem' }} />
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                        {founder.email}
+                      </Typography>
+                    </Box>
                   )}
 
                   {founder.location && (
                     <Box display="flex" alignItems="center" gap={0.5} mb={0.75}>
-                      <LocationOnIcon fontSize="small" color="action" />
+                      <LocationOnIcon fontSize="small" color="action" sx={{ fontSize: '1rem' }} />
                       <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
                         {founder.location}
                       </Typography>
@@ -957,6 +1238,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             fontSize: '0.875rem',
+                            whiteSpace: 'pre-wrap',
                           }}
                         >
                           {founder.bio}
@@ -977,7 +1259,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                               key={skill.id} 
                               label={skill.name} 
                               color="primary"
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!selectedSkillIds.includes(skill.id)) {
+                                  setSelectedSkillIds([...selectedSkillIds, skill.id]);
+                                }
+                              }}
+                              sx={{ 
+                                height: '20px', 
+                                fontSize: '0.7rem', 
+                                '& .MuiChip-label': { px: 1, py: 0 }, 
+                                flexShrink: 0,
+                                cursor: 'pointer',
+                              }}
                             />
                           ))}
                           {founder.skills.length > 3 && (
@@ -1002,7 +1296,19 @@ const FoundersList: React.FC<FoundersListProps> = ({
                               key={hobby.id} 
                               label={hobby.name} 
                               color="secondary"
-                              sx={{ height: '20px', fontSize: '0.7rem', '& .MuiChip-label': { px: 1, py: 0 }, flexShrink: 0 }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!selectedHobbyIds.includes(hobby.id)) {
+                                  setSelectedHobbyIds([...selectedHobbyIds, hobby.id]);
+                                }
+                              }}
+                              sx={{ 
+                                height: '20px', 
+                                fontSize: '0.7rem', 
+                                '& .MuiChip-label': { px: 1, py: 0 }, 
+                                flexShrink: 0,
+                                cursor: 'pointer',
+                              }}
                             />
                           ))}
                           {founder.hobbies.length > 3 && (
@@ -1023,48 +1329,6 @@ const FoundersList: React.FC<FoundersListProps> = ({
             </Box>
           ))}
         </Box>
-      )}
-
-      {/* Compact View */}
-      {viewType === 'compact' && (
-        <Grid container spacing={2}>
-          {paginatedFounders.map((founder) => (
-            <Grid key={founder.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%', lg: '25%', xl: '16.67%' }, p: 1 }}>
-              <Card
-                sx={{
-                  cursor: 'pointer',
-                }}
-                onClick={() => {
-                  if (!isProfileVisible(founder)) {
-                    alert('This profile is marked as not visible and details cannot be viewed.');
-                    return;
-                  }
-                  setSelectedFounder(founder);
-                }}
-              >
-                <CardContent>
-                  <Typography variant="h6" fontWeight={700} mb={1.5}>
-                    {founder.name}
-                  </Typography>
-                  {getFounderIndustry(founder) && (
-                    <Box mb={1.5}>
-                      <Chip
-                        label={getFounderIndustry(founder)}
-                        size="small"
-                        color="secondary"
-                      />
-                    </Box>
-                  )}
-                  {founder.bio && (
-                    <Typography variant="body2" color="text.secondary" lineHeight={1.5}>
-                      {truncateDescription(founder.bio, 80)}
-                    </Typography>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
       )}
 
       {/* Pagination */}
@@ -1117,7 +1381,7 @@ const FoundersList: React.FC<FoundersListProps> = ({
             {/* Main Content Section */}
             <Box mb={3}>
               {selectedFounder.bio && (
-                <Typography variant="body1" mb={2}>
+                <Typography variant="body1" mb={2} sx={{ whiteSpace: 'pre-wrap' }}>
                   {selectedFounder.bio}
                 </Typography>
               )}
@@ -1144,12 +1408,12 @@ const FoundersList: React.FC<FoundersListProps> = ({
                   {selectedFounder.twitter_url && (
                     <Button
                       size="small"
-                      startIcon={<TwitterIcon />}
+                      startIcon={<XIcon />}
                       href={selectedFounder.twitter_url}
                       target="_blank"
                       rel="noopener"
                     >
-                      Twitter
+                      X (Twitter)
                     </Button>
                   )}
                   {selectedFounder.github_url && (
@@ -1245,48 +1509,48 @@ const FoundersList: React.FC<FoundersListProps> = ({
               </Typography>
             )}
 
-            <Grid container spacing={2} mb={3}>
+            <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
               {selectedStartup.industry && (
-                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%' } }}>
                   <Typography variant="caption" color="text.secondary">
                     Industry
                   </Typography>
                   <Box mt={0.5}>
                     <Chip label={selectedStartup.industry} color="secondary" size="small" />
                   </Box>
-                </Grid>
+                </Box>
               )}
               {selectedStartup.stage && (
-                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%' } }}>
                   <Typography variant="caption" color="text.secondary">
                     Stage
                   </Typography>
                   <Box mt={0.5}>
                     <Chip label={selectedStartup.stage} color="success" size="small" />
                   </Box>
-                </Grid>
+                </Box>
               )}
               {selectedStartup.target_market && (
-                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%' } }}>
                   <Typography variant="caption" color="text.secondary">
                     Target Market
                   </Typography>
                   <Typography variant="body2" mt={0.5}>
                     🎯 {selectedStartup.target_market}
                   </Typography>
-                </Grid>
+                </Box>
               )}
               {selectedStartup.revenue_arr && (
-                <Grid sx={{ width: { xs: '100%', sm: '50%' }, p: 1 }}>
+                <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 45%' } }}>
                   <Typography variant="caption" color="text.secondary">
                     Revenue ARR
                   </Typography>
                   <Typography variant="body2" mt={0.5}>
                     💰 {selectedStartup.revenue_arr}
                   </Typography>
-                </Grid>
+                </Box>
               )}
-            </Grid>
+            </Box>
 
             {selectedStartup.website_url && (
               <Box mb={3}>

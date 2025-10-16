@@ -123,7 +123,7 @@ function App() {
 
   // Redirect non-admin users away from admin-only tabs
   useEffect(() => {
-    if (!isAdmin && (activeTab === 'skills' || activeTab === 'hobbies' || activeTab === 'admin')) {
+    if (!isAdmin && (activeTab === 'admin' || activeTab === 'skills' || activeTab === 'hobbies')) {
       setActiveTab('founders');
     }
   }, [isAdmin, activeTab]);
@@ -157,12 +157,12 @@ function App() {
 
   // Tab index mapping
   const getTabIndex = (tab: TabType): number => {
-    const tabs = ['founders', isAdmin ? 'skills' : null, isAdmin ? 'hobbies' : null, 'startups', 'help-requests', 'events', isAdmin ? 'admin' : null].filter(Boolean);
+    const tabs = ['founders', 'startups', 'help-requests', 'events', isAdmin ? 'admin' : null, isAdmin ? 'skills' : null, isAdmin ? 'hobbies' : null].filter(Boolean);
     return tabs.indexOf(tab);
   };
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    const tabs: TabType[] = ['founders', ...(isAdmin ? ['skills' as TabType, 'hobbies' as TabType] : []), 'startups', 'help-requests', 'events', ...(isAdmin ? ['admin' as TabType] : [])];
+    const tabs: TabType[] = ['founders', 'startups', 'help-requests', 'events', ...(isAdmin ? ['admin' as TabType, 'skills' as TabType, 'hobbies' as TabType] : [])];
     setActiveTab(tabs[newValue]);
   };
 
@@ -240,7 +240,7 @@ function App() {
     <Box 
       minHeight="100vh" 
       sx={{
-        background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f8fafc 100%)',
+        background: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 35%, #ddd6fe 70%, #e9d5ff 100%)',
       }}
     >
       {/* Profile Setup Modal (lazy) */}
@@ -251,7 +251,15 @@ function App() {
         />
       </Suspense>
 
-      <AppBar position="static" elevation={1}>
+      <AppBar 
+        position="static" 
+        elevation={0}
+        sx={{
+          background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+        }}
+      >
         <Toolbar sx={{ minHeight: { xs: 56, sm: 64 } }}>
           {/* Mobile: Burger Menu */}
           {isMobile && (
@@ -260,7 +268,12 @@ function App() {
               color="inherit"
               aria-label="menu"
               onClick={() => toggleDrawer(true)}
-              sx={{ mr: 2 }}
+              sx={{ 
+                mr: 2,
+                '&:hover': {
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                },
+              }}
             >
               <MenuIcon />
             </IconButton>
@@ -274,6 +287,8 @@ function App() {
               fontFamily: '"Merriweather", "Georgia", serif',
               fontWeight: 700,
               fontSize: { xs: '1rem', sm: '1.5rem' },
+              letterSpacing: '0.5px',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
             }}
           >
             {isMobile ? 'Scrappy Founders' : 'Scrappy Founders Knowledge Base'}
@@ -298,19 +313,29 @@ function App() {
             value={getTabIndex(activeTab)}
             onChange={handleTabChange}
             textColor="inherit"
-            indicatorColor="secondary"
+            TabIndicatorProps={{
+              style: {
+                backgroundColor: '#ffffff',
+                height: '2px',
+              }
+            }}
             sx={{
-              bgcolor: 'primary.main',
+              bgcolor: 'rgba(0, 0, 0, 0.1)',
               borderTop: 1,
-              borderColor: 'primary.dark',
+              borderColor: 'rgba(255, 255, 255, 0.1)',
               '& .MuiTab-root': {
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: 'rgba(255, 255, 255, 0.8)',
+                fontWeight: 500,
+                fontSize: '0.9rem',
+                textTransform: 'none',
+                minHeight: 48,
                 '&.Mui-selected': {
                   color: 'white',
+                  fontWeight: 600,
                 },
                 '&:hover': {
                   color: 'white',
-                  bgcolor: 'rgba(255, 255, 255, 0.08)',
+                  bgcolor: 'rgba(255, 255, 255, 0.1)',
                 },
               },
             }}
@@ -319,18 +344,6 @@ function App() {
               label="Founders"
               onMouseEnter={() => preloadTab('founders')}
             />
-            {isAdmin && (
-              <Tab
-                label="Skills"
-                onMouseEnter={() => preloadTab('skills')}
-              />
-            )}
-            {isAdmin && (
-              <Tab
-                label="Hobbies"
-                onMouseEnter={() => preloadTab('hobbies')}
-              />
-            )}
             <Tab
               label="Startups"
               onMouseEnter={() => preloadTab('startups')}
@@ -347,6 +360,18 @@ function App() {
               <Tab
                 label="Admin"
                 onMouseEnter={() => preloadTab('admin')}
+              />
+            )}
+            {isAdmin && (
+              <Tab
+                label="Skills"
+                onMouseEnter={() => preloadTab('skills')}
+              />
+            )}
+            {isAdmin && (
+              <Tab
+                label="Hobbies"
+                onMouseEnter={() => preloadTab('hobbies')}
               />
             )}
           </Tabs>
@@ -367,7 +392,13 @@ function App() {
       >
         <Box sx={{ width: 280 }} role="presentation">
           {/* User Profile Section */}
-          <Box sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+          <Box 
+            sx={{ 
+              p: 2, 
+              background: 'linear-gradient(135deg, #2563eb 0%, #4f46e5 50%, #7c3aed 100%)',
+              color: 'white' 
+            }}
+          >
             <Box display="flex" alignItems="center" gap={2} mb={1}>
               <Avatar
                 src={user?.picture}
@@ -376,7 +407,7 @@ function App() {
                   width: 48,
                   height: 48,
                   border: '2px solid',
-                  borderColor: 'primary.light',
+                  borderColor: 'rgba(255, 255, 255, 0.3)',
                 }}
               />
               <Box>
@@ -459,34 +490,6 @@ function App() {
               </ListItemButton>
             </ListItem>
 
-            {isAdmin && (
-              <ListItem disablePadding>
-                <ListItemButton 
-                  selected={activeTab === 'skills'}
-                  onClick={() => handleNavigation('skills')}
-                >
-                  <ListItemIcon>
-                    <SkillsIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Skills" />
-                </ListItemButton>
-              </ListItem>
-            )}
-
-            {isAdmin && (
-              <ListItem disablePadding>
-                <ListItemButton 
-                  selected={activeTab === 'hobbies'}
-                  onClick={() => handleNavigation('hobbies')}
-                >
-                  <ListItemIcon>
-                    <HobbiesIcon />
-                  </ListItemIcon>
-                  <ListItemText primary="Hobbies" />
-                </ListItemButton>
-              </ListItem>
-            )}
-
             <ListItem disablePadding>
               <ListItemButton 
                 selected={activeTab === 'startups'}
@@ -533,6 +536,34 @@ function App() {
                     <AdminIcon />
                   </ListItemIcon>
                   <ListItemText primary="Admin" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            {isAdmin && (
+              <ListItem disablePadding>
+                <ListItemButton 
+                  selected={activeTab === 'skills'}
+                  onClick={() => handleNavigation('skills')}
+                >
+                  <ListItemIcon>
+                    <SkillsIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Skills" />
+                </ListItemButton>
+              </ListItem>
+            )}
+
+            {isAdmin && (
+              <ListItem disablePadding>
+                <ListItemButton 
+                  selected={activeTab === 'hobbies'}
+                  onClick={() => handleNavigation('hobbies')}
+                >
+                  <ListItemIcon>
+                    <HobbiesIcon />
+                  </ListItemIcon>
+                  <ListItemText primary="Hobbies" />
                 </ListItemButton>
               </ListItem>
             )}

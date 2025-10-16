@@ -22,12 +22,26 @@ import {
   Divider,
   Grid,
   Tooltip,
+  ToggleButtonGroup,
+  ToggleButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Language as LanguageIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { Startup, StartupCreate, Founder } from '../types';
 import Modal from './Modal';
@@ -112,6 +126,8 @@ const revenueOptions = [
   '$1M+',
 ];
 
+type ViewType = 'table' | 'card';
+
 const StartupsList: React.FC<StartupsListProps> = ({
   searchQuery = '',
   startupToShow,
@@ -131,6 +147,16 @@ const StartupsList: React.FC<StartupsListProps> = ({
 
   const [startupFounders, setStartupFounders] = useState<Founder[]>([]);
   const [loadingFounders, setLoadingFounders] = useState(false);
+  const [viewType, setViewType] = useState<ViewType>('table');
+  
+  // Filter states
+  const [selectedIndustries, setSelectedIndustries] = useState<string[]>([]);
+  const [selectedStages, setSelectedStages] = useState<string[]>([]);
+  const [industrySearchQuery, setIndustrySearchQuery] = useState('');
+  const [stageSearchQuery, setStageSearchQuery] = useState('');
+  const [showIndustryDropdown, setShowIndustryDropdown] = useState(false);
+  const [showStageDropdown, setShowStageDropdown] = useState(false);
+  
   const [formData, setFormData] = useState<StartupCreate>({
     name: '',
     description: '',
@@ -259,27 +285,60 @@ const StartupsList: React.FC<StartupsListProps> = ({
     }
   };
 
+  // Filtered industries based on search query
+  const filteredIndustries = useMemo(() => {
+    if (!industrySearchQuery.trim()) return industries.slice(0, 6);
+    const q = industrySearchQuery.toLowerCase();
+    return industries.filter((i) => i.toLowerCase().includes(q)).slice(0, 6);
+  }, [industrySearchQuery]);
+
+  // Filtered stages based on search query
+  const filteredStages = useMemo(() => {
+    if (!stageSearchQuery.trim()) return startupStages.slice(0, 6);
+    const q = stageSearchQuery.toLowerCase();
+    return startupStages.filter((s) => s.toLowerCase().includes(q)).slice(0, 6);
+  }, [stageSearchQuery]);
+
   const filteredStartups = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return startups;
+    let result = startups;
 
-    return startups.filter((s) => {
-      const name = s.name.toLowerCase();
-      const description = s.description?.toLowerCase() || '';
-      const industry = s.industry?.toLowerCase() || '';
-      const stage = s.stage?.toLowerCase() || '';
-      const target = s.target_market?.toLowerCase() || '';
-      const revenue = s.revenue_arr?.toLowerCase() || '';
-      return (
-        name.includes(q) ||
-        description.includes(q) ||
-        industry.includes(q) ||
-        stage.includes(q) ||
-        target.includes(q) ||
-        revenue.includes(q)
+    // Apply text search filter
+    if (q) {
+      result = startups.filter((s) => {
+        const name = s.name.toLowerCase();
+        const description = s.description?.toLowerCase() || '';
+        const industry = s.industry?.toLowerCase() || '';
+        const stage = s.stage?.toLowerCase() || '';
+        const target = s.target_market?.toLowerCase() || '';
+        const revenue = s.revenue_arr?.toLowerCase() || '';
+        return (
+          name.includes(q) ||
+          description.includes(q) ||
+          industry.includes(q) ||
+          stage.includes(q) ||
+          target.includes(q) ||
+          revenue.includes(q)
+        );
+      });
+    }
+
+    // Apply industry filter
+    if (selectedIndustries.length > 0) {
+      result = result.filter((s) =>
+        s.industry && selectedIndustries.includes(s.industry)
       );
-    });
-  }, [startups, searchQuery]);
+    }
+
+    // Apply stage filter
+    if (selectedStages.length > 0) {
+      result = result.filter((s) =>
+        s.stage && selectedStages.includes(s.stage)
+      );
+    }
+
+    return result;
+  }, [startups, searchQuery, selectedIndustries, selectedStages]);
 
   if (loading) {
     return (
@@ -295,10 +354,28 @@ const StartupsList: React.FC<StartupsListProps> = ({
   return (
     <Box>
       {/* Header */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h3" fontWeight={700}>
-          Startups
-        </Typography>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
+        <Box display="flex" alignItems="center" gap={3}>
+          <Typography variant="h3" fontWeight={700}>
+            Startups
+          </Typography>
+
+          {/* View Switcher */}
+          <ToggleButtonGroup
+            value={viewType}
+            exclusive
+            onChange={(_, newView) => newView && setViewType(newView)}
+            size="small"
+          >
+            <ToggleButton value="table">
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
+            <ToggleButton value="card">
+              <ViewModuleIcon fontSize="small" />
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+
         <Button
           variant="contained"
           color="success"
@@ -309,6 +386,164 @@ const StartupsList: React.FC<StartupsListProps> = ({
           Add Startup
         </Button>
       </Box>
+
+      {/* Filters Row */}
+      <Box display="flex" flexWrap="wrap" gap={2} mb={3}>
+        {/* Industry Filter */}
+        <Box sx={{ position: 'relative', minWidth: 250 }}>
+          <TextField
+            placeholder="Filter by industry…"
+            value={industrySearchQuery}
+            onChange={(e) => setIndustrySearchQuery(e.target.value)}
+            onFocus={() => setShowIndustryDropdown(true)}
+            onBlur={() => setTimeout(() => setShowIndustryDropdown(false), 200)}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {showIndustryDropdown && filteredIndustries.length > 0 && (
+            <Paper
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                mt: 0.5,
+                maxHeight: 200,
+                overflow: 'auto',
+                zIndex: 1000,
+              }}
+            >
+              {filteredIndustries.map((industry) => (
+                <Box
+                  key={industry}
+                  sx={{
+                    p: 1,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  onClick={() => {
+                    if (!selectedIndustries.includes(industry)) {
+                      setSelectedIndustries([...selectedIndustries, industry]);
+                    }
+                    setIndustrySearchQuery('');
+                    setShowIndustryDropdown(false);
+                  }}
+                >
+                  <Typography variant="body2">{industry}</Typography>
+                  {selectedIndustries.includes(industry) && (
+                    <Chip label="Selected" size="small" color="secondary" />
+                  )}
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </Box>
+
+        {/* Stage Filter */}
+        <Box sx={{ position: 'relative', minWidth: 250 }}>
+          <TextField
+            placeholder="Filter by stage…"
+            value={stageSearchQuery}
+            onChange={(e) => setStageSearchQuery(e.target.value)}
+            onFocus={() => setShowStageDropdown(true)}
+            onBlur={() => setTimeout(() => setShowStageDropdown(false), 200)}
+            size="small"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          {showStageDropdown && filteredStages.length > 0 && (
+            <Paper
+              sx={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                mt: 0.5,
+                maxHeight: 200,
+                overflow: 'auto',
+                zIndex: 1000,
+              }}
+            >
+              {filteredStages.map((stage) => (
+                <Box
+                  key={stage}
+                  sx={{
+                    p: 1,
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                  onClick={() => {
+                    if (!selectedStages.includes(stage)) {
+                      setSelectedStages([...selectedStages, stage]);
+                    }
+                    setStageSearchQuery('');
+                    setShowStageDropdown(false);
+                  }}
+                >
+                  <Typography variant="body2">{stage}</Typography>
+                  {selectedStages.includes(stage) && (
+                    <Chip label="Selected" size="small" color="success" />
+                  )}
+                </Box>
+              ))}
+            </Paper>
+          )}
+        </Box>
+      </Box>
+
+      {/* Selected Filters Display */}
+      {(selectedIndustries.length > 0 || selectedStages.length > 0) && (
+        <Box display="flex" flexWrap="wrap" gap={1} mb={3}>
+          {selectedIndustries.map((industry) => (
+            <Chip
+              key={industry}
+              label={industry}
+              color="secondary"
+              onDelete={() => setSelectedIndustries(selectedIndustries.filter((i) => i !== industry))}
+              deleteIcon={<CloseIcon />}
+            />
+          ))}
+          {selectedStages.map((stage) => (
+            <Chip
+              key={stage}
+              label={stage}
+              color="success"
+              onDelete={() => setSelectedStages(selectedStages.filter((s) => s !== stage))}
+              deleteIcon={<CloseIcon />}
+            />
+          ))}
+          {(selectedIndustries.length > 0 || selectedStages.length > 0) && (
+            <Button
+              size="small"
+              onClick={() => {
+                setSelectedIndustries([]);
+                setSelectedStages([]);
+              }}
+            >
+              Clear All
+            </Button>
+          )}
+        </Box>
+      )}
 
       {err && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setErr(null)}>
@@ -428,129 +663,272 @@ const StartupsList: React.FC<StartupsListProps> = ({
         </form>
       </Dialog>
 
-      {/* Startups List */}
-      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mx: -1 }}>
-        {filteredStartups.map((startup) => (
-          <Box key={startup.id} sx={{ flex: { xs: '1 1 100%', md: '0 0 calc(33.333% - 11px)' }, minWidth: 0, maxWidth: { xs: '100%', md: 'calc(33.333% - 11px)' } }}>
-            <Card
-              sx={{ 
-                height: '350px',
-                display: 'flex', 
-                flexDirection: 'column',
-                cursor: 'pointer',
-              }}
-              onClick={() => setSelectedStartup(startup)}
-            >
-              <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
-                  <Typography variant="h5" fontWeight={700}>
-                    {startup.name}
+      {/* Table View */}
+      {viewType === 'table' && (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>
+                  <Typography variant="subtitle2" fontWeight={600}>
+                    NAME
                   </Typography>
-                  {isAdmin && (
-                    <Box onClick={(e) => e.stopPropagation()}>
-                      <IconButton size="small" color="primary" onClick={() => handleEdit(startup)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={() => handleDelete(startup.id)}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Box>
-
-                {startup.description && (
-                  <Tooltip title={startup.description} arrow placement="top" enterDelay={500}>
-                    <Box>
-                      <Typography 
-                        variant="body2" 
-                        mb={2} 
-                        lineHeight={1.5}
+                </TableCell>
+                <TableCell>Industry</TableCell>
+                <TableCell>Stage</TableCell>
+                <TableCell>Target Market</TableCell>
+                <TableCell>Revenue ARR</TableCell>
+                <TableCell>Website</TableCell>
+                {isAdmin && <TableCell>Actions</TableCell>}
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filteredStartups.map((startup) => (
+                <TableRow key={startup.id} hover>
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      fontWeight={500}
+                      sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                      onClick={() => setSelectedStartup(startup)}
+                    >
+                      {startup.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {startup.industry ? (
+                      <Chip
+                        label={startup.industry}
+                        size="small"
+                        color="secondary"
+                        onClick={() => {
+                          if (!selectedIndustries.includes(startup.industry!)) {
+                            setSelectedIndustries([...selectedIndustries, startup.industry!]);
+                          }
+                        }}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        -
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {startup.stage ? (
+                      <Chip
+                        label={startup.stage}
+                        size="small"
+                        color="success"
+                        onClick={() => {
+                          if (!selectedStages.includes(startup.stage!)) {
+                            setSelectedStages([...selectedStages, startup.stage!]);
+                          }
+                        }}
+                        sx={{ cursor: 'pointer' }}
+                      />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">
+                        -
+                      </Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {startup.target_market || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {startup.revenue_arr || '-'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {startup.website_url && (
+                      <IconButton
+                        size="small"
+                        href={startup.website_url}
+                        target="_blank"
+                        rel="noopener"
                         sx={{
-                          display: '-webkit-box',
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          p: 0.5,
+                          '&:hover': {
+                            color: 'primary.main',
+                            transform: 'scale(1.1)',
+                            transition: 'all 0.2s ease-in-out',
+                          },
                         }}
                       >
-                        {startup.description}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                )}
-
-                <Box flexGrow={1}>
-                  {(startup.industry || startup.stage) && (
-                    <Box mb={2}>
-                      <Box display="flex" gap={2}>
-                        {startup.industry && (
-                          <Box flex={1}>
-                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
-                              INDUSTRY
-                            </Typography>
-                            <Chip label={startup.industry} color="secondary" size="small" />
-                          </Box>
-                        )}
-                        {startup.stage && (
-                          <Box flex={1}>
-                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
-                              STAGE
-                            </Typography>
-                            <Chip label={startup.stage} color="success" size="small" />
-                          </Box>
-                        )}
+                        <LanguageIcon sx={{ fontSize: '1.25rem' }} />
+                      </IconButton>
+                    )}
+                  </TableCell>
+                  {isAdmin && (
+                    <TableCell>
+                      <Box display="flex" gap={1}>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(startup)}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(startup.id)}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
                       </Box>
-                    </Box>
+                    </TableCell>
                   )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
-                  {(startup.target_market || startup.revenue_arr) && (
-                    <Box mb={2}>
-                      <Box display="flex" gap={2}>
-                        {startup.target_market && (
-                          <Box flex={1}>
-                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
-                              TARGET MARKET
-                            </Typography>
-                            <Typography variant="body2">
-                              🎯 {startup.target_market}
-                            </Typography>
-                          </Box>
-                        )}
-                        {startup.revenue_arr && (
-                          <Box flex={1}>
-                            <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
-                              REVENUE ARR
-                            </Typography>
-                            <Typography variant="body2">
-                              💰 {startup.revenue_arr}
-                            </Typography>
-                          </Box>
-                        )}
+      {/* Card View */}
+      {viewType === 'card' && (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mx: -1 }}>
+          {filteredStartups.map((startup) => (
+            <Box key={startup.id} sx={{ flex: { xs: '1 1 100%', md: '0 0 calc(33.333% - 11px)' }, minWidth: 0, maxWidth: { xs: '100%', md: 'calc(33.333% - 11px)' } }}>
+              <Card
+                sx={{ 
+                  height: '350px',
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setSelectedStartup(startup)}
+              >
+                <CardContent sx={{ flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={2}>
+                    <Typography variant="h5" fontWeight={700}>
+                      {startup.name}
+                    </Typography>
+                    {isAdmin && (
+                      <Box onClick={(e) => e.stopPropagation()}>
+                        <IconButton size="small" color="primary" onClick={() => handleEdit(startup)}>
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={() => handleDelete(startup.id)}>
+                          <DeleteIcon />
+                        </IconButton>
                       </Box>
-                    </Box>
-                  )}
-                </Box>
-
-                {startup.website_url && (
-                  <Box mt={2} pt={2} borderTop={1} borderColor="divider">
-                    <Link
-                      href={startup.website_url}
-                      target="_blank"
-                      rel="noopener"
-                      variant="body2"
-                      onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
-                    >
-                      <LanguageIcon fontSize="small" />
-                      Website
-                    </Link>
+                    )}
                   </Box>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
-        ))}
-      </Box>
+
+                  {startup.description && (
+                    <Tooltip title={startup.description} arrow placement="top" enterDelay={500}>
+                      <Box>
+                        <Typography 
+                          variant="body2" 
+                          mb={2} 
+                          lineHeight={1.5}
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {startup.description}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  )}
+
+                  <Box flexGrow={1}>
+                    {(startup.industry || startup.stage) && (
+                      <Box mb={2}>
+                        <Box display="flex" gap={2}>
+                          {startup.industry && (
+                            <Box flex={1}>
+                              <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                                INDUSTRY
+                              </Typography>
+                              <Chip 
+                                label={startup.industry} 
+                                color="secondary" 
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!selectedIndustries.includes(startup.industry!)) {
+                                    setSelectedIndustries([...selectedIndustries, startup.industry!]);
+                                  }
+                                }}
+                                sx={{ cursor: 'pointer' }}
+                              />
+                            </Box>
+                          )}
+                          {startup.stage && (
+                            <Box flex={1}>
+                              <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                                STAGE
+                              </Typography>
+                              <Chip 
+                                label={startup.stage} 
+                                color="success" 
+                                size="small"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!selectedStages.includes(startup.stage!)) {
+                                    setSelectedStages([...selectedStages, startup.stage!]);
+                                  }
+                                }}
+                                sx={{ cursor: 'pointer' }}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+
+                    {(startup.target_market || startup.revenue_arr) && (
+                      <Box mb={2}>
+                        <Box display="flex" gap={2}>
+                          {startup.target_market && (
+                            <Box flex={1}>
+                              <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                                TARGET MARKET
+                              </Typography>
+                              <Typography variant="body2">
+                                🎯 {startup.target_market}
+                              </Typography>
+                            </Box>
+                          )}
+                          {startup.revenue_arr && (
+                            <Box flex={1}>
+                              <Typography variant="caption" fontWeight={600} mb={1} display="block" color="text.secondary">
+                                REVENUE ARR
+                              </Typography>
+                              <Typography variant="body2">
+                                💰 {startup.revenue_arr}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {startup.website_url && (
+                    <Box mt={2} pt={2} borderTop={1} borderColor="divider">
+                      <Link
+                        href={startup.website_url}
+                        target="_blank"
+                        rel="noopener"
+                        variant="body2"
+                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                      >
+                        <LanguageIcon fontSize="small" />
+                        Website
+                      </Link>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
+          ))}
+        </Box>
+      )}
 
       {/* Startup Details Modal */}
       <Modal

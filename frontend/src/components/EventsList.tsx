@@ -21,6 +21,7 @@ import {
   ToggleButton,
   Paper,
   Link,
+  Divider,
   Grid,
 } from '@mui/material';
 import {
@@ -28,12 +29,13 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   CalendarMonth as CalendarIcon,
-  ViewModule as ViewModuleIcon,
   ViewList as ViewListIcon,
   Event as EventIcon,
   LocationOn as LocationOnIcon,
   People as PeopleIcon,
   Link as LinkIcon,
+  History as HistoryIcon,
+  Upcoming as UpcomingIcon,
 } from '@mui/icons-material';
 import { Calendar, momentLocalizer, View } from 'react-big-calendar';
 import moment from 'moment';
@@ -44,7 +46,7 @@ import { useAdmin } from '../hooks/useAdmin';
 
 const localizer = momentLocalizer(moment);
 
-type ViewType = 'card' | 'compact' | 'calendar';
+type ViewType = 'timeline' | 'calendar';
 
 const THEMES = ['hiking', 'poker', 'basketball', 'pickleball', 'roundtable', 'group dinner'] as const;
 
@@ -55,10 +57,11 @@ const EventsList: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [viewType, setViewType] = useState<ViewType>('calendar');
+  const [viewType, setViewType] = useState<ViewType>('timeline');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState<View>('month');
+  const [showPastEvents, setShowPastEvents] = useState(false);
   const [formData, setFormData] = useState<EventCreate>({
     title: '',
     description: '',
@@ -255,6 +258,47 @@ const EventsList: React.FC = () => {
     [events]
   );
 
+  const { upcomingEvents, pastEvents } = useMemo(() => {
+    const now = new Date();
+    const upcoming = sortedEvents.filter(event => new Date(event.date_time) >= now);
+    const past = sortedEvents.filter(event => new Date(event.date_time) < now).reverse();
+    return { upcomingEvents: upcoming, pastEvents: past };
+  }, [sortedEvents]);
+
+  // Group events by date
+  const groupEventsByDate = useCallback((events: Event[]) => {
+    const groups: { date: string; events: Event[] }[] = [];
+    const dateMap: { [key: string]: Event[] } = {};
+    
+    events.forEach(event => {
+      const date = new Date(event.date_time);
+      const dateKey = date.toDateString(); // Use unique key for grouping
+      if (!dateMap[dateKey]) {
+        dateMap[dateKey] = [];
+      }
+      dateMap[dateKey].push(event);
+    });
+
+    // Convert to array and format
+    Object.keys(dateMap).forEach(dateKey => {
+      const date = new Date(dateKey);
+      const formatted = date.toLocaleDateString('en-US', { 
+        weekday: 'long',
+        month: 'short', 
+        day: 'numeric'
+      });
+      groups.push({
+        date: formatted,
+        events: dateMap[dateKey]
+      });
+    });
+
+    return groups;
+  }, []);
+
+  const upcomingByDate = useMemo(() => groupEventsByDate(upcomingEvents), [upcomingEvents, groupEventsByDate]);
+  const pastByDate = useMemo(() => groupEventsByDate(pastEvents), [pastEvents, groupEventsByDate]);
+
   return (
     <Box>
       {/* Header */}
@@ -271,14 +315,11 @@ const EventsList: React.FC = () => {
             onChange={(_, newView) => newView && setViewType(newView)}
             size="small"
           >
+            <ToggleButton value="timeline">
+              <ViewListIcon fontSize="small" />
+            </ToggleButton>
             <ToggleButton value="calendar">
               <CalendarIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="card">
-              <ViewModuleIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="compact">
-              <ViewListIcon fontSize="small" />
             </ToggleButton>
           </ToggleButtonGroup>
         </Box>
@@ -470,138 +511,338 @@ const EventsList: React.FC = () => {
         </Box>
       )}
 
-      {/* Card View */}
-      {viewType === 'card' && (
-        <Grid container spacing={3}>
-          {sortedEvents.map((event) => (
-            <Grid key={event.id} sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' }, p: 1.5 }}>
-              <Card 
-                sx={{ 
-                  height: '100%',
-                  cursor: 'pointer',
-                }}
-                onClick={() => setSelectedEvent(event)}
-              >
-                <CardContent>
-                  <Box display="flex" justifyContent="space-between" alignItems="start" mb={3}>
-                    <Typography variant="h4" fontWeight={800} sx={{ fontSize: '1.5rem' }}>
-                      {event.title}
-                    </Typography>
-                    {isAdmin && (
-                      <Box onClick={(e) => e.stopPropagation()}>
-                        <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
-                          <DeleteIcon />
-                        </IconButton>
-                      </Box>
-                    )}
-                  </Box>
-
-                  <Box display="flex" alignItems="center" gap={1} mb={2}>
-                    <EventIcon fontSize="medium" color="action" />
-                    <Typography variant="body1" color="text.secondary" fontWeight={500}>
-                      {formatDateTime(event.date_time)}
-                    </Typography>
-                  </Box>
-
-                  {event.location && (
-                    <Box display="flex" alignItems="center" gap={1} mb={2}>
-                      <LocationOnIcon fontSize="medium" color="action" />
-                      <Typography variant="body1" color="text.secondary">
-                        {event.location}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {event.description && (
-                    <Typography variant="body1" mb={3} lineHeight={1.6}>
-                      {event.description}
-                    </Typography>
-                  )}
-
-                  {event.attendees && (
-                    <Box display="flex" alignItems="center" gap={1} mb={3}>
-                      <PeopleIcon fontSize="medium" color="action" />
-                      <Typography variant="body2" color="text.secondary">
-                        {event.attendees}
-                      </Typography>
-                    </Box>
-                  )}
-
-                  {event.theme && (
-                    <Box mb={2}>
-                      <Chip label={event.theme} color={getThemeColor(event.theme)} />
-                    </Box>
-                  )}
-
-                  {event.link && (
-                    <Box>
-                      <Link 
-                        href={event.link} 
-                        target="_blank" 
-                        rel="noopener" 
-                        variant="body2"
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                      >
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <LinkIcon />
-                          Event Link
-                        </Box>
-                      </Link>
-                    </Box>
-                  )}
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
-
-      {/* Compact View */}
-      {viewType === 'compact' && (
+      {/* Timeline View */}
+      {viewType === 'timeline' && (
         <Box>
-          {sortedEvents.map((event) => (
-            <Paper 
-              key={event.id} 
-              sx={{ 
-                p: 3, 
-                mb: 2,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease-in-out',
-                '&:hover': {
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                }
-              }}
-              onClick={() => setSelectedEvent(event)}
-            >
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Box flexGrow={1}>
-                  <Typography variant="h6" fontWeight={700} mb={0.5}>
-                    {event.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {formatDate(event.date_time)} at {formatTime(event.date_time)}
-                    {event.location && ` • ${event.location}`}
-                  </Typography>
-                </Box>
-                {event.theme && (
-                  <Chip label={event.theme} color={getThemeColor(event.theme)} sx={{ mx: 2 }} />
-                )}
-                {isAdmin && (
-                  <Box onClick={(e) => e.stopPropagation()}>
-                    <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                )}
-              </Box>
+          {/* Upcoming Events Section */}
+          {upcomingEvents.length === 0 ? (
+            <Paper sx={{ p: 4, textAlign: 'center', mb: 4 }}>
+              <Typography variant="body1" color="text.secondary">
+                No upcoming events scheduled
+              </Typography>
             </Paper>
-          ))}
+          ) : (
+            <Box mb={4}>
+              {upcomingByDate.map((group, groupIndex) => (
+                <Box key={group.date} sx={{ mb: 4 }}>
+                  {/* Date Header - Outside cards */}
+                  <Box 
+                    sx={{ 
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1.5,
+                      mb: 2,
+                      ml: 1,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        bgcolor: 'text.primary',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <Typography 
+                      variant="body1" 
+                      fontWeight={700}
+                      sx={{ 
+                        color: 'text.primary',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {group.date}
+                    </Typography>
+                  </Box>
+
+                  {/* Events for this date */}
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {group.events.map((event) => {
+                      const eventDate = new Date(event.date_time);
+                      const timeStr = eventDate.toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                      });
+
+                      return (
+                        <Card
+                          key={event.id}
+                          sx={{
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease-in-out',
+                            '&:hover': {
+                              boxShadow: 3,
+                            },
+                          }}
+                          onClick={() => setSelectedEvent(event)}
+                        >
+                          <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="start" gap={2}>
+                              <Box flexGrow={1}>
+                                {/* Time */}
+                                <Typography 
+                                  variant="body2" 
+                                  color="text.secondary" 
+                                  fontWeight={600}
+                                  sx={{ mb: 0.5, fontSize: '0.875rem' }}
+                                >
+                                  {timeStr}
+                                </Typography>
+
+                                {/* Title */}
+                                <Typography variant="h6" fontWeight={700} sx={{ mb: 1, fontSize: '1.1rem' }}>
+                                  {event.title}
+                                </Typography>
+
+                                {/* Description */}
+                                {event.description && (
+                                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5 }}>
+                                    {event.description}
+                                  </Typography>
+                                )}
+
+                                {/* Location */}
+                                {event.location && (
+                                  <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
+                                    <LocationOnIcon sx={{ fontSize: 18 }} color="action" />
+                                    <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                                      {event.location}
+                                    </Typography>
+                                  </Box>
+                                )}
+
+                                {/* Attendees */}
+                                {event.attendees && (
+                                  <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
+                                    <PeopleIcon sx={{ fontSize: 18 }} color="action" />
+                                    <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                                      {event.attendees}
+                                    </Typography>
+                                  </Box>
+                                )}
+
+                                {/* Event Link */}
+                                {event.link && (
+                                  <Link
+                                    href={event.link}
+                                    target="_blank"
+                                    rel="noopener"
+                                    variant="body2"
+                                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                    sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 1, fontSize: '0.875rem' }}
+                                  >
+                                    <LinkIcon sx={{ fontSize: 16 }} />
+                                    View Event
+                                  </Link>
+                                )}
+                              </Box>
+
+                              {/* Right side: Theme chip and admin actions */}
+                              <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+                                {event.theme && (
+                                  <Chip 
+                                    label={event.theme} 
+                                    color={getThemeColor(event.theme)} 
+                                    size="small"
+                                    sx={{ height: 24 }}
+                                  />
+                                )}
+                                {isAdmin && (
+                                  <Box onClick={(e) => e.stopPropagation()} display="flex" gap={0.5}>
+                                    <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
+                                      <EditIcon sx={{ fontSize: 18 }} />
+                                    </IconButton>
+                                    <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
+                                      <DeleteIcon sx={{ fontSize: 18 }} />
+                                    </IconButton>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+          )}
+
+          {/* Past Events Section */}
+          {pastEvents.length > 0 && (
+            <Box>
+              <Divider sx={{ my: 4 }} />
+              
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                <Typography variant="h6" fontWeight={700} color="text.secondary">
+                  Past Events ({pastEvents.length})
+                </Typography>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowPastEvents(!showPastEvents)}
+                  startIcon={showPastEvents ? <UpcomingIcon /> : <HistoryIcon />}
+                >
+                  {showPastEvents ? 'Hide' : 'Show'} Past Events
+                </Button>
+              </Box>
+
+              {showPastEvents && (
+                <Box mb={4}>
+                  {pastByDate.map((group) => (
+                    <Box key={group.date} sx={{ mb: 4 }}>
+                      {/* Date Header - Outside cards */}
+                      <Box 
+                        sx={{ 
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1.5,
+                          mb: 2,
+                          ml: 1,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: 'text.disabled',
+                            flexShrink: 0,
+                          }}
+                        />
+                        <Typography 
+                          variant="body1" 
+                          fontWeight={700}
+                          sx={{ 
+                            color: 'text.secondary',
+                            fontSize: '0.95rem',
+                          }}
+                        >
+                          {group.date}
+                        </Typography>
+                      </Box>
+
+                      {/* Events for this date */}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {group.events.map((event) => {
+                          const eventDate = new Date(event.date_time);
+                          const timeStr = eventDate.toLocaleTimeString('en-US', { 
+                            hour: 'numeric', 
+                            minute: '2-digit',
+                            hour12: true 
+                          });
+
+                          return (
+                            <Card
+                              key={event.id}
+                              sx={{
+                                cursor: 'pointer',
+                                opacity: 0.85,
+                                transition: 'all 0.2s ease-in-out',
+                                '&:hover': {
+                                  opacity: 1,
+                                  boxShadow: 3,
+                                },
+                              }}
+                              onClick={() => setSelectedEvent(event)}
+                            >
+                              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="start" gap={2}>
+                                  <Box flexGrow={1}>
+                                    {/* Time */}
+                                    <Typography 
+                                      variant="body2" 
+                                      color="text.secondary" 
+                                      fontWeight={600}
+                                      sx={{ mb: 0.5, fontSize: '0.875rem' }}
+                                    >
+                                      {timeStr}
+                                    </Typography>
+
+                                    {/* Title */}
+                                    <Typography variant="h6" fontWeight={700} color="text.secondary" sx={{ mb: 1, fontSize: '1.1rem' }}>
+                                      {event.title}
+                                    </Typography>
+
+                                    {/* Description */}
+                                    {event.description && (
+                                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.5 }}>
+                                        {event.description}
+                                      </Typography>
+                                    )}
+
+                                    {/* Location */}
+                                    {event.location && (
+                                      <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
+                                        <LocationOnIcon sx={{ fontSize: 18 }} color="action" />
+                                        <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                                          {event.location}
+                                        </Typography>
+                                      </Box>
+                                    )}
+
+                                    {/* Attendees */}
+                                    {event.attendees && (
+                                      <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
+                                        <PeopleIcon sx={{ fontSize: 18 }} color="action" />
+                                        <Typography variant="body2" color="text.secondary" fontSize="0.875rem">
+                                          {event.attendees}
+                                        </Typography>
+                                      </Box>
+                                    )}
+
+                                    {/* Event Link */}
+                                    {event.link && (
+                                      <Link
+                                        href={event.link}
+                                        target="_blank"
+                                        rel="noopener"
+                                        variant="body2"
+                                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                                        sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5, mt: 1, fontSize: '0.875rem' }}
+                                      >
+                                        <LinkIcon sx={{ fontSize: 16 }} />
+                                        View Event
+                                      </Link>
+                                    )}
+                                  </Box>
+
+                                  {/* Right side: Theme chip and admin actions */}
+                                  <Box display="flex" flexDirection="column" alignItems="flex-end" gap={1}>
+                                    {event.theme && (
+                                      <Chip 
+                                        label={event.theme} 
+                                        color={getThemeColor(event.theme)} 
+                                        size="small"
+                                        sx={{ height: 24 }}
+                                      />
+                                    )}
+                                    {isAdmin && (
+                                      <Box onClick={(e) => e.stopPropagation()} display="flex" gap={0.5}>
+                                        <IconButton size="small" color="primary" onClick={() => handleEdit(event)}>
+                                          <EditIcon sx={{ fontSize: 18 }} />
+                                        </IconButton>
+                                        <IconButton size="small" color="error" onClick={() => handleDelete(event.id)}>
+                                          <DeleteIcon sx={{ fontSize: 18 }} />
+                                        </IconButton>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </Box>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
         </Box>
       )}
 
